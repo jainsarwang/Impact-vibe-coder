@@ -1,0 +1,23 @@
+prompt - may be avaiable api key
+
+generate back story of user prompt(requirement)
+project flow:
+BAB - Business analysis
+solution arcitect - diagram, sequence, architecture
+technical requirement
+direcetory structure - decide endpoints
+code
+validate endpoint
+render
+technical documentation
+requirement.txt
+virtual env for each project
+
+
+
+version 2:
+teraform scripts
+
+
+
+explore: Web assembly
