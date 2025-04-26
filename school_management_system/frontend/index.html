@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>School Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .form-container,
+        .list-container {
+            width: 45%;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"],
+        input[type="email"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <h1>School Management System</h1>
+    <div class="container">
+        <div class="form-container">
+            <h2>Add Student</h2>
+            <form id="add-student-form">
+                <label for="student-name">Name:</label>
+                <input type="text" id="student-name" name="student-name" required>
+                <label for="student-email">Email:</label>
+                <input type="email" id="student-email" name="student-email" required>
+                <button type="submit">Add Student</button>
+            </form>
+        </div>
+        <div class="form-container">
+            <h2>Add Course</h2>
+            <form id="add-course-form">
+                <label for="course-name">Name:</label>
+                <input type="text" id="course-name" name="course-name" required>
+                <label for="course-description">Description:</label>
+                <input type="text" id="course-description" name="course-description" required>
+                <button type="submit">Add Course</button>
+            </form>
+        </div>
+    </div>
+    <div class="container">
+        <div class="list-container">
+            <h2>Students</h2>
+            <ul id="student-list"></ul>
+        </div>
+        <div class="list-container">
+            <h2>Courses</h2>
+            <ul id="course-list"></ul>
+        </div>
+    </div>
+    <script>
+        const backendUrl = 'http://127.0.0.1:5000'; // Replace with your backend URL
+
+        // Function to fetch and display students
+        async function fetchStudents() {
+            const response = await fetch(`${backendUrl}/students`);
+            const students = await response.json();
+            const studentList = document.getElementById('student-list');
+            studentList.innerHTML = ''; // Clear existing list
+            students.forEach(student => {
+                const li = document.createElement('li');
+                li.textContent = `${student.name} (${student.email})`;
+                studentList.appendChild(li);
+            });
+        }
+
+        // Function to fetch and display courses
+        async function fetchCourses() {
+            const response = await fetch(`${backendUrl}/courses`);
+            const courses = await response.json();
+            const courseList = document.getElementById('course-list');
+            courseList.innerHTML = ''; // Clear existing list
+            courses.forEach(course => {
+                const li = document.createElement('li');
+                li.textContent = `${course.name} - ${course.description}`;
+                courseList.appendChild(li);
+            });
+        }
+
+        // Add student form submission
+        document.getElementById('add-student-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('student-name').value;
+            const email = document.getElementById('student-email').value;
+            const response = await fetch(`${backendUrl}/students`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: name, email: email })
+            });
+            if (response.ok) {
+                fetchStudents(); // Refresh student list
+                document.getElementById('student-name').value = ''; // Clear form
+                document.getElementById('student-email').value = '';
+            } else {
+                alert('Failed to add student');
+            }
+        });
+
+        // Add course form submission
+        document.getElementById('add-course-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('course-name').value;
+            const description = document.getElementById('course-description').value;
+            const response = await fetch(`${backendUrl}/courses`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: name, description: description })
+            });
+            if (response.ok) {
+                fetchCourses(); // Refresh course list
+                document.getElementById('course-name').value = ''; // Clear form
+                document.getElementById('course-description').value = '';
+            } else {
+                alert('Failed to add course');
+            }
+        });
+
+        // Initial fetch of students and courses
+        fetchStudents();
+        fetchCourses();
+    </script>
+</body>
+</html>

@@ -36,7 +36,7 @@ def create_gemini_llm(model: str, temperature: float = 0.0) -> ChatGemini:
         raise ValueError("GOOGLE_API_KEY environment variable not set")
     
     return ChatGemini(
-    model="gemini-2.0-flash",
+    model= model,
     temperature=0,
     max_tokens=None,
     timeout=None,
@@ -51,10 +51,11 @@ def get_llm_by_type(llm_type: LLMType) -> ChatOpenAI | genai.Client:
 
     if llm_type == "basic":
         if GOOGLE_API_KEY:
-            llm = create_gemini_llm(model="gemini-2.0-flash") # Or "gemini-pro-vision" if needed
+            llm = create_gemini_llm(model="gemini-2.0-flash")
+            # Or "gemini-pro-vision" if needed
     elif llm_type == "reasoning":
         if GROQ_API_KEY:
-            llm = create_groq_llm(REASONING_MODEL_GROQ)
+            llm = create_gemini_llm(model="gemini-2.0-flash")
         else:
             raise ValueError("GROQ_API_KEY environment variable not set for basic LLM.")
     elif llm_type == "vision":

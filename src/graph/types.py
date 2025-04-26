@@ -1,6 +1,7 @@
 from typing import Literal
 from typing_extensions import TypedDict
 from langgraph.graph import MessagesState
+from langchain_core.messages import BaseMessage
 
 from src.config import TEAM_MEMBERS
 
