@@ -1,5 +1,6 @@
 import os
 import re
+import json
 from datetime import datetime
 
 from langchain_core.prompts import PromptTemplate
@@ -21,3 +22,29 @@ def apply_prompt_template(prompt_name: str, state: AgentState) -> list:
         template=get_prompt_template(prompt_name),
     ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
     return [{"role": "system", "content": system_prompt}] + state["messages"]
+
+
+def apply_prompt_template_planner(prompt_name: str, state: AgentState) -> list:
+    """Applies prompt template for planner with proper JSON handling."""
+    try:
+        # Load project requirements from JSON file
+        with open("project_requirements.json", "r", encoding="utf-8") as f:
+            project_requirements = json.load(f)
+        
+        system_prompt = PromptTemplate(
+            input_variables=["CURRENT_TIME", "project_requirements"],
+            template=get_prompt_template(prompt_name),
+        ).format(
+            CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+            project_requirements=json.dumps(project_requirements, indent=2),  # Convert dict to formatted JSON string
+            **state
+        )
+        
+        return [{"role": "system", "content": system_prompt}] + state["messages"]
+    
+    except FileNotFoundError:
+        raise ValueError("project_requirements.json file not found")
+    except json.JSONDecodeError:
+        raise ValueError("Invalid JSON in project_requirements.json")
+    except Exception as e:
+        raise ValueError(f"Error applying prompt template: {str(e)}")

@@ -1,0 +1,12 @@
+{
+  "name": "sorting_visualizer",
+  "version": "1.0.0",
+  "description": "A sorting algorithm visualizer",
+  "main": "app.py",
+  "scripts": {
+    "start": "flask run"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.9"
+  }
+}

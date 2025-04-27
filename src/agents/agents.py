@@ -1,13 +1,14 @@
 from langgraph.prebuilt import create_react_agent
 from langchain_openai import ChatOpenAI
 
-from src.prompts import apply_prompt_template
+from src.prompts import apply_prompt_template, apply_prompt_template_planner
 from src.tools import (
     bash_tool,
     browser_tool,
     crawl_tool,
     python_repl_tool,
     tavily_tool,
+    project_zip_tool
 )
 
 from src.llms.llm import get_llm_by_type
@@ -22,7 +23,7 @@ research_agent = create_react_agent(
 
 coder_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP["coder"]),
-    tools=[python_repl_tool, bash_tool],
+    tools=[python_repl_tool, bash_tool,project_zip_tool],
     prompt=lambda state: apply_prompt_template("coder", state),
 )
 

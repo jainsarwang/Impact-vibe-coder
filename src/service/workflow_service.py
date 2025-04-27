@@ -69,7 +69,7 @@ async def run_agent_workflow(
             "messages": user_input_messages,
             "deep_thinking_mode": deep_thinking_mode,
             "search_before_planning": search_before_planning,
-        },
+        },{"recurison_limit": 100},
         version="v2",
     ):
         kind = event.get("event")

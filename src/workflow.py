@@ -43,10 +43,10 @@ def run_agent_workflow(user_input: str, debug: bool = False):
             "TEAM_MEMBERS": TEAM_MEMBERS,
             # Runtime Variables
             "messages": [{"role": "user", "content": user_input}],
-            "deep_thinking_mode": True,
-            "search_before_planning": True
+            "deep_thinking_mode": False,
+            "search_before_planning": False
         },
-        {"configurable": {"recursion_limit": 100}},
+        {"recursion_limit": 100},
     )
     logger.debug(f"Final workflow state: {result}")
     logger.info("Workflow completed successfully")

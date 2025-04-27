@@ -46,8 +46,6 @@ def create_gemini_llm(model: str, temperature: float = 0.0) -> ChatGemini:
 
 def get_llm_by_type(llm_type: LLMType) -> ChatOpenAI | genai.Client:
     """Get LLM instance by type. Returns cached instance if available."""
-    if llm_type in _llm_cache:
-        return _llm_cache[llm_type]
 
     if llm_type == "basic":
         if GOOGLE_API_KEY:

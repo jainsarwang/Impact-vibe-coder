@@ -7,7 +7,16 @@ wheels/
 *.egg-info
 .coverage
 agent_history.gif
-
+node_modules
+chatbot
+groq_chatbot
+GroqChat
+job_portal
+library_management_system
+sorter
+sorting_visulizer
+WeatherWise
+school_management_system
 # Virtual environments
 .venv
 

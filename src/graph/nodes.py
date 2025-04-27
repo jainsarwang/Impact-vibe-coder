@@ -14,10 +14,50 @@ from src.agents import research_agent, coder_agent, browser_agent
 from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS
 from src.config.agents import AGENT_LLM_MAP
-from src.prompts.template import apply_prompt_template
+from src.prompts.template import apply_prompt_template, apply_prompt_template_planner
 from src.tools.search import tavily_tool
 from src.utils.json_utils import repair_json_output
 from .types import State, Router
+import re
+import json
+
+def extract_and_save_json(response_text: str, output_file: str = 'project_requirements.json') -> bool:
+    """
+    Extracts JSON from response text and saves to file.
+    Uses a non-recursive approach to handle nested structures.
+    """
+    try:
+        # First try parsing the entire response as JSON
+        try:
+            json_data = json.loads(response_text)
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(json_data, f, indent=2, ensure_ascii=False)
+            return True
+        except json.JSONDecodeError:
+            pass  # Continue to try partial extraction
+
+        # Improved pattern without recursive extension
+        json_pattern = r'(?s)(?:```json\s*)?(\{(?:[^{}]|(?0))*\})(?:\s*```)?'
+        
+        # Alternative simpler pattern that works with standard re
+        simple_pattern = r'(?s)(?:```json\s*)?(\{.*?\})(?:\s*```)?'
+        
+        for pattern in [simple_pattern, json_pattern]:
+            try:
+                match = re.search(pattern, response_text)
+                if match:
+                    json_str = match.group(1)
+                    json_data = json.loads(json_str)
+                    with open(output_file, 'w', encoding='utf-8') as f:
+                        json.dump(json_data, f, indent=2, ensure_ascii=False)
+                    return True
+            except (re.error, json.JSONDecodeError):
+                continue
+
+        raise ValueError("No valid JSON found after multiple extraction attempts")
+    
+    except Exception as e:
+        raise ValueError(f"Could not extract valid JSON: {str(e)}")
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +183,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
 def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     """Planner node that generate the full plan."""
     logger.info("Planner generating full plan")
-    messages = apply_prompt_template("planner", state)
+    messages = apply_prompt_template_planner("planner", state)
     # whether to enable deep thinking mode
     llm = get_llm_by_type("basic")
     if state.get("deep_thinking_mode"):
@@ -154,8 +194,9 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
         messages[-1].content += f"\n\n# Relative Search Results\n\n{json.dumps([{'title': elem['title'], 'content': elem['content']} for elem in searched_content], ensure_ascii=False)}"
     response = llm.invoke(messages)
     full_response = response.content
+    # extract_and_save_json(full_response)
     logger.debug(f"Current state messages: {state['messages']}")
-    logger.debug(f"Planner response: {full_response}")
+    logger.info(f"Planner response: {full_response}")
 
     if full_response.startswith("```json"):
         full_response = full_response.removeprefix("```json")
@@ -167,6 +208,8 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     try:
         repaired_response = json_repair.loads(full_response)
         full_response = json.dumps(repaired_response)
+        with open("project_requirements.json", "w", encoding="utf-8") as f:
+            json.dump(repaired_response, f, indent=2, ensure_ascii=False)
     except json.JSONDecodeError:
         logger.warning("Planner response is not a valid JSON")
         goto = "__end__"
@@ -181,25 +224,44 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
 
 
 def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
-    """Coordinator node that communicate with customers."""
+    """Coordinator node that communicates with customers, showing only non-JSON context."""
     logger.info("Coordinator talking.")
     messages = apply_prompt_template("coordinator", state)
     response = get_llm_by_type(AGENT_LLM_MAP["coordinator"]).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
-    response_content = response.content
-    response_content = repair_json_output(response_content)
-    logger.debug(f"Coordinator response: {response_content}")
-
+    
+    # Keep original response
+    response_content_raw = response.content
+    
+    # Process JSON for internal use
+    response_content = repair_json_output(response_content_raw)
+    logger.debug(f"Coordinator full response: {response_content}")
+    
+    # Extract non-JSON context to show user
+    user_display_content = extract_user_content(response_content_raw)
+    
+    # Set the user-visible content
+    response.content = user_display_content
+    
+    # Handle planner handoff
     goto = "__end__"
-    if "handoff_to_planner" in response_content.lower():
+    if "handoff_to_planner()" in response_content_raw:
+        extract_and_save_json(response_content)
         goto = "planner"
+    
+    return Command(goto=goto)
 
-    response.content = response_content
-
-    return Command(
-        goto=goto,
-    )
-
+def extract_user_content(full_content: str) -> str:
+    """Extracts non-JSON parts of the response for user display."""
+    # Remove JSON blocks (both ```json``` and raw {})
+    no_json = re.sub(r'```json.*?```', '', full_content, flags=re.DOTALL)
+    no_json = re.sub(r'\{.*?\}', '', no_json, flags=re.DOTALL)
+    
+    # Remove technical markers like handoff_to_planner()
+    no_json = no_json.replace("handoff_to_planner()", "")
+    
+    # Clean up resulting whitespace
+    return "\n".join(line.strip() for line in no_json.splitlines() if line.strip())
 
 
 def reporter_node(state: State) -> Command[Literal["supervisor"]]:
