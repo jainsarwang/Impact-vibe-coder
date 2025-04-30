@@ -1,0 +1,30 @@
+[
+    {
+        "id": 1,
+        "hotel_id": 1,
+        "type": "Single",
+        "price": 100.0,
+        "availability": true
+    },
+    {
+        "id": 2,
+        "hotel_id": 1,
+        "type": "Double",
+        "price": 150.0,
+        "availability": true
+    },
+    {
+        "id": 3,
+        "hotel_id": 2,
+        "type": "Single",
+        "price": 120.0,
+        "availability": true
+    },
+    {
+        "id": 4,
+        "hotel_id": 2,
+        "type": "Suite",
+        "price": 250.0,
+        "availability": true
+    }
+]

@@ -43,8 +43,8 @@ def run_agent_workflow(user_input: str, debug: bool = False):
             "TEAM_MEMBERS": TEAM_MEMBERS,
             # Runtime Variables
             "messages": [{"role": "user", "content": user_input}],
-            "deep_thinking_mode": False,
-            "search_before_planning": False
+            "deep_thinking_mode": True,
+            "search_before_planning": True
         },
         {"recursion_limit": 100},
     )

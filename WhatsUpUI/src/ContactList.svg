@@ -1,0 +1,21 @@
+<svg width="375" height="667" viewBox="0 0 375 667" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Contact List Background -->
+<rect width="375" height="667" fill="white"/>
+
+<!-- Top Navigation Bar -->
+<rect x="0" y="0" width="375" height="56" fill="#075E54"/>
+<text x="16" y="36" font-family="Arial" font-size="20" font-weight="bold" fill="white">Select Contact</text>
+
+<!-- Search Bar -->
+<rect x="8" y="64" width="359" height="40" rx="20" fill="#F0F0F0"/>
+<text x="24" y="90" font-family="Arial" font-size="16" fill="#8E8E93">Search</text>
+
+<!-- Contact List Items -->
+<circle cx="40" cy="144" r="24" fill="#D3D3D3"/>
+<text x="80" y="144" font-family="Arial" font-size="16" fill="black">Contact Name</text>
+<text x="80" y="164" font-family="Arial" font-size="12" fill="#8E8E93">Status</text>
+
+<circle cx="40" cy="208" r="24" fill="#D3D3D3"/>
+<text x="80" y="208" font-family="Arial" font-size="16" fill="black">Contact Name</text>
+<text x="80" y="228" font-family="Arial" font-size="12" fill="#8E8E93">Status</text>
+</svg>

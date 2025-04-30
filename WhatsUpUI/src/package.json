@@ -1,0 +1,11 @@
+{
+  "name": "whatsup-ui",
+  "version": "1.0.0",
+  "description": "Figma UI design for a WhatsApp-like chat application",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Bard",
+  "license": "ISC"
+}

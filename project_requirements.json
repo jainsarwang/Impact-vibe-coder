@@ -1,61 +1,19 @@
 {
-  "thought": "Okay, I will create a plan to develop an LLM chatbot using the Groq API. The chatbot will have features like user authentication, a chat interface, context management, error handling, and rate limiting. I will use Python with Flask for the backend and React for the frontend. The plan will cover researching the Groq API, setting up the backend and frontend, integrating the API, and implementing the required features.",
-  "project_name": "GroqChat",
-  "title": "Plan for Developing an LLM Chatbot using Groq API",
+  "thought": "Okay, I will create a plan to design a complete Figma UI for a WhatsApp-like chat application, replicating its core functionality and user experience. This will involve designing multiple pages, including chat screens, contact lists, settings, profile, status updates, and potentially voice/video call interfaces. I will use the agents 'researcher', 'coder', 'browser', and 'reporter' to achieve this.",
+  "project_name": "WhatsUpUI",
+  "title": "Figma UI Design Plan for a WhatsApp-like Chat Application",
   "steps": [
     {
-      "agent_name": "researcher",
-      "title": "Research Groq API Documentation",
-      "description": "Research the Groq API documentation to understand the authentication process, available endpoints, request and response formats, and any limitations or best practices. Focus on aspects relevant to building a chatbot, such as text generation and streaming responses.",
-      "note": "This step is crucial for understanding how to interact with the Groq API effectively."
-    },
-    {
       "agent_name": "coder",
-      "title": "Create Project Structure and Basic Backend Setup",
-      "description": "Create the project directory structure and set up a basic Flask backend. This includes creating a `requirements.txt` file with necessary dependencies (Flask, requests, etc.), setting up a basic Flask app with routes for handling user authentication and chat requests, and configuring environment variables for storing the Groq API key. Also, create a basic HTML template to display the chat interface.",
-      "note": "This step lays the foundation for the backend functionality."
-    },
-    {
-      "agent_name": "coder",
-      "title": "Implement User Authentication and API Key Storage",
-      "description": "Implement user authentication using a simple username/password system. Securely store user API keys in a database (e.g., SQLite) with encryption. Create functions for user registration, login, and API key retrieval. Ensure that the API key is encrypted before storing it in the database.",
-      "note": "Security is paramount; ensure proper encryption and secure storage of API keys."
-    },
-    {
-      "agent_name": "coder",
-      "title": "Develop Chat Interface (Frontend)",
-      "description": "Develop a basic chat interface using React. This includes creating components for displaying messages, handling user input, and sending requests to the backend. Implement basic styling for a clean and intuitive user experience. The frontend should handle displaying messages in a chat-like format, with clear distinction between user and bot messages.",
-      "note": "Focus on creating a user-friendly and responsive chat interface."
-    },
-    {
-      "agent_name": "coder",
-      "title": "Integrate Groq API for Text Generation",
-      "description": "Implement the core logic for interacting with the Groq API. This involves creating functions to send user messages to the Groq API, receive responses, and format them for display in the chat interface. Handle API authentication using the stored API key. Implement error handling to gracefully manage API errors and provide informative messages to the user.",
-      "note": "This is the core functionality of the chatbot; ensure efficient and reliable API integration."
-    },
-    {
-      "agent_name": "coder",
-      "title": "Implement Context Management",
-      "description": "Implement context management to maintain conversation history. Store conversation history in-memory or in a lightweight database (e.g., SQLite) for context-aware responses. Update the conversation history with each message exchange and include relevant parts of the history in API requests to the Groq API.",
-      "note": "Context management is crucial for providing coherent and relevant responses."
-    },
-    {
-      "agent_name": "coder",
-      "title": "Implement Error Handling and Rate Limiting",
-      "description": "Implement robust error handling to gracefully manage API errors, network issues, and other potential problems. Provide informative error messages to the user. Implement rate limiting to prevent abuse and ensure fair usage of the Groq API. This can be done using a simple token bucket algorithm or a more sophisticated rate limiting library.",
-      "note": "Error handling and rate limiting are essential for a production-ready chatbot."
-    },
-    {
-      "agent_name": "coder",
-      "title": "Write the complete code for the project",
-      "description": "Write the complete code for the project, including the Flask backend, React frontend, database setup, API integration, user authentication, context management, error handling, and rate limiting. Ensure that the code is well-structured, documented, and follows best practices for security and performance. The code should be modular and easy to maintain. Include detailed comments to explain the functionality of each part of the code. The final output should be a fully functional chatbot that can be deployed and used by users.",
-      "note": "This is the final step of the project, ensure that the code is complete and well-tested."
+      "title": "Generate Figma UI Design Code",
+      "description": "Generate the Figma UI design code for a WhatsApp-like chat application. This includes multiple pages such as: Chat Screen (individual and group chats with text, emojis, media sharing, voice notes, document sharing, message reactions, replies, and forward options), Contact List (display contacts with profile pictures and status, search functionality), Status Updates (ability to view and post status updates with privacy settings), Calls (voice and video call functionality), Settings (profile customization, account settings, notifications, data and storage usage, help), and Profile (user profile display). The design should closely replicate the WhatsApp user interface and user experience. Output the design as a single, well-structured Figma file.",
+      "note": "This step requires a detailed understanding of Figma UI design principles and best practices to create a high-quality, functional, and visually appealing design."
     },
     {
       "agent_name": "reporter",
       "title": "Generate Final Report",
-      "description": "Generate a final report summarizing the project, including the architecture, implementation details, challenges faced, and lessons learned. The report should also include instructions on how to set up and run the chatbot, as well as any relevant configuration options. Include a section on future improvements and potential enhancements.",
-      "note": "The final report should provide a comprehensive overview of the project."
+      "description": "Generate a final report summarizing the Figma UI design for the WhatsApp-like chat application. The report should include a description of each page, its functionality, and how it contributes to the overall user experience. Include screenshots of the Figma design to illustrate the key features and design elements. The report should be professional and well-organized.",
+      "note": "This is the final step, ensuring that the report accurately reflects the completed Figma UI design."
     }
   ]
 }

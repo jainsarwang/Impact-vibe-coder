@@ -1,0 +1,10 @@
+{
+  "project_name": "SimpleLinearRegressionModel",
+  "version": "1.0.0",
+  "description": "A simple linear regression model project.",
+  "main": "src/main.py",
+  "scripts": {
+    "start": "streamlit run src/main.py"
+  },
+  "dependencies": {}
+}

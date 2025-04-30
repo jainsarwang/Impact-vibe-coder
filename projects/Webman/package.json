@@ -1,0 +1,16 @@
+{
+  "name": "webman",
+  "version": "1.0.0",
+  "description": "A web-based Postman clone",
+  "scripts": {
+    "start": "node backend/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "concurrently": "^6.2.0"
+  }
+}

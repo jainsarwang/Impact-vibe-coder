@@ -1,0 +1,12 @@
+
+{
+  "project_name": "SmartTaskManager",
+  "version": "1.0.0",
+  "description": "A smart to-do list application",
+  "main": "index.js",
+  "scripts": {
+    "start": "streamlit run src/frontend/app.py"
+  },
+  "author": "AI Assistant",
+  "license": "ISC"
+}

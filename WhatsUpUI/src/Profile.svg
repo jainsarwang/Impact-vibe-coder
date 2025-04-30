@@ -1,0 +1,21 @@
+<svg width="375" height="667" viewBox="0 0 375 667" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Profile Background -->
+<rect width="375" height="667" fill="white"/>
+
+<!-- Top Navigation Bar -->
+<rect x="0" y="0" width="375" height="56" fill="#075E54"/>
+<text x="16" y="36" font-family="Arial" font-size="20" font-weight="bold" fill="white">Profile</text>
+
+<!-- Profile Picture -->
+<circle cx="187.5" cy="144" r="64" fill="#D3D3D3"/>
+
+<!-- Name -->
+<text x="16" y="240" font-family="Arial" font-size="18" font-weight="bold" fill="black">Name</text>
+<rect x="16" y="256" width="343" height="40" rx="8" fill="#F0F0F0"/>
+<text x="32" y="282" font-family="Arial" font-size="16" fill="black">Your Name</text>
+
+<!-- About -->
+<text x="16" y="328" font-family="Arial" font-size="18" font-weight="bold" fill="black">About</text>
+<rect x="16" y="344" width="343" height="40" rx="8" fill="#F0F0F0"/>
+<text x="32" y="370" font-family="Arial" font-size="16" fill="black">Available</text>
+</svg>

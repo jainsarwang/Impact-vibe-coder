@@ -1,0 +1,2 @@
+# No python dependencies needed for this project as it's primarily a design file.
+# Add any dependencies if you decide to add Python backend functionality.

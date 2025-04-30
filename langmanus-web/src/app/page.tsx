@@ -60,7 +60,7 @@ export default function HomePage() {
                 👋 Hello, there!
               </h3>
               <div className="px-4 text-center text-lg text-gray-400">
-                LangManus, built on cutting-edge language models, helps you
+                VibeCoder, built on cutting-edge language models, helps you
                 search on web, browse information, and handle complex tasks.
               </div>
             </div>

@@ -1,0 +1,48 @@
+body {
+    background-color: #f0f2f6;
+    font-family: sans-serif;
+}
+
+.stApp {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.stTitle {
+    color: #333;
+    text-align: center;
+}
+
+.stHeader {
+    color: #555;
+    margin-top: 20px;
+}
+
+.stDataFrame {
+    margin-top: 10px;
+}
+
+.stSelectbox {
+    margin-top: 10px;
+}
+
+.stNumberInput {
+    margin-top: 10px;
+}
+
+.css-1avcm0n {
+    background-color: #e1f5fe;
+    padding: 1em;
+    border-radius: 5px;
+    border: 1px solid #81d4fa;
+}
+
+a {
+    color: #4285f4;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}

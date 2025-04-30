@@ -1,0 +1,12 @@
+{
+  "name": "FinancialPDFChatbot",
+  "version": "1.0.0",
+  "description": "A chatbot for interacting with financial PDF documents.",
+  "main": "src/chatbot.py",
+  "scripts": {
+    "start": "streamlit run src/chatbot.py"
+  },
+  "dependencies": {
+    "streamlit": "^1.0.0"
+  }
+}

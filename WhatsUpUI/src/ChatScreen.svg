@@ -1,0 +1,23 @@
+<svg width="375" height="667" viewBox="0 0 375 667" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Chat Screen Background -->
+<rect width="375" height="667" fill="#ECE5DD"/>
+
+<!-- Top Navigation Bar -->
+<rect x="0" y="0" width="375" height="56" fill="#075E54"/>
+<text x="56" y="36" font-family="Arial" font-size="18" font-weight="bold" fill="white">Chat Name</text>
+<path d="M16 28L24 36M24 28L16 36" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Message Bubbles -->
+<rect x="16" y="72" width="200" height="40" rx="8" fill="#DCF8C6"/>
+<text x="24" y="98" font-family="Arial" font-size="14" fill="black">Hello!</text>
+
+<rect x="159" y="128" width="200" height="40" rx="8" fill="white"/>
+<text x="167" y="154" font-family="Arial" font-size="14" fill="black">Hi there!</text>
+
+<!-- Input Bar -->
+<rect x="0" y="611" width="375" height="56" fill="#F0F0F0"/>
+<rect x="8" y="619" width="291" height="40" rx="20" fill="white"/>
+<text x="24" y="645" font-family="Arial" font-size="16" fill="#8E8E93">Type a message</text>
+<circle cx="347" cy="639" r="18" fill="#00A884"/>
+<path d="M338 630L356 639L338 648" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

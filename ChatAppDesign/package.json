@@ -1,0 +1,10 @@
+{
+  "name": "chatappdesign",
+  "version": "1.0.0",
+  "description": "Figma UX design for a WhatsApp-level chat app",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {}
+}

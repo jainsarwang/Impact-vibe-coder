@@ -1,0 +1,13 @@
+
+{
+  "name": "streamlit-fastapi-auth",
+  "version": "1.0.0",
+  "description": "A simple authentication system using Streamlit and FastAPI with SQLite.",
+  "main": "backend/main.py",
+  "scripts": {
+    "start-backend": "uvicorn backend.main:app --reload",
+    "start-frontend": "streamlit run frontend/app.py"
+  },
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,35 @@
+<svg width="400" height="700" viewBox="0 0 400 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+<!-- Background -->
+<rect width="400" height="700" fill="#E5DDD5"/>
+
+<!-- App Bar -->
+<rect width="400" height="60" fill="#075E54"/>
+<text x="60" y="35" font-size="20" fill="white">ChatApp</text>
+
+<!-- User Profile -->
+<circle cx="30" cy="30" r="20" fill="lightgrey"/>
+
+<!-- Chat Bubbles -->
+<!-- Received Message -->
+<rect x="10" y="80" width="200" height="50" rx="10" fill="#FFFFFF"/>
+<text x="20" y="110" font-size="14" fill="black">Hello! How are you?</text>
+
+<!-- Sent Message -->
+<rect x="190" y="140" width="200" height="50" rx="10" fill="#DCF8C6"/>
+<text x="200" y="170" font-size="14" fill="black">I'm good, thanks! And you?</text>
+
+<!-- Input Area -->
+<rect x="0" y="640" width="400" height="60" fill="#F0F0F0"/>
+<rect x="10" y="650" width="320" height="40" rx="20" fill="white"/>
+<text x="20" y="675" font-size="16" fill="grey">Type a message...</text>
+
+<!-- Send Button -->
+<circle cx="360" cy="670" r="20" fill="#128C7E"/>
+<text x="352" y="675" font-size="16" fill="white">></text>
+
+<!-- Dynamic Elements (Example - replace with actual logic) -->
+<circle cx="300" cy="300" r="30" fill="rgba(79, 70, 229, 0.5)"/>
+<text x="285" y="305" font-size="12" fill="white">Dynamic</text>
+
+</svg>

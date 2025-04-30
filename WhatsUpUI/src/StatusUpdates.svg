@@ -1,0 +1,19 @@
+<svg width="375" height="667" viewBox="0 0 375 667" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Status Updates Background -->
+<rect width="375" height="667" fill="white"/>
+
+<!-- Top Navigation Bar -->
+<rect x="0" y="0" width="375" height="56" fill="#075E54"/>
+<text x="16" y="36" font-family="Arial" font-size="20" font-weight="bold" fill="white">Status</text>
+
+<!-- My Status -->
+<text x="16" y="80" font-family="Arial" font-size="18" font-weight="bold" fill="black">My Status</text>
+<circle cx="40" cy="120" r="24" fill="#D3D3D3"/>
+<text x="80" y="120" font-family="Arial" font-size="16" fill="black">Add to my status</text>
+
+<!-- Recent Updates -->
+<text x="16" y="176" font-family="Arial" font-size="18" font-weight="bold" fill="black">Recent updates</text>
+<circle cx="40" cy="216" r="24" fill="#D3D3D3"/>
+<text x="80" y="216" font-family="Arial" font-size="16" fill="black">Contact Name</text>
+<text x="80" y="236" font-family="Arial" font-size="12" fill="#8E8E93">Time</text>
+</svg>

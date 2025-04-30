@@ -6,7 +6,7 @@ export function AppHeader() {
         href="https://github.com/langmanus/langmanus"
         target="_blank"
       >
-        LangManus
+        <img src="/logo.png" alt="Langmanus Logo" className="h-16 w-16 inline-block mr-4 mt-4 rounded" />
       </a>
     </div>
   );

@@ -1,0 +1,8 @@
+flask
+pandas
+yfinance
+streamlit
+bcrypt
+flask_bcrypt
+python-dotenv
+requests

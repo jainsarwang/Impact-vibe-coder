@@ -1,0 +1,11 @@
+{
+  "name": "ToDoApp",
+  "version": "1.0.0",
+  "description": "A simple to-do list application with FastAPI backend and Streamlit frontend.",
+  "main": "index.js",
+  "scripts": {
+    "start": "streamlit run frontend/streamlit_app.py"
+  },
+  "author": "Bard",
+  "license": "ISC"
+}

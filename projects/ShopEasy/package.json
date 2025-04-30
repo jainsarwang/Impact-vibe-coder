@@ -1,0 +1,12 @@
+{
+  "name": "ShopEasy",
+  "version": "1.0.0",
+  "description": "A simple e-commerce application",
+  "main": "app.py",
+  "scripts": {
+    "start": "streamlit run ShopEasy/app.py"
+  },
+  "dependencies": {
+    "streamlit": "^1.0.0"
+  }
+}
