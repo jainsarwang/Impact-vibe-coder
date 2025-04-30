@@ -34,10 +34,10 @@ A powerful tool that transforms data migration processes with natural language q
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. Install backend dependencies
-   ```bash
-   pip install -r requirements.txt
-   ```
+3. create a .env file with
+TAVILY_API_KEY
+GROQ_API_KEY
+GOOGLE_API_KEY
 
 4. Run the backend server
    ```bash
@@ -56,6 +56,9 @@ A powerful tool that transforms data migration processes with natural language q
    ```bash
    npm install
    ```
+
+   Create a .env file with variable
+   NEXT_PUBLIC_API_URL = "http://localhost:8080/api"
 
 3. Start the development server
    ```bash
