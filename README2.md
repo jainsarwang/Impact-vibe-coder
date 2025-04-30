@@ -53,8 +53,13 @@ GOOGLE_API_KEY
    ```
 
 2. Install dependencies
+   install pnpm using 
    ```bash
-   npm install
+   npm install -g pnpm@latest-10
+   ```
+   
+   ```bash
+   pnpm install
    ```
 
    Create a .env file with variable
