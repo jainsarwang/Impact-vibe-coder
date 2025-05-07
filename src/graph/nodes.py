@@ -10,7 +10,7 @@ import json_repair
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 
-from src.agents import research_agent, directory_generator_agent, coder_agent, browser_agent
+from src.agents import research_agent, directory_generator_agent, coder_agent,frontend_coder_agent,backend_coder_agent, browser_agent
 from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS
 from src.config.agents import AGENT_LLM_MAP
@@ -92,8 +92,8 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     result = directory_generator_agent.invoke(state)
     logger.info("Directory Generator agent completed task")
     response_content = result["messages"][-1].content
-    # 尝试修复可能的JSON输出
     response_content = repair_json_output(response_content)
+    extract_and_save_json(response_content, "project_structure.json")
     logger.debug(f"Directory Generator agent response: {response_content}")
     return Command(
         update={
@@ -128,6 +128,45 @@ def code_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
+def frontend_code_node(state: State) -> Command[Literal["supervisor"]]:
+    """Node for the frontend coder agent that executes Python code."""
+    logger.info("Frontend Code agent starting task")
+    result = frontend_coder_agent.invoke(state)
+    logger.info("Frontend Code agent completed task")
+    response_content = result["messages"][-1].content
+    response_content = repair_json_output(response_content)
+    logger.debug(f"Frontend Code agent response: {response_content}")
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="frontend_coder",
+                )
+            ]
+        },
+        goto="supervisor",
+    )
+
+def backend_code_node(state: State) -> Command[Literal["supervisor"]]:
+    """Node for the frontend coder agent that executes Python code."""
+    logger.info("Frontend Code agent starting task")
+    result = backend_coder_agent.invoke(state)
+    logger.info("Frontend Code agent completed task")
+    response_content = result["messages"][-1].content
+    response_content = repair_json_output(response_content)
+    logger.debug(f"Frontend Code agent response: {response_content}")
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="backend_coder",
+                )
+            ]
+        },
+        goto="supervisor",
+    )
 
 def browser_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the browser agent that performs web browsing tasks."""

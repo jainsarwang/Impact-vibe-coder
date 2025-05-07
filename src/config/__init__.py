@@ -28,7 +28,7 @@ from .env import (
 from .tools import TAVILY_MAX_RESULTS, BROWSER_HISTORY_DIR
 
 # Team configuration
-TEAM_MEMBERS = ["researcher", "directory_generator", "coder", "browser", "reporter"]
+TEAM_MEMBERS = ["researcher", "directory_generator", "browser", "reporter","frontend_coder","backend_coder"]
 
 __all__ = [
     # Reasoning LLM

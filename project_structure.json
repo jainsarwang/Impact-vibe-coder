@@ -1,0 +1,166 @@
+{
+  "project_name": "helloworld",
+  "description": "A simple to-do list application.",
+  "dependencies": {
+    "frontend": {
+      "react": "18.2.0",
+      "react-dom": "18.2.0",
+      "typescript": "5.0",
+      "@types/react": "18.0.0",
+      "@types/react-dom": "18.0.0",
+      "axios": "1.6.7"
+    },
+    "backend": {
+      "express": "4.18.2",
+      "body-parser": "1.20.2",
+      "cors": "2.8.5",
+      "nodemon": "3.0.3"
+    }
+  },
+  "project_structure": {
+    "root": [
+      "frontend/",
+      "backend/",
+      "README.md"
+    ],
+    "frontend": [
+      "src/",
+      "public/",
+      "package.json",
+      "tsconfig.json",
+      "vite.config.ts"
+    ],
+    "backend": [
+      "src/",
+      "package.json",
+      "nodemon.json"
+    ],
+    "frontend/src": [
+      "components/",
+      "App.tsx",
+      "index.tsx",
+      "types.ts",
+      "api/",
+      "App.css"
+    ],
+    "backend/src": [
+      "index.ts",
+      "routes/",
+      "utils/"
+    ],
+    "frontend/src/components": [
+      "TodoItem.tsx",
+      "TodoList.tsx",
+      "TodoForm.tsx"
+    ],
+    "frontend/src/api": [
+      "todoApi.ts"
+    ],
+    "backend/src/routes": [
+      "todoRoutes.ts"
+    ],
+    "backend/src/utils": [
+      "db.ts"
+    ]
+  },
+  "file_definitions": {
+    "frontend/src/types.ts": {
+      "Todo": {
+        "properties": {
+          "id": "string",
+          "text": "string",
+          "completed": "boolean"
+        },
+        "description": "Defines the structure of a to-do item."
+      }
+    },
+    "frontend/src/api/todoApi.ts": {
+      "getTodos": {
+        "params": "None",
+        "return type and data": "Promise<Todo[]>",
+        "Documentation": "Fetches all todos from the backend."
+      },
+      "createTodo": {
+        "params": "text: string",
+        "return type and data": "Promise<Todo>",
+        "Documentation": "Creates a new todo item on the backend."
+      },
+      "updateTodo": {
+        "params": "id: string, updates: Partial<Todo>",
+        "return type and data": "Promise<Todo>",
+        "Documentation": "Updates an existing todo item on the backend."
+      },
+      "deleteTodo": {
+        "params": "id: string",
+        "return type and data": "Promise<void>",
+        "Documentation": "Deletes a todo item from the backend."
+      }
+    },
+    "frontend/src/components/TodoItem.tsx": {
+      "TodoItem": {
+        "params": "todo: Todo, onUpdate: (id: string, updates: Partial<Todo>) => void, onDelete: (id: string) => void",
+        "return type and data": "JSX.Element",
+        "Documentation": "Displays a single to-do item with options to mark as complete/incomplete and delete."
+      }
+    },
+    "frontend/src/components/TodoList.tsx": {
+      "TodoList": {
+        "params": "todos: Todo[], onUpdate: (id: string, updates: Partial<Todo>) => void, onDelete: (id: string) => void",
+        "return type and data": "JSX.Element",
+        "Documentation": "Displays a list of to-do items."
+      }
+    },
+    "frontend/src/components/TodoForm.tsx": {
+      "TodoForm": {
+        "params": "onCreate: (text: string) => void",
+        "return type and data": "JSX.Element",
+        "Documentation": "Form for creating new to-do items."
+      }
+    },
+    "frontend/src/App.tsx": {
+      "App": {
+        "params": "None",
+        "return type and data": "JSX.Element",
+        "Documentation": "Main application component that renders the to-do list and form."
+      }
+    },
+    "backend/src/utils/db.ts": {
+      "todos": {
+        "type": "array",
+        "description": "In-memory database for storing todos."
+      }
+    },
+    "backend/src/routes/todoRoutes.ts": {
+      "GET /todos": {
+        "request": "None",
+        "response": "Todo[]",
+        "description": "Retrieves all todos."
+      },
+      "POST /todos": {
+        "request": "{ text: string }",
+        "response": "Todo",
+        "description": "Creates a new todo."
+      },
+      "PUT /todos/:id": {
+        "request": "{ completed?: boolean, text?: string }",
+        "response": "Todo",
+        "description": "Updates an existing todo."
+      },
+      "DELETE /todos/:id": {
+        "request": "None",
+        "response": "void",
+        "description": "Deletes a todo."
+      }
+    },
+    "backend/src/index.ts": {
+      "app": {
+        "type": "Express",
+        "description": "Express application instance."
+      },
+      "port": {
+        "type": "number",
+        "description": "Port the server listens on."
+      }
+    }
+  }
+}
