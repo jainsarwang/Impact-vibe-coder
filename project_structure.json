@@ -1,165 +1,106 @@
 {
-  "project_name": "helloworld",
-  "description": "A simple to-do list application.",
-  "dependencies": {
+  "WorkplaceHarmony": {
+    "dependencies": {
+      "streamlit": "1.32.2",
+      "fastapi": "0.110.0",
+      "uvicorn": "0.32.0",
+      "python": "3.12"
+    },
     "frontend": {
-      "react": "18.2.0",
-      "react-dom": "18.2.0",
-      "typescript": "5.0",
-      "@types/react": "18.0.0",
-      "@types/react-dom": "18.0.0",
-      "axios": "1.6.7"
+      "frontend/app.py": {
+        "app": {
+          "params": "None",
+          "return type and data": "None",
+          "Documentation": "Main Streamlit application that handles user authentication, personality assessment, chat interface, and displays communication advice."
+        },
+        "show_personality_form": {
+          "params": "None",
+          "return type and data": "dict",
+          "Documentation": "Displays the personality assessment form and returns the user's responses."
+        },
+        "display_chat_interface": {
+          "params": "user_id: str",
+          "return type and data": "None",
+          "Documentation": "Displays the chat interface for the given user ID."
+        },
+        "get_communication_advice": {
+          "params": "user1_personality: str, user2_personality: str",
+          "return type and data": "str",
+          "Documentation": "Retrieves communication advice based on the personalities of the two users."
+        },
+        "register_user": {
+          "params": "username: str, personality_data: dict",
+          "return type and data": "str",
+          "Documentation": "Registers a new user, saves their personality data to a JSON file, and returns the user ID."
+        },
+        "login_user": {
+          "params": "username: str",
+          "return type and data": "str",
+          "Documentation": "Logs in an existing user and returns the user ID if the username exists."
+        }
+      }
     },
     "backend": {
-      "express": "4.18.2",
-      "body-parser": "1.20.2",
-      "cors": "2.8.5",
-      "nodemon": "3.0.3"
-    }
-  },
-  "project_structure": {
-    "root": [
-      "frontend/",
-      "backend/",
-      "README.md"
-    ],
-    "frontend": [
-      "src/",
-      "public/",
-      "package.json",
-      "tsconfig.json",
-      "vite.config.ts"
-    ],
-    "backend": [
-      "src/",
-      "package.json",
-      "nodemon.json"
-    ],
-    "frontend/src": [
-      "components/",
-      "App.tsx",
-      "index.tsx",
-      "types.ts",
-      "api/",
-      "App.css"
-    ],
-    "backend/src": [
-      "index.ts",
-      "routes/",
-      "utils/"
-    ],
-    "frontend/src/components": [
-      "TodoItem.tsx",
-      "TodoList.tsx",
-      "TodoForm.tsx"
-    ],
-    "frontend/src/api": [
-      "todoApi.ts"
-    ],
-    "backend/src/routes": [
-      "todoRoutes.ts"
-    ],
-    "backend/src/utils": [
-      "db.ts"
-    ]
-  },
-  "file_definitions": {
-    "frontend/src/types.ts": {
-      "Todo": {
-        "properties": {
-          "id": "string",
-          "text": "string",
-          "completed": "boolean"
+      "backend/main.py": {
+        "submit_assessment": {
+          "api": "/submit_assessment",
+          "method": "POST",
+          "request": "dict (Personality assessment responses)",
+          "response": "dict (User ID, Personality Type)",
+          "Documentation": "Receives personality assessment data, determines personality type, and returns user ID and personality type."
         },
-        "description": "Defines the structure of a to-do item."
+        "chat": {
+          "api": "/chat",
+          "method": "POST",
+          "request": "dict (sender_id: str, receiver_id: str, message: str)",
+          "response": "dict (message: str)",
+          "Documentation": "Handles real-time chat messages between users."
+        },
+        "advice": {
+          "api": "/advice",
+          "method": "GET",
+          "request": "user1_id: str, user2_id: str",
+          "response": "str (Communication advice)",
+          "Documentation": "Generates communication advice based on the personalities of two users."
+        },
+        "get_user_personality": {
+          "params": "user_id: str",
+          "return type and data": "str",
+          "Documentation": "Retrieves the personality type of a user from their profile."
+        },
+        "analyze_personality": {
+          "params": "assessment_data: dict",
+          "return type and data": "str",
+          "Documentation": "Analyzes the personality assessment data and determines the user's personality type."
+        },
+        "generate_communication_advice": {
+          "params": "personality1: str, personality2: str",
+          "return type and data": "str",
+          "Documentation": "Generates advice on how to communicate effectively between two personality types."
+        }
       }
     },
-    "frontend/src/api/todoApi.ts": {
-      "getTodos": {
-        "params": "None",
-        "return type and data": "Promise<Todo[]>",
-        "Documentation": "Fetches all todos from the backend."
+    "data": {
+      "data/user_profiles": {
+        "file_type": "JSON",
+        "description": "Stores user profiles, including username, password (hashed), personality type, and other relevant information.",
+        "schema": {
+          "user_id": "str (UUID)",
+          "username": "str",
+          "personality_type": "str",
+          "assessment_data": "dict"
+        }
       },
-      "createTodo": {
-        "params": "text: string",
-        "return type and data": "Promise<Todo>",
-        "Documentation": "Creates a new todo item on the backend."
-      },
-      "updateTodo": {
-        "params": "id: string, updates: Partial<Todo>",
-        "return type and data": "Promise<Todo>",
-        "Documentation": "Updates an existing todo item on the backend."
-      },
-      "deleteTodo": {
-        "params": "id: string",
-        "return type and data": "Promise<void>",
-        "Documentation": "Deletes a todo item from the backend."
-      }
-    },
-    "frontend/src/components/TodoItem.tsx": {
-      "TodoItem": {
-        "params": "todo: Todo, onUpdate: (id: string, updates: Partial<Todo>) => void, onDelete: (id: string) => void",
-        "return type and data": "JSX.Element",
-        "Documentation": "Displays a single to-do item with options to mark as complete/incomplete and delete."
-      }
-    },
-    "frontend/src/components/TodoList.tsx": {
-      "TodoList": {
-        "params": "todos: Todo[], onUpdate: (id: string, updates: Partial<Todo>) => void, onDelete: (id: string) => void",
-        "return type and data": "JSX.Element",
-        "Documentation": "Displays a list of to-do items."
-      }
-    },
-    "frontend/src/components/TodoForm.tsx": {
-      "TodoForm": {
-        "params": "onCreate: (text: string) => void",
-        "return type and data": "JSX.Element",
-        "Documentation": "Form for creating new to-do items."
-      }
-    },
-    "frontend/src/App.tsx": {
-      "App": {
-        "params": "None",
-        "return type and data": "JSX.Element",
-        "Documentation": "Main application component that renders the to-do list and form."
-      }
-    },
-    "backend/src/utils/db.ts": {
-      "todos": {
-        "type": "array",
-        "description": "In-memory database for storing todos."
-      }
-    },
-    "backend/src/routes/todoRoutes.ts": {
-      "GET /todos": {
-        "request": "None",
-        "response": "Todo[]",
-        "description": "Retrieves all todos."
-      },
-      "POST /todos": {
-        "request": "{ text: string }",
-        "response": "Todo",
-        "description": "Creates a new todo."
-      },
-      "PUT /todos/:id": {
-        "request": "{ completed?: boolean, text?: string }",
-        "response": "Todo",
-        "description": "Updates an existing todo."
-      },
-      "DELETE /todos/:id": {
-        "request": "None",
-        "response": "void",
-        "description": "Deletes a todo."
-      }
-    },
-    "backend/src/index.ts": {
-      "app": {
-        "type": "Express",
-        "description": "Express application instance."
-      },
-      "port": {
-        "type": "number",
-        "description": "Port the server listens on."
+      "data/chat_history": {
+        "file_type": "JSON",
+        "description": "Stores chat history between users.",
+        "schema": {
+          "message_id": "str (UUID)",
+          "sender_id": "str (UUID)",
+          "receiver_id": "str (UUID)",
+          "message": "str",
+          "timestamp": "datetime"
+        }
       }
     }
   }

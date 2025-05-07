@@ -150,12 +150,12 @@ def frontend_code_node(state: State) -> Command[Literal["supervisor"]]:
 
 def backend_code_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the frontend coder agent that executes Python code."""
-    logger.info("Frontend Code agent starting task")
+    logger.info("Backend Code agent starting task")
     result = backend_coder_agent.invoke(state)
-    logger.info("Frontend Code agent completed task")
+    logger.info("Backend Code agent completed task")
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
-    logger.debug(f"Frontend Code agent response: {response_content}")
+    logger.debug(f"Backend Code agent response: {response_content}")
     return Command(
         update={
             "messages": [
