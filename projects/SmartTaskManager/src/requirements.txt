@@ -1,1 +1,0 @@
-fastapi\nstreamlit\ SQLAlchemy\npydantic\python-dotenv\ufw\n

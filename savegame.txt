@@ -1,1 +1,0 @@
-{'player_name': 'Hero', 'location': 'Town Square', 'inventory': ['sword', 'potion'], 'health': 100}

@@ -10,7 +10,7 @@ import json_repair
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 
-from src.agents import research_agent, coder_agent, browser_agent
+from src.agents import research_agent, directory_generator_agent, coder_agent, browser_agent
 from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS
 from src.config.agents import AGENT_LLM_MAP
@@ -85,6 +85,27 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
+
+def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
+    """Node for the directory generator agent that generator directory structure."""
+    logger.info("Directory Generator agent starting task")
+    result = directory_generator_agent.invoke(state)
+    logger.info("Directory Generator agent completed task")
+    response_content = result["messages"][-1].content
+    # 尝试修复可能的JSON输出
+    response_content = repair_json_output(response_content)
+    logger.debug(f"Directory Generator agent response: {response_content}")
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="directory_generator",
+                )
+            ]
+        },
+        goto="supervisor",
+    )
 
 def code_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the coder agent that executes Python code."""

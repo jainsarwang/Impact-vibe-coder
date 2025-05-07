@@ -4,6 +4,7 @@ from .types import State
 from .nodes import (
     supervisor_node,
     research_node,
+    directory_generator_node,
     code_node,
     coordinator_node,
     browser_node,
@@ -20,6 +21,7 @@ def build_graph():
     builder.add_node("planner", planner_node)
     builder.add_node("supervisor", supervisor_node)
     builder.add_node("researcher", research_node)
+    builder.add_node("directory_generator", directory_generator_node)
     builder.add_node("coder", code_node)
     builder.add_node("browser", browser_node)
     builder.add_node("reporter", reporter_node)

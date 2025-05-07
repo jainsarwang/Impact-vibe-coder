@@ -21,6 +21,12 @@ research_agent = create_react_agent(
     prompt=lambda state: apply_prompt_template("researcher", state),
 )
 
+directory_generator_agent = create_react_agent(
+    get_llm_by_type(AGENT_LLM_MAP['directory_generator']),
+    tools=[browser_tool],
+    prompt=lambda state: apply_prompt_template("directory_generator", state),
+)
+
 coder_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP["coder"]),
     tools=[python_repl_tool, bash_tool,project_zip_tool],
