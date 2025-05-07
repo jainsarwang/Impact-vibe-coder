@@ -1,7 +1,0 @@
-
-fastapi
-uvicorn[standard]
-streamlit
-sqlalchemy
-passlib[bcrypt]
-requests

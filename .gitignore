@@ -28,3 +28,7 @@ school_management_system
 .venv
 .env
 htmlcov
+
+project_requirements.json
+projects/
+project_zips/

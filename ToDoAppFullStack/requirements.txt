@@ -1,1 +1,0 @@
-fastapi\nuvicorn\nsqlalchemy\npydantic\npython-jose[cryptography]\npasslib[bcrypt]\nbcrypt\nstreamlit\nrequests\python-multipart

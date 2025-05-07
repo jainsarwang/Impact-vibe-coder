@@ -9,6 +9,7 @@ AGENT_LLM_MAP: dict[str, LLMType] = {
     "planner": "reasoning",  # 计划默认使用basic llm
     "supervisor": "reasoning",  # 决策使用basic llm
     "researcher": "reasoning",  # 简单搜索任务使用basic llm
+    "directory_generator" : "basic",
     "coder": "basic",  # 编程任务使用basic llm
     "browser": "vision",  # 浏览器操作使用vision llm
     "reporter": "reasoning",  # 编写报告使用basic llm
