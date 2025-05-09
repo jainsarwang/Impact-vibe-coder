@@ -18,6 +18,8 @@ textarea {
 
 .markdown {
   line-height: 1.75;
+  width: 100%;
+  @apply pl-4;
 
   a {
     color: blue;
@@ -65,4 +67,12 @@ textarea {
   ol {
     @apply list-decimal pl-4;
   }
+
+  pre {
+    @apply bg-[#fdfdfd] border p-3 rounded-lg;
+  }
+
+}
+pre {
+  @apply overflow-auto my-8;
 }

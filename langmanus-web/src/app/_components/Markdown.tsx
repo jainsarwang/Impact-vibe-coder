@@ -17,7 +17,7 @@ export function Markdown({
               {children}
             </a>
           ),
-          code: () => ("")
+          code: ({ children }) => <code>{children}</code>,
         }}
         {...props}
       >

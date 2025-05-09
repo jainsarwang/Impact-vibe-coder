@@ -10,7 +10,20 @@ import json_repair
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 
-from src.agents import research_agent, directory_generator_agent, coder_agent,frontend_coder_agent,backend_coder_agent, browser_agent
+from src.agents import  (
+    research_agent, 
+    directory_generator_agent, 
+    coder_master_agent, 
+    model_coder_agent,
+    controller_coder_agent,
+    route_coder_agent,
+    service_coder_agent,
+    utility_coder_agent,
+    config_coder_agent,
+    test_coder_agent,
+    frontend_coder_agent,db_coder_agent,
+    browser_agent
+)
 from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS
 from src.config.agents import AGENT_LLM_MAP
@@ -107,35 +120,233 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
-def code_node(state: State) -> Command[Literal["supervisor"]]:
-    """Node for the coder agent that executes Python code."""
-    logger.info("Code agent starting task")
-    result = coder_agent.invoke(state)
-    logger.info("Code agent completed task")
+
+CODER_AGENTS = [
+    "model_coder",
+    "controller_coder",
+    "route_coder",
+    "service_coder",
+    "utility_coder",
+    "test_coder",
+    "config_coder",
+    "frontend_coder",
+    "db_coder",
+]
+def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "supervisor" "__end__"]]:
+    """Coder Master node that decides which agent should act next."""
+    
+    logger.info("Coder master evaluating next action")
+    messages = apply_prompt_template("coder_master", state)
+    # preprocess messages to make coder_master execute better.
+    messages = deepcopy(messages)
+
+    for message in messages:
+        if isinstance(message, BaseMessage) and message.name in [*CODER_AGENTS, "directory_generator"]:
+            message.content = RESPONSE_FORMAT.format(message.name, message.content)
+            
+    response = (
+        get_llm_by_type(AGENT_LLM_MAP["coder_master"])
+        # Remove .with_structured_output for streaming compatibility
+        .invoke(messages)
+    )
+    
+    # Parse the JSON manually if the LLM doesn't directly output structured data
+    try:
+        if isinstance(response, str):
+            # Handle Markdown JSON formatting if present
+            if response.startswith('```json') and response.endswith('```'):
+                response = response[7:-3].strip()  # Remove ```json and ```
+            parsed_response = json.loads(response)
+        elif hasattr(response, 'content'):
+            content = response.content
+            # Handle Markdown JSON formatting if present
+            if content.startswith('```json') and content.endswith('```'):
+                content = content[7:-3].strip()  # Remove ```json and ```
+            parsed_response = json.loads(content)
+        else:
+            raise ValueError("Unexpected response format from supervisor LLM")
+        goto = parsed_response.get("next")
+
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.error(f"Error parsing supervisor response: {e}, raw response: {response}")
+        goto = "__end__"  # Default to end if parsing fails
+
+    logger.debug(f"Current state messages: {state['messages']}")
+    logger.debug(f"Supervisor raw response: {response.content}")
+    logger.debug(f"Supervisor parsed response: {goto=}")
+
+    if goto == "FINISH":
+        goto = "__end__"
+        logger.info("Coder Master workflow completed")
+    elif goto == "INSTALLATION":
+        goto = "__end__"
+        # TODO: Module installtion handling left
+        logger.info("Module Installtion required")
+    elif goto in CODER_AGENTS:
+        logger.info(f"Coder Master delegating to: {goto}")
+    else:
+        logger.warning(f"Coder master returned invalid next step: {goto}. Ending workflow.")
+        goto = "__end__"
+
+    return Command(goto=goto, update={"next": goto})
+
+
+def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the Model Coder agent that generator directory structure."""
+    logger.info("Model Coder agent starting task")
+    result = model_coder_agent.invoke(state)
+    logger.info("Model Coder agent completed task")
     response_content = result["messages"][-1].content
-    # 尝试修复可能的JSON输出
     response_content = repair_json_output(response_content)
-    logger.debug(f"Code agent response: {response_content}")
+    extract_and_save_json(response_content, "project_structure.json")
+    logger.debug(f"Model Coder agent response: {response_content}")
     return Command(
         update={
             "messages": [
                 HumanMessage(
                     content=response_content,
-                    name="coder",
+                    name="model_coder",
                 )
             ]
         },
-        goto="supervisor",
+        goto="coder_master",
     )
 
-def frontend_code_node(state: State) -> Command[Literal["supervisor"]]:
-    """Node for the frontend coder agent that executes Python code."""
-    logger.info("Frontend Code agent starting task")
-    result = frontend_coder_agent.invoke(state)
-    logger.info("Frontend Code agent completed task")
+def controller_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the Controller Coder agent that generator directory structure."""
+    logger.info("Controller Coder agent starting task")
+    result = controller_coder_agent.invoke(state)
+    logger.info("Controller Coder agent completed task")
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
-    logger.debug(f"Frontend Code agent response: {response_content}")
+    extract_and_save_json(response_content, "project_structure.json")
+    logger.debug(f"Controller Coder agent response: {response_content}")
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="controller_coder",
+                )
+            ]
+        },
+        goto="coder_master",
+    )
+
+def route_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the Router Coder agent that generator directory structure."""
+    logger.info("Router Coder agent starting task")
+    result = route_coder_agent.invoke(state)
+    logger.info("Router Coder agent completed task")
+    response_content = result["messages"][-1].content
+    response_content = repair_json_output(response_content)
+    extract_and_save_json(response_content, "project_structure.json")
+    logger.debug(f"Router Coder agent response: {response_content}")
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="route_coder",
+                )
+            ]
+        },
+        goto="coder_master",
+    )
+
+def service_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the Service Coder agent that generator directory structure."""
+    logger.info("Service Coder agent starting task")
+    result = service_coder_agent.invoke(state)
+    logger.info("Service Coder agent completed task")
+    response_content = result["messages"][-1].content
+    response_content = repair_json_output(response_content)
+    extract_and_save_json(response_content, "project_structure.json")
+    logger.debug(f"Service Coder agent response: {response_content}")
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="service_coder",
+                )
+            ]
+        },
+        goto="coder_master",
+    )
+
+def utility_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the Utility Coder agent that generator directory structure."""
+    logger.info("Utility Coder agent starting task")
+    result = utility_coder_agent.invoke(state)
+    logger.info("Utility Coder agent completed task")
+    response_content = result["messages"][-1].content
+    response_content = repair_json_output(response_content)
+    extract_and_save_json(response_content, "project_structure.json")
+    logger.debug(f"Utility Coder agent response: {response_content}")
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="utility_coder",
+                )
+            ]
+        },
+        goto="coder_master",
+    )
+
+def config_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the Config Coder agent that generator directory structure."""
+    logger.info("Config Coder agent starting task")
+    result = config_coder_agent.invoke(state)
+    logger.info("Config Coder agent completed task")
+    response_content = result["messages"][-1].content
+    response_content = repair_json_output(response_content)
+    extract_and_save_json(response_content, "project_structure.json")
+    logger.debug(f"Config Coder agent response: {response_content}")
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="config_coder",
+                )
+            ]
+        },
+        goto="coder_master",
+    )
+
+def test_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the Test Coder agent that generator directory structure."""
+    logger.info("Test Coder agent starting task")
+    result = test_coder_agent.invoke(state)
+    logger.info("Test Coder agent completed task")
+    response_content = result["messages"][-1].content
+    response_content = repair_json_output(response_content)
+    extract_and_save_json(response_content, "project_structure.json")
+    logger.debug(f"Test Coder agent response: {response_content}")
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="test_coder",
+                )
+            ]
+        },
+        goto="coder_master",
+    )
+
+def frontend_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the Frontend Coder agent that generator directory structure."""
+    logger.info("Frontend Coder agent starting task")
+    result = frontend_coder_agent.invoke(state)
+    logger.info("Frontend Coder agent completed task")
+    response_content = result["messages"][-1].content
+    response_content = repair_json_output(response_content)
+    extract_and_save_json(response_content, "project_structure.json")
+    logger.debug(f"Frontend Coder agent response: {response_content}")
     return Command(
         update={
             "messages": [
@@ -145,28 +356,91 @@ def frontend_code_node(state: State) -> Command[Literal["supervisor"]]:
                 )
             ]
         },
-        goto="supervisor",
+        goto="coder_master",
     )
 
-def backend_code_node(state: State) -> Command[Literal["supervisor"]]:
-    """Node for the frontend coder agent that executes Python code."""
-    logger.info("Backend Code agent starting task")
-    result = backend_coder_agent.invoke(state)
-    logger.info("Backend Code agent completed task")
+def db_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the DB Coder agent that generator directory structure."""
+    logger.info("DB Coder agent starting task")
+    result = db_coder_agent.invoke(state)
+    logger.info("DB Coder agent completed task")
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
-    logger.debug(f"Backend Code agent response: {response_content}")
+    extract_and_save_json(response_content, "project_structure.json")
+    logger.debug(f"DB Coder agent response: {response_content}")
     return Command(
         update={
             "messages": [
                 HumanMessage(
                     content=response_content,
-                    name="backend_coder",
+                    name="db_coder",
                 )
             ]
         },
-        goto="supervisor",
+        goto="coder_master",
     )
+
+
+# def code_node(state: State) -> Command[Literal["supervisor"]]:
+#     """Node for the coder agent that executes Python code."""
+#     logger.info("Code agent starting task")
+#     result = coder_agent.invoke(state)
+#     logger.info("Code agent completed task")
+#     response_content = result["messages"][-1].content
+#     # 尝试修复可能的JSON输出
+#     response_content = repair_json_output(response_content)
+#     logger.debug(f"Code agent response: {response_content}")
+#     return Command(
+#         update={
+#             "messages": [
+#                 HumanMessage(
+#                     content=response_content,
+#                     name="coder",
+#                 )
+#             ]
+#         },
+#         goto="supervisor",
+#     )
+
+# def frontend_code_node(state: State) -> Command[Literal["supervisor"]]:
+#     """Node for the frontend coder agent that executes Python code."""
+#     logger.info("Frontend Code agent starting task")
+#     result = frontend_coder_agent.invoke(state)
+#     logger.info("Frontend Code agent completed task")
+#     response_content = result["messages"][-1].content
+#     response_content = repair_json_output(response_content)
+#     logger.debug(f"Frontend Code agent response: {response_content}")
+#     return Command(
+#         update={
+#             "messages": [
+#                 HumanMessage(
+#                     content=response_content,
+#                     name="frontend_coder",
+#                 )
+#             ]
+#         },
+#         goto="supervisor",
+#     )
+
+# def backend_code_node(state: State) -> Command[Literal["supervisor"]]:
+#     """Node for the frontend coder agent that executes Python code."""
+#     logger.info("Backend Code agent starting task")
+#     result = backend_coder_agent.invoke(state)
+#     logger.info("Backend Code agent completed task")
+#     response_content = result["messages"][-1].content
+#     response_content = repair_json_output(response_content)
+#     logger.debug(f"Backend Code agent response: {response_content}")
+#     return Command(
+#         update={
+#             "messages": [
+#                 HumanMessage(
+#                     content=response_content,
+#                     name="backend_coder",
+#                 )
+#             ]
+#         },
+#         goto="supervisor",
+#     )
 
 def browser_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the browser agent that performs web browsing tasks."""

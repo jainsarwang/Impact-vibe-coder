@@ -43,6 +43,7 @@ function MessageView({ message }: { message: Message }) {
                   {children}
                 </a>
               ),
+              code: ({ children }) => <code>{children}</code>,
             }}
           >
             {message.content}
