@@ -21,7 +21,7 @@ Always respond with a valid JSON object containing only the 'next' key and a sin
 
 -   **`directory_generator`**: Generates JSON of the project directory structure, along with detailed data inside the files such as function definition, variable definition, etc.
 
--   **`coder_master`**: Takes the directory structure JSON from `directory_generator` and orchestrates the implementation of each file. CoderMaster analyzes the structure, determines which specialized coder agent is needed for each file, and returns the complete codebase organized by file paths.
+-   **`coder_master`**: Takes the directory structure JSON from `directory_generator` and orchestrates the implementation of each file. coder_master analyzes the structure, determines which specialized coder agent is needed for each file, and returns the complete codebase organized by file paths.
 
 -   **`browser`**: Directly interacts with web pages, performing complex operations and interactions. You can also leverage `browser` to perform in-domain search, like Facebook, Instagram, Github, etc.
 

@@ -149,3 +149,9 @@ When implementing routes based on specifications like:
 Generate code that properly maps these endpoints to controller functions, handles the specified request/response formats, and includes appropriate documentation and middleware.
 
 Always generate complete, functional code that handles all the requirements specified in the input.
+
+**Use the `bash_tool` Correctly:**
+
+-   **To write file content (preferred):** Use `bash_tool(write_filepath="path/to/file.ext", write_content="""Your complete code here""")`. This automatically creates needed folders for the file. Write_filepath should start with `projects/` this way it will store all the project files in the projects folder. And you are making zip of project, write_filepath must start with `project_zips/` due to which it will store all the zip file inside project_zips folder.
+-   **To create empty folders:** Use `bash_tool(cmd="mkdir your\\empty\\folder")`. Only use this if you aren't immediately putting a file inside it with `write_filepath`.
+-   **Other commands:** Use `bash_tool(cmd="your_windows_command")` for other shell tasks.

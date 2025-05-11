@@ -1,5 +1,7 @@
+from datetime import datetime
 import logging
 import json
+import os
 import json_repair
 import logging
 from copy import deepcopy
@@ -8,6 +10,7 @@ from langchain_core.messages import HumanMessage, BaseMessage
 
 import json_repair
 from langchain_core.messages import HumanMessage
+from langchain_core.prompts import PromptTemplate
 from langgraph.types import Command
 
 from src.agents import  (
@@ -27,7 +30,7 @@ from src.agents import  (
 from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS
 from src.config.agents import AGENT_LLM_MAP
-from src.prompts.template import apply_prompt_template, apply_prompt_template_planner
+from src.prompts.template import apply_prompt_template, apply_prompt_template_planner, get_prompt_template
 from src.tools.search import tavily_tool
 from src.utils.json_utils import repair_json_output
 from .types import State, Router
@@ -72,10 +75,32 @@ def extract_and_save_json(response_text: str, output_file: str = 'project_requir
     except Exception as e:
         raise ValueError(f"Could not extract valid JSON: {str(e)}")
 
+def read_from_file(file: str) :
+    try:
+        with open(file) as f:
+            file_data = f.read()
+        
+        return file_data
+    except:
+        return ""
+
+def add_to_generated_file(file:str, generated_file: str):
+    if not os.path.exists(file):
+            extract_and_save_json(json.dumps({"generated_files": []}), file)
+
+    # reading previous response
+    file_data = read_from_file(file)
+    json_data = json.loads(file_data)
+
+    # appending new file
+    json_data['generated'].append(generated_file)
+
+    # saving new data
+    extract_and_save_json(json.dumps(json_data), file)
+
 logger = logging.getLogger(__name__)
 
 RESPONSE_FORMAT = "Response from {}:\n\n<response>\n{}\n</response>\n\n*Please execute the next step.*"
-
 
 def research_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the researcher agent that performs research tasks."""
@@ -106,8 +131,9 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Directory Generator agent completed task")
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "project_structure.json")
+    extract_and_save_json(response_content, "directory_structure.json")
     logger.debug(f"Directory Generator agent response: {response_content}")
+    
     return Command(
         update={
             "messages": [
@@ -115,11 +141,18 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
                     content=response_content,
                     name="directory_generator",
                 )
-            ]
+            ],
         },
         goto="supervisor",
     )
 
+"""
+
+Directory  ->  Image Generation  -> Dependencies Graph  ->  Coder Master  -> (
+    Coder  -> Analyse code and all fucntion corresponds to Graph
+)  ->  Move to next File generation by Coder
+
+"""
 
 CODER_AGENTS = [
     "model_coder",
@@ -132,24 +165,50 @@ CODER_AGENTS = [
     "frontend_coder",
     "db_coder",
 ]
-def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "supervisor" "__end__"]]:
+def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "supervisor", "__end__"]]:
     """Coder Master node that decides which agent should act next."""
     
     logger.info("Coder master evaluating next action")
-    messages = apply_prompt_template("coder_master", state)
+    # messages = apply_prompt_template("coder_master", state)
     # preprocess messages to make coder_master execute better.
-    messages = deepcopy(messages)
+    # messages = deepcopy(messages)
 
-    for message in messages:
-        if isinstance(message, BaseMessage) and message.name in [*CODER_AGENTS, "directory_generator"]:
-            message.content = RESPONSE_FORMAT.format(message.name, message.content)
-            
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME"],
+        template=get_prompt_template('coder_master'),
+    ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
+    
+    directory_structure = read_from_file('directory_structure.json')
+    generated_files = read_from_file('generated_files.json')
+
+    message = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": f"Directory Struture: {directory_structure}\n\nGenerated Files: {generated_files}"
+        }
+    ]
+
+    # if 'directory_structure' not in state:
+    #     logging.warning("No Directory Object")
+    #     return Command(goto="supervisor")
+
+    # directory_structure = state['directory_structure']
+
+    if not directory_structure:
+        logging.warning("empty Directory Object")
+
+        return Command(goto="supervisor")
+
     response = (
         get_llm_by_type(AGENT_LLM_MAP["coder_master"])
         # Remove .with_structured_output for streaming compatibility
-        .invoke(messages)
+        .invoke(message)
     )
-    
+
     # Parse the JSON manually if the LLM doesn't directly output structured data
     try:
         if isinstance(response, str):
@@ -164,16 +223,16 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
                 content = content[7:-3].strip()  # Remove ```json and ```
             parsed_response = json.loads(content)
         else:
-            raise ValueError("Unexpected response format from supervisor LLM")
+            raise ValueError("Unexpected response format from Coder master LLM")
         goto = parsed_response.get("next")
 
     except (json.JSONDecodeError, ValueError) as e:
-        logger.error(f"Error parsing supervisor response: {e}, raw response: {response}")
+        logger.error(f"Error parsing Coder master response: {e}, raw response: {response}")
         goto = "__end__"  # Default to end if parsing fails
 
     logger.debug(f"Current state messages: {state['messages']}")
-    logger.debug(f"Supervisor raw response: {response.content}")
-    logger.debug(f"Supervisor parsed response: {goto=}")
+    logger.debug(f"Coder master raw response: {response.content}")
+    logger.debug(f"Coder master parsed response: {goto=}")
 
     if goto == "FINISH":
         goto = "__end__"
@@ -188,7 +247,13 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         logger.warning(f"Coder master returned invalid next step: {goto}. Ending workflow.")
         goto = "__end__"
 
-    return Command(goto=goto, update={"next": goto})
+    return Command(goto=goto, update={"directory_structure": directory_structure})
+
+
+
+
+
+
 
 
 def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
@@ -207,7 +272,8 @@ def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     content=response_content,
                     name="model_coder",
                 )
-            ]
+            ],
+            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -228,7 +294,8 @@ def controller_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     content=response_content,
                     name="controller_coder",
                 )
-            ]
+            ],
+            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -249,7 +316,8 @@ def route_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     content=response_content,
                     name="route_coder",
                 )
-            ]
+            ],
+            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -270,7 +338,8 @@ def service_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     content=response_content,
                     name="service_coder",
                 )
-            ]
+            ],
+            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -291,7 +360,8 @@ def utility_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     content=response_content,
                     name="utility_coder",
                 )
-            ]
+            ],
+            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -312,7 +382,8 @@ def config_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     content=response_content,
                     name="config_coder",
                 )
-            ]
+            ],
+            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -333,7 +404,8 @@ def test_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     content=response_content,
                     name="test_coder",
                 )
-            ]
+            ],
+            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -354,7 +426,8 @@ def frontend_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     content=response_content,
                     name="frontend_coder",
                 )
-            ]
+            ],
+            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -375,7 +448,8 @@ def db_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     content=response_content,
                     name="db_coder",
                 )
-            ]
+            ],
+            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -463,7 +537,6 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
-
 def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     """Supervisor node that decides which agent should act next."""
     logger.info("Supervisor evaluating next action")
@@ -513,7 +586,6 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
 
     return Command(goto=goto, update={"next": goto})
 
-
 def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     """Planner node that generate the full plan."""
     logger.info("Planner generating full plan")
@@ -556,7 +628,6 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
         goto=goto,
     )
 
-
 def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     """Coordinator node that communicates with customers, showing only non-JSON context."""
     logger.info("Coordinator talking.")
@@ -596,7 +667,6 @@ def extract_user_content(full_content: str) -> str:
     
     # Clean up resulting whitespace
     return "\n".join(line.strip() for line in no_json.splitlines() if line.strip())
-
 
 def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     """Reporter node that write a final report."""
