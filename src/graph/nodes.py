@@ -226,7 +226,7 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
                 )
             ],
             "generated_files": generated_files, 
-            "coder_instruction": parsed_response
+            "coder_instruction": response.content
         }
     )
 
@@ -242,7 +242,7 @@ def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
     logger.info("Model Coder agent starting task")
     logging.warning(state.get('coder_instruction'))
 
-    result = model_coder_agent.invoke(state)
+    result = model_coder_agent(state)
     logger.info("Model Coder agent completed task")
     response_content = result["messages"][-1].content
 
@@ -264,7 +264,7 @@ def controller_coder_node(state: State) -> Command[Literal["coder_master"]]:
     logger.info("Controller Coder agent starting task")
     logging.warning(state.get('coder_instruction'))
 
-    result = controller_coder_agent.invoke(state)
+    result = controller_coder_agent(state)
     logger.info("Controller Coder agent completed task")
     response_content = result["messages"][-1].content
 
@@ -286,7 +286,7 @@ def route_coder_node(state: State) -> Command[Literal["coder_master"]]:
     logger.info("Router Coder agent starting task")
     logging.warning(state.get('coder_instruction'))
 
-    result = route_coder_agent.invoke(state)
+    result = route_coder_agent(state)
     logger.info("Router Coder agent completed task")
     response_content = result["messages"][-1].content
 
@@ -308,7 +308,7 @@ def service_coder_node(state: State) -> Command[Literal["coder_master"]]:
     logger.info("Service Coder agent starting task")
     logging.warning(state.get('coder_instruction'))
 
-    result = service_coder_agent.invoke(state)
+    result = service_coder_agent(state)
     logger.info("Service Coder agent completed task")
     response_content = result["messages"][-1].content
 
@@ -330,7 +330,7 @@ def utility_coder_node(state: State) -> Command[Literal["coder_master"]]:
     logger.info("Utility Coder agent starting task")
     logging.warning(state.get('coder_instruction'))
 
-    result = utility_coder_agent.invoke(state)
+    result = utility_coder_agent(state)
     logger.info("Utility Coder agent completed task")
     response_content = result["messages"][-1].content
 
@@ -352,7 +352,7 @@ def config_coder_node(state: State) -> Command[Literal["coder_master"]]:
     logger.info("Config Coder agent starting task")
     logging.warning(state.get('coder_instruction'))
 
-    result = config_coder_agent.invoke(state)
+    result = config_coder_agent(state)
     logger.info("Config Coder agent completed task")
     response_content = result["messages"][-1].content
 
@@ -374,7 +374,7 @@ def test_coder_node(state: State) -> Command[Literal["coder_master"]]:
     logger.info("Test Coder agent starting task")
     logging.warning(state.get('coder_instruction'))
 
-    result = test_coder_agent.invoke(state)
+    result = test_coder_agent(state)
     logger.info("Test Coder agent completed task")
     response_content = result["messages"][-1].content
 
@@ -396,7 +396,7 @@ def frontend_coder_node(state: State) -> Command[Literal["coder_master"]]:
     logger.info("Frontend Coder agent starting task")
     logging.warning(state.get('coder_instruction'))
 
-    result = frontend_coder_agent.invoke(state)
+    result = frontend_coder_agent(state)
     logger.info("Frontend Coder agent completed task")
     response_content = result["messages"][-1].content
 
@@ -418,7 +418,7 @@ def db_coder_node(state: State) -> Command[Literal["coder_master"]]:
     logger.info("DB Coder agent starting task")
     logging.warning(state.get('coder_instruction'))
 
-    result = db_coder_agent.invoke(state)
+    result = db_coder_agent(state)
     logger.info("DB Coder agent completed task")
     response_content = result["messages"][-1].content
 

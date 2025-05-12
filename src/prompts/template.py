@@ -6,6 +6,7 @@ from datetime import datetime
 
 from langchain_core.prompts import PromptTemplate
 from langgraph.prebuilt.chat_agent_executor import AgentState
+from ..graph.types import State
 
 
 def get_prompt_template(prompt_name: str) -> str:
@@ -23,15 +24,14 @@ def apply_prompt_template(prompt_name: str, state: AgentState) -> list:
     ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
     return [{"role": "system", "content": system_prompt}] + state["messages"]
 
-def  apply_prompt_template_for_coder(prompt_name: str, state: AgentState) -> list:
-    logging.DEBUG([i for i in state])
+def  apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
+    logging.debug([i for i in state])
+
     system_prompt = PromptTemplate(
         input_variables=["CURRENT_TIME"],
         template=get_prompt_template(prompt_name),
     ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
-    return [{"role": "system", "content": system_prompt}] + [{"role": "user", "content": state["messages"][-1].content}]
-
-
+    return [{"role": "system", "content": system_prompt}] + [{"role": "user", "content": state["coder_instruction"]}]
 
 def apply_prompt_template_planner(prompt_name: str, state: AgentState) -> list:
     """Applies prompt template for planner with proper JSON handling."""
