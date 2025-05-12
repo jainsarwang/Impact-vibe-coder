@@ -92,14 +92,15 @@ export interface User {
 
 ## Output Format
 
-Provide the complete model implementation with:
+Provide model implementaiton file paths with in json:
 
-```
-FILE: path/to/file.ext
-```
 
-```programming_language
-// Complete model implementation here
+```json
+{
+"FILE": ["List of file paths for all files created"],
+"programming_language": "programmin_language"
+// Complete frontend implementation here
+}
 ```
 
 ## Best Practices to Follow

@@ -98,14 +98,14 @@ export class UserController {
 
 ## Output Format
 
-Provide the complete controller implementation with:
+Provide the paths controller files created in json with:
 
-```
-FILE: path/to/file.ext
-```
-
-```programming_language
-// Complete controller implementation here
+```json
+{
+"FILE": ["List of file paths for all files created"],
+"programming_language": "programmin_language"
+// Complete frontend implementation here
+}
 ```
 
 ## Best Practices to Follow

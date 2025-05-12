@@ -162,14 +162,14 @@ export default TodoList;
 
 ## Output Format
 
-Provide the complete frontend implementation with:
+Provide files created in json with:
 
-```
-FILE: path/to/file.ext
-```
-
-```programming_language
+```json
+{
+"FILE": ["List of file paths for all files created"],
+"programming_language": "programmin_language"
 // Complete frontend implementation here
+}
 ```
 
 ## Best Practices to Follow

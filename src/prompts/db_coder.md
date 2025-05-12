@@ -198,14 +198,14 @@ export class CreateTodosTable1620000000000 implements MigrationInterface {
 
 ## Output Format
 
-Provide the complete database implementation with:
+Provide the file paths of complete database implementation in json with:
 
-```
-FILE: path/to/file.ext
-```
-
-```programming_language
-// Complete database implementation here
+```json
+{
+"FILE": ["List of file paths for all files created"],
+"programming_language": "programmin_language"
+// Complete frontend implementation here
+}
 ```
 
 ## Best Practices to Follow

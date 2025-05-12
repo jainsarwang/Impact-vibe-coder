@@ -102,14 +102,14 @@ export default router;
 
 ## Output Format
 
-Provide the complete route implementation with:
+Provide the file paths of the complete route implementation in json with:
 
-```
-FILE: path/to/file.ext
-```
-
-```programming_language
-// Complete route implementation here
+```json
+{
+"FILE": ["List of file paths for all files created"],
+"programming_language": "programmin_language"
+// Complete frontend implementation here
+}
 ```
 
 ## Best Practices to Follow
