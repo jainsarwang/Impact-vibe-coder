@@ -33,16 +33,7 @@ TEAM_MEMBERS = [
     "browser",
     "reporter",
     "directory_generator",
-    "coder_master",
-    "model_coder",
-    "controller_coder",
-    "route_coder",
-    "service_coder",
-    "utility_coder",
-    "test_coder",
-    "config_coder",
-    "frontend_coder",
-    "db_coder"
+    "coder_master"
 ]
 
 __all__ = [

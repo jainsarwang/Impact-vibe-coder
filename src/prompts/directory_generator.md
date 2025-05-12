@@ -47,7 +47,7 @@ Provide the results in this JSON structure:
     "stack": ["language", "framework", "database"]
   },
   "directory_structure": {
-    "path/to/directory": {
+    "path\\to\\directory": {
       "purpose": "Description of this directory's purpose",
       "files": [
         "file1.ext",
@@ -56,7 +56,7 @@ Provide the results in this JSON structure:
     }
   },
   "file_documentation": {
-    "path/to/file.ext": {
+    "path\\to\\file.ext": {
       "purpose": "What this file does",
       "functions": {
         "functionName": {
@@ -77,7 +77,7 @@ Provide the results in this JSON structure:
   },
   "api_endpoints": {
     "METHOD /path": {
-      "controller": "path/to/controller.file",
+      "controller": "path\\to\\controller.file",
       "function": "handlerFunction",
       "request": {
         "params": {},

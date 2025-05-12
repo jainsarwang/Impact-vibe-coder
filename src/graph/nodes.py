@@ -75,29 +75,6 @@ def extract_and_save_json(response_text: str, output_file: str = 'project_requir
     except Exception as e:
         raise ValueError(f"Could not extract valid JSON: {str(e)}")
 
-def read_from_file(file: str) :
-    try:
-        with open(file) as f:
-            file_data = f.read()
-        
-        return file_data
-    except:
-        return ""
-
-def add_to_generated_file(file:str, generated_file: str):
-    if not os.path.exists(file):
-            extract_and_save_json(json.dumps({"generated_files": []}), file)
-
-    # reading previous response
-    file_data = read_from_file(file)
-    json_data = json.loads(file_data)
-
-    # appending new file
-    json_data['generated'].append(generated_file)
-
-    # saving new data
-    extract_and_save_json(json.dumps(json_data), file)
-
 logger = logging.getLogger(__name__)
 
 RESPONSE_FORMAT = "Response from {}:\n\n<response>\n{}\n</response>\n\n*Please execute the next step.*"
@@ -123,7 +100,6 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
-
 def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the directory generator agent that generator directory structure."""
     logger.info("Directory Generator agent starting task")
@@ -131,7 +107,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Directory Generator agent completed task")
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "directory_structure.json")
+    
     logger.debug(f"Directory Generator agent response: {response_content}")
     
     return Command(
@@ -142,6 +118,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
                     name="directory_generator",
                 )
             ],
+            "directory_structure": response_content
         },
         goto="supervisor",
     )
@@ -169,17 +146,20 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
     """Coder Master node that decides which agent should act next."""
     
     logger.info("Coder master evaluating next action")
-    # messages = apply_prompt_template("coder_master", state)
-    # preprocess messages to make coder_master execute better.
-    # messages = deepcopy(messages)
+
+    directory_structure = state.get('directory_structure')
+    if not directory_structure:
+        logging.warning("No Directory Object in State, Going back to supervisor")
+        return Command(goto='supervisor')
+    
+    generated_files = state.get('generated_files')
+    if not generated_files:
+        generated_files = []
 
     system_prompt = PromptTemplate(
         input_variables=["CURRENT_TIME"],
         template=get_prompt_template('coder_master'),
     ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
-    
-    directory_structure = read_from_file('directory_structure.json')
-    generated_files = read_from_file('generated_files.json')
 
     message = [
         {
@@ -188,20 +168,9 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         },
         {
             "role": "user",
-            "content": f"Directory Struture: {directory_structure}\n\nGenerated Files: {generated_files}"
+            "content": f"Directory Struture: {directory_structure}\n\nGenerated Files: {str(generated_files)}"
         }
     ]
-
-    # if 'directory_structure' not in state:
-    #     logging.warning("No Directory Object")
-    #     return Command(goto="supervisor")
-
-    # directory_structure = state['directory_structure']
-
-    if not directory_structure:
-        logging.warning("empty Directory Object")
-
-        return Command(goto="supervisor")
 
     response = (
         get_llm_by_type(AGENT_LLM_MAP["coder_master"])
@@ -247,7 +216,19 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         logger.warning(f"Coder master returned invalid next step: {goto}. Ending workflow.")
         goto = "__end__"
 
-    return Command(goto=goto, update={"directory_structure": directory_structure})
+    return Command(
+        goto=goto, 
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response.content,
+                    name="coder_master",
+                )
+            ],
+            "generated_files": generated_files, 
+            "coder_instruction": parsed_response
+        }
+    )
 
 
 
@@ -259,11 +240,12 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
 def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Model Coder agent that generator directory structure."""
     logger.info("Model Coder agent starting task")
+    logging.warning(state.get('coder_instruction'))
+
     result = model_coder_agent.invoke(state)
     logger.info("Model Coder agent completed task")
     response_content = result["messages"][-1].content
-    response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "project_structure.json")
+
     logger.debug(f"Model Coder agent response: {response_content}")
     return Command(
         update={
@@ -273,7 +255,6 @@ def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     name="model_coder",
                 )
             ],
-            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -281,11 +262,12 @@ def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
 def controller_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Controller Coder agent that generator directory structure."""
     logger.info("Controller Coder agent starting task")
+    logging.warning(state.get('coder_instruction'))
+
     result = controller_coder_agent.invoke(state)
     logger.info("Controller Coder agent completed task")
     response_content = result["messages"][-1].content
-    response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "project_structure.json")
+
     logger.debug(f"Controller Coder agent response: {response_content}")
     return Command(
         update={
@@ -295,7 +277,6 @@ def controller_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     name="controller_coder",
                 )
             ],
-            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -303,11 +284,12 @@ def controller_coder_node(state: State) -> Command[Literal["coder_master"]]:
 def route_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Router Coder agent that generator directory structure."""
     logger.info("Router Coder agent starting task")
+    logging.warning(state.get('coder_instruction'))
+
     result = route_coder_agent.invoke(state)
     logger.info("Router Coder agent completed task")
     response_content = result["messages"][-1].content
-    response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "project_structure.json")
+
     logger.debug(f"Router Coder agent response: {response_content}")
     return Command(
         update={
@@ -317,7 +299,6 @@ def route_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     name="route_coder",
                 )
             ],
-            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -325,11 +306,12 @@ def route_coder_node(state: State) -> Command[Literal["coder_master"]]:
 def service_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Service Coder agent that generator directory structure."""
     logger.info("Service Coder agent starting task")
+    logging.warning(state.get('coder_instruction'))
+
     result = service_coder_agent.invoke(state)
     logger.info("Service Coder agent completed task")
     response_content = result["messages"][-1].content
-    response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "project_structure.json")
+
     logger.debug(f"Service Coder agent response: {response_content}")
     return Command(
         update={
@@ -339,7 +321,6 @@ def service_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     name="service_coder",
                 )
             ],
-            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -347,11 +328,12 @@ def service_coder_node(state: State) -> Command[Literal["coder_master"]]:
 def utility_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Utility Coder agent that generator directory structure."""
     logger.info("Utility Coder agent starting task")
+    logging.warning(state.get('coder_instruction'))
+
     result = utility_coder_agent.invoke(state)
     logger.info("Utility Coder agent completed task")
     response_content = result["messages"][-1].content
-    response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "project_structure.json")
+
     logger.debug(f"Utility Coder agent response: {response_content}")
     return Command(
         update={
@@ -361,7 +343,6 @@ def utility_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     name="utility_coder",
                 )
             ],
-            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -369,11 +350,12 @@ def utility_coder_node(state: State) -> Command[Literal["coder_master"]]:
 def config_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Config Coder agent that generator directory structure."""
     logger.info("Config Coder agent starting task")
+    logging.warning(state.get('coder_instruction'))
+
     result = config_coder_agent.invoke(state)
     logger.info("Config Coder agent completed task")
     response_content = result["messages"][-1].content
-    response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "project_structure.json")
+
     logger.debug(f"Config Coder agent response: {response_content}")
     return Command(
         update={
@@ -383,7 +365,6 @@ def config_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     name="config_coder",
                 )
             ],
-            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -391,11 +372,12 @@ def config_coder_node(state: State) -> Command[Literal["coder_master"]]:
 def test_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Test Coder agent that generator directory structure."""
     logger.info("Test Coder agent starting task")
+    logging.warning(state.get('coder_instruction'))
+
     result = test_coder_agent.invoke(state)
     logger.info("Test Coder agent completed task")
     response_content = result["messages"][-1].content
-    response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "project_structure.json")
+
     logger.debug(f"Test Coder agent response: {response_content}")
     return Command(
         update={
@@ -405,7 +387,6 @@ def test_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     name="test_coder",
                 )
             ],
-            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -413,11 +394,12 @@ def test_coder_node(state: State) -> Command[Literal["coder_master"]]:
 def frontend_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Frontend Coder agent that generator directory structure."""
     logger.info("Frontend Coder agent starting task")
+    logging.warning(state.get('coder_instruction'))
+
     result = frontend_coder_agent.invoke(state)
     logger.info("Frontend Coder agent completed task")
     response_content = result["messages"][-1].content
-    response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "project_structure.json")
+
     logger.debug(f"Frontend Coder agent response: {response_content}")
     return Command(
         update={
@@ -427,7 +409,6 @@ def frontend_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     name="frontend_coder",
                 )
             ],
-            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )
@@ -435,11 +416,12 @@ def frontend_coder_node(state: State) -> Command[Literal["coder_master"]]:
 def db_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the DB Coder agent that generator directory structure."""
     logger.info("DB Coder agent starting task")
+    logging.warning(state.get('coder_instruction'))
+
     result = db_coder_agent.invoke(state)
     logger.info("DB Coder agent completed task")
     response_content = result["messages"][-1].content
-    response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "project_structure.json")
+
     logger.debug(f"DB Coder agent response: {response_content}")
     return Command(
         update={
@@ -449,7 +431,6 @@ def db_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     name="db_coder",
                 )
             ],
-            "directory_structure": state['directory_structure']
         },
         goto="coder_master",
     )

@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import json
@@ -15,13 +16,21 @@ def get_prompt_template(prompt_name: str) -> str:
     template = re.sub(r"<<([^>>]+)>>", r"{\1}", template)
     return template
 
-
 def apply_prompt_template(prompt_name: str, state: AgentState) -> list:
     system_prompt = PromptTemplate(
         input_variables=["CURRENT_TIME"],
         template=get_prompt_template(prompt_name),
     ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
     return [{"role": "system", "content": system_prompt}] + state["messages"]
+
+def  apply_prompt_template_for_coder(prompt_name: str, state: AgentState) -> list:
+    logging.DEBUG([i for i in state])
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME"],
+        template=get_prompt_template(prompt_name),
+    ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
+    return [{"role": "system", "content": system_prompt}] + [{"role": "user", "content": state["messages"][-1].content}]
+
 
 
 def apply_prompt_template_planner(prompt_name: str, state: AgentState) -> list:

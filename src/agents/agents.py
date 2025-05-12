@@ -1,7 +1,7 @@
 from langgraph.prebuilt import create_react_agent
 from langchain_openai import ChatOpenAI
 
-from src.prompts import apply_prompt_template, apply_prompt_template_planner
+from src.prompts import apply_prompt_template, apply_prompt_template_planner, apply_prompt_template_for_coder
 from src.tools import (
     bash_tool,
     browser_tool,
@@ -13,6 +13,7 @@ from src.tools import (
 
 from src.llms.llm import get_llm_by_type
 from src.config.agents import AGENT_LLM_MAP
+from ..graph.types import State
 
 # Create agents using configured LLM types
 research_agent = create_react_agent(
@@ -27,6 +28,12 @@ directory_generator_agent = create_react_agent(
     prompt=lambda state: apply_prompt_template("directory_generator", state),
 )
 
+def coder_wrapper(react_agent):
+    def state_holder(state: State):
+        return react_agent
+    
+    return state_holder
+
 coder_master_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP['coder_master']),
     tools=[browser_tool],
@@ -35,47 +42,47 @@ coder_master_agent = create_react_agent(
 model_coder_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP['model_coder']),
     tools=[bash_tool],
-    prompt=lambda state: apply_prompt_template("model_coder", state),
+    prompt=lambda state: apply_prompt_template_for_coder("model_coder", state),
 )
 controller_coder_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP['controller_coder']),
     tools=[bash_tool],
-    prompt=lambda state: apply_prompt_template("controller_coder", state),
+    prompt=lambda state: apply_prompt_template_for_coder("controller_coder", state),
 )
 route_coder_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP['route_coder']),
     tools=[bash_tool],
-    prompt=lambda state: apply_prompt_template("route_coder", state),
+    prompt=lambda state: apply_prompt_template_for_coder("route_coder", state),
 )
 service_coder_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP['service_coder']),
     tools=[bash_tool],
-    prompt=lambda state: apply_prompt_template("service_coder", state),
+    prompt=lambda state: apply_prompt_template_for_coder("service_coder", state),
 )
 utility_coder_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP['utility_coder']),
     tools=[bash_tool],
-    prompt=lambda state: apply_prompt_template("utility_coder", state),
+    prompt=lambda state: apply_prompt_template_for_coder("utility_coder", state),
 )
 config_coder_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP['config_coder']),
     tools=[bash_tool],
-    prompt=lambda state: apply_prompt_template("config_coder", state),
+    prompt=lambda state: apply_prompt_template_for_coder("config_coder", state),
 )
 test_coder_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP['test_coder']),
     tools=[bash_tool],
-    prompt=lambda state: apply_prompt_template("test_coder", state),
+    prompt=lambda state: apply_prompt_template_for_coder("test_coder", state),
 )
 frontend_coder_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP['frontend_coder']),
     tools=[bash_tool],
-    prompt=lambda state: apply_prompt_template("frontend_coder", state),
+    prompt=lambda state: apply_prompt_template_for_coder("frontend_coder", state),
 )
 db_coder_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP['db_coder']),
     tools=[bash_tool],
-    prompt=lambda state: apply_prompt_template("db_coder", state),
+    prompt=lambda state: apply_prompt_template_for_coder("db_coder", state),
 )
 
 # coder_agent = create_react_agent(

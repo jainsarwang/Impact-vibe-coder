@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 from typing_extensions import TypedDict
 from langgraph.graph import MessagesState
 from langchain_core.messages import BaseMessage
@@ -26,3 +26,6 @@ class State(MessagesState):
     full_plan: str
     deep_thinking_mode: bool
     search_before_planning: bool
+    directory_structure: str
+    generated_files: list[str]
+    coder_instruction: Any
