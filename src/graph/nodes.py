@@ -16,6 +16,7 @@ from src.config import TEAM_MEMBERS
 from src.config.agents import AGENT_LLM_MAP
 from src.prompts.template import apply_prompt_template, apply_prompt_template_planner
 from src.tools.search import tavily_tool
+from src.tools.executor import manage_project_lifecycle
 from src.utils.json_utils import repair_json_output
 from .types import State, Router
 import re
@@ -72,7 +73,7 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
     response_content = result["messages"][-1].content
 
     response_content = repair_json_output(response_content)
-    logger.debug(f"Research agent response: {response_content}")
+    logger.info(f"Research agent response: {response_content}")
     return Command(
         update={
             "messages": [
@@ -94,7 +95,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
     extract_and_save_json(response_content, "project_structure.json")
-    logger.debug(f"Directory Generator agent response: {response_content}")
+    logger.info(f"Directory Generator agent response: {response_content}")
     return Command(
         update={
             "messages": [
@@ -115,7 +116,7 @@ def code_node(state: State) -> Command[Literal["supervisor"]]:
     response_content = result["messages"][-1].content
     # 尝试修复可能的JSON输出
     response_content = repair_json_output(response_content)
-    logger.debug(f"Code agent response: {response_content}")
+    logger.info(f"Code agent response: {response_content}")
     return Command(
         update={
             "messages": [
@@ -135,7 +136,7 @@ def frontend_code_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Frontend Code agent completed task")
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
-    logger.debug(f"Frontend Code agent response: {response_content}")
+    logger.info(f"Frontend Code agent response: {response_content}")
     return Command(
         update={
             "messages": [
@@ -155,7 +156,7 @@ def backend_code_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Backend Code agent completed task")
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
-    logger.debug(f"Backend Code agent response: {response_content}")
+    logger.info(f"Backend Code agent response: {response_content}")
     return Command(
         update={
             "messages": [
@@ -176,7 +177,7 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
     response_content = result["messages"][-1].content
     # 尝试修复可能的JSON输出
     response_content = repair_json_output(response_content)
-    logger.debug(f"Browser agent response: {response_content}")
+    logger.info(f"Browser agent response: {response_content}")
     return Command(
         update={
             "messages": [
@@ -224,13 +225,18 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         logger.error(f"Error parsing supervisor response: {e}, raw response: {response}")
         goto = "__end__"  # Default to end if parsing fails
 
-    logger.debug(f"Current state messages: {state['messages']}")
-    logger.debug(f"Supervisor raw response: {response.content}")
-    logger.debug(f"Supervisor parsed response: {goto=}")
+    logger.info(f"Current state messages: {state['messages']}")
+    logger.info(f"Supervisor raw response: {response.content}")
+    logger.info(f"Supervisor parsed response: {goto=}")
 
     if goto == "FINISH":
         goto = "__end__"
         logger.info("Workflow completed")
+        result = manage_project_lifecycle(
+        project_name=None,  # Set to None for auto-discovery
+        action="read_manual"
+        )
+        print(json.dumps(result, indent=2))
     elif goto in TEAM_MEMBERS:
         logger.info(f"Supervisor delegating to: {goto}")
     else:
@@ -255,7 +261,7 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     response = llm.invoke(messages)
     full_response = response.content
     # extract_and_save_json(full_response)
-    logger.debug(f"Current state messages: {state['messages']}")
+    logger.info(f"Current state messages: {state['messages']}")
     logger.info(f"Planner response: {full_response}")
 
     if full_response.startswith("```json"):
@@ -288,14 +294,14 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     logger.info("Coordinator talking.")
     messages = apply_prompt_template("coordinator", state)
     response = get_llm_by_type(AGENT_LLM_MAP["coordinator"]).invoke(messages)
-    logger.debug(f"Current state messages: {state['messages']}")
+    logger.info(f"Current state messages: {state['messages']}")
     
     # Keep original response
     response_content_raw = response.content
     
     # Process JSON for internal use
     response_content = repair_json_output(response_content_raw)
-    logger.debug(f"Coordinator full response: {response_content}")
+    logger.info(f"Coordinator full response: {response_content}")
     
     # Extract non-JSON context to show user
     user_display_content = extract_user_content(response_content_raw)
@@ -329,11 +335,11 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Reporter write final report")
     messages = apply_prompt_template("reporter", state)
     response = get_llm_by_type(AGENT_LLM_MAP["reporter"]).invoke(messages)
-    logger.debug(f"Current state messages: {state['messages']}")
+    logger.info(f"Current state messages: {state['messages']}")
     response_content = response.content
     # 尝试修复可能的JSON输出
     response_content = repair_json_output(response_content)
-    logger.debug(f"reporter response: {response_content}")
+    logger.info(f"reporter response: {response_content}")
 
     return Command(
         update={

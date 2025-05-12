@@ -7,6 +7,8 @@ import uuid
 
 # Configure logging
 logging.basicConfig(
+    filename="app.log",  # Specify the log file name
+    filemode="a",  # Append mode
     level=logging.INFO,  # Default level is INFO
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )

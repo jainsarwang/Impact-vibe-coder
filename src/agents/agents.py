@@ -8,7 +8,8 @@ from src.tools import (
     crawl_tool,
     python_repl_tool,
     tavily_tool,
-    project_zip_tool
+    project_zip_tool,
+    manage_project_lifecycle
 )
 
 from src.llms.llm import get_llm_by_type
@@ -50,3 +51,4 @@ browser_agent = create_react_agent(
     tools=[browser_tool],
     prompt=lambda state: apply_prompt_template("browser", state),
 )
+

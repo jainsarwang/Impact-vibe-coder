@@ -4,8 +4,10 @@ from src.graph import build_graph
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,  # Default level is INFO
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    filename='app.log',  # Specify the log file name
+    level=logging.DEBUG,  # Set the logging level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filemode='a',
 )
 
 

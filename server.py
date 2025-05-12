@@ -8,14 +8,16 @@ import sys
 
 # Configure logging
 logging.basicConfig(
+    filename="app.log",  # Specify the log file name
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    filemode="a",
 )
 
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    logger.info("Starting LangManus API server")
+    logger.info("Starting VibeCoder API server")
     reload = True
     if sys.platform.startswith("win"):
         reload = False

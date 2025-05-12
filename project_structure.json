@@ -1,107 +1,58 @@
 {
-  "WorkplaceHarmony": {
-    "dependencies": {
-      "streamlit": "1.32.2",
-      "fastapi": "0.110.0",
-      "uvicorn": "0.32.0",
-      "python": "3.12"
+  "MultiplicationTableGenerator\\app.py": {
+    "generate_table": {
+      "params": "None",
+      "return type and data": "JSON",
+      "Documentation": "API endpoint that receives a number from the frontend, calculates its multiplication table (up to 10), and returns the table as a JSON response. Handles potential errors such as invalid input."
     },
-    "frontend": {
-      "frontend/app.py": {
-        "app": {
-          "params": "None",
-          "return type and data": "None",
-          "Documentation": "Main Streamlit application that handles user authentication, personality assessment, chat interface, and displays communication advice."
-        },
-        "show_personality_form": {
-          "params": "None",
-          "return type and data": "dict",
-          "Documentation": "Displays the personality assessment form and returns the user's responses."
-        },
-        "display_chat_interface": {
-          "params": "user_id: str",
-          "return type and data": "None",
-          "Documentation": "Displays the chat interface for the given user ID."
-        },
-        "get_communication_advice": {
-          "params": "user1_personality: str, user2_personality: str",
-          "return type and data": "str",
-          "Documentation": "Retrieves communication advice based on the personalities of the two users."
-        },
-        "register_user": {
-          "params": "username: str, personality_data: dict",
-          "return type and data": "str",
-          "Documentation": "Registers a new user, saves their personality data to a JSON file, and returns the user ID."
-        },
-        "login_user": {
-          "params": "username: str",
-          "return type and data": "str",
-          "Documentation": "Logs in an existing user and returns the user ID if the username exists."
-        }
-      }
+    "app": {
+      "type": "Flask",
+      "description": "Flask application instance."
+    }
+  },
+  "MultiplicationTableGenerator\\templates\\index.html": {
+    "input": {
+      "type": "HTMLInputElement",
+      "description": "Input field for the user to enter a number."
     },
-    "backend": {
-      "backend/main.py": {
-        "submit_assessment": {
-          "api": "/submit_assessment",
-          "method": "POST",
-          "request": "dict (Personality assessment responses)",
-          "response": "dict (User ID, Personality Type)",
-          "Documentation": "Receives personality assessment data, determines personality type, and returns user ID and personality type."
-        },
-        "chat": {
-          "api": "/chat",
-          "method": "POST",
-          "request": "dict (sender_id: str, receiver_id: str, message: str)",
-          "response": "dict (message: str)",
-          "Documentation": "Handles real-time chat messages between users."
-        },
-        "advice": {
-          "api": "/advice",
-          "method": "GET",
-          "request": "user1_id: str, user2_id: str",
-          "response": "str (Communication advice)",
-          "Documentation": "Generates communication advice based on the personalities of two users."
-        },
-        "get_user_personality": {
-          "params": "user_id: str",
-          "return type and data": "str",
-          "Documentation": "Retrieves the personality type of a user from their profile."
-        },
-        "analyze_personality": {
-          "params": "assessment_data: dict",
-          "return type and data": "str",
-          "Documentation": "Analyzes the personality assessment data and determines the user's personality type."
-        },
-        "generate_communication_advice": {
-          "params": "personality1: str, personality2: str",
-          "return type and data": "str",
-          "Documentation": "Generates advice on how to communicate effectively between two personality types."
-        }
-      }
+    "button": {
+      "type": "HTMLButtonElement",
+      "description": "Button to trigger the generation of the multiplication table."
     },
-    "data": {
-      "data/user_profiles": {
-        "file_type": "JSON",
-        "description": "Stores user profiles, including username, password (hashed), personality type, and other relevant information.",
-        "schema": {
-          "user_id": "str (UUID)",
-          "username": "str",
-          "personality_type": "str",
-          "assessment_data": "dict"
-        }
-      },
-      "data/chat_history": {
-        "file_type": "JSON",
-        "description": "Stores chat history between users.",
-        "schema": {
-          "message_id": "str (UUID)",
-          "sender_id": "str (UUID)",
-          "receiver_id": "str (UUID)",
-          "message": "str",
-          "timestamp": "datetime"
-        }
-      }
+    "table": {
+      "type": "HTMLTableElement",
+      "description": "Element where the multiplication table is displayed."
+    }
+  },
+  "MultiplicationTableGenerator\\static\\css\\style.css": {
+    "body": {
+      "description": "Styles for the body of the HTML page, including font, layout, and background."
+    },
+    "input": {
+      "description": "Styles for the input field, including size, padding, and border."
+    },
+    "button": {
+      "description": "Styles for the button, including color, padding, and font."
+    },
+    "table": {
+      "description": "Styles for the multiplication table, including borders, spacing, and font."
+    }
+  },
+  "MultiplicationTableGenerator\\static\\js\\script.js": {
+    "generateTable": {
+      "params": "number",
+      "return type and data": "None",
+      "Documentation": "Function to send the number to backend and generate multiplication table dynamically."
+    }
+  },
+  "Dependencies": {
+    "Backend": {
+      "Flask": "version 2.3.2"
+    },
+    "Frontend": {
+      "HTML": "version 5",
+      "CSS": "version 3",
+      "JavaScript": "ES6"
     }
   }
 }

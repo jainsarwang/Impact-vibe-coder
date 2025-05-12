@@ -5,6 +5,7 @@ from .search import tavily_tool
 from .bash_tool import bash_tool
 from .browser import browser_tool
 from .create_zip import project_zip_tool
+from .executor import manage_project_lifecycle
 
 __all__ = [
     "bash_tool",
@@ -14,4 +15,5 @@ __all__ = [
     "write_file_tool",
     "browser_tool",
     "project_zip_tool",
+    "manage_project_lifecycle",
 ]
