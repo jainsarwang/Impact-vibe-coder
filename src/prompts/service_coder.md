@@ -104,14 +104,14 @@ export class UserService {
 
 ## Output Format
 
-Provide the complete service implementation with:
+Provide the file paths of complete service implementation files in json with:
 
-```
-FILE: path/to/file.ext
-```
-
-```programming_language
-// Complete service implementation here
+```json
+{
+"FILE": ["List of file paths for all files created"],
+"programming_language": "programmin_language"
+// Complete frontend implementation here
+}
 ```
 
 ## Best Practices to Follow

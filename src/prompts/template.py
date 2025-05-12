@@ -24,9 +24,7 @@ def apply_prompt_template(prompt_name: str, state: AgentState) -> list:
     ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
     return [{"role": "system", "content": system_prompt}] + state["messages"]
 
-def  apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
-    logging.debug([i for i in state])
-
+def apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
     system_prompt = PromptTemplate(
         input_variables=["CURRENT_TIME"],
         template=get_prompt_template(prompt_name),

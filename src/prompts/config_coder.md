@@ -123,14 +123,15 @@ Example package.json:
 
 ## Output Format
 
-Provide the complete configuration file with:
+Provide the path of the configuration files created in json with:
 
-```
-FILE: path/to/file.ext
-```
 
-```format
-# Complete configuration file content here
+```json
+{
+"FILE": ["List of file paths for all files created"],
+"programming_language": "programmin_language"
+// Complete frontend implementation here
+}
 ```
 
 ## Best Practices to Follow

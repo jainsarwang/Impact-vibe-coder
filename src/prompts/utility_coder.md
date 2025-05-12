@@ -117,14 +117,14 @@ export function truncate(input: string, maxLength: number): string {
 
 ## Output Format
 
-Provide the complete utility implementation with:
+Provide the files paths of the complete utility implementation files in json with:
 
-```
-FILE: path/to/file.ext
-```
-
-```programming_language
-// Complete utility implementation here
+```json
+{
+"FILE": ["List of file paths for all files created"],
+"programming_language": "programmin_language"
+// Complete frontend implementation here
+}
 ```
 
 ## Best Practices to Follow
