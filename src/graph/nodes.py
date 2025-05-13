@@ -32,6 +32,7 @@ from src.config import TEAM_MEMBERS
 from src.config.agents import AGENT_LLM_MAP
 from src.prompts.template import apply_prompt_template, apply_prompt_template_planner, get_prompt_template
 from src.tools.search import tavily_tool
+from src.utils import executor
 from src.utils.json_utils import repair_json_output
 from .types import State, Router
 import re
@@ -414,6 +415,11 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     logger.debug(f"Supervisor parsed response: {goto=}")
 
     if goto == "FINISH":
+        with open("project_requirement.json") as f:
+            project_requirement = f.read()
+        
+        executor.execute(state, project_requirement)
+        
         goto = "__end__"
         logger.info("Workflow completed")
     elif goto in TEAM_MEMBERS:
