@@ -21,6 +21,8 @@ Always respond with a valid JSON object containing only the 'next' key and a sin
 
 -   **`directory_generator`**: Generates JSON of the project directory structure, along with detailed data inside the files such as function definition, variable definition, etc.
 
+-   **`code_planner`**: Creates a structured plan to call upon different agents using output from `directory_generator` as reference.
+
 -   **`coder_master`**: Takes the directory structure JSON from `directory_generator` and orchestrates the implementation of each file. coder_master analyzes the structure, determines which specialized coder agent is needed for each file, and returns the complete codebase organized by file paths.
 
 -   **`browser`**: Directly interacts with web pages, performing complex operations and interactions. You can also leverage `browser` to perform in-domain search, like Facebook, Instagram, Github, etc.
@@ -32,6 +34,7 @@ Always respond with a valid JSON object containing only the 'next' key and a sin
 When building an application:
 
 1. First, call `directory_generator` to create the complete directory structure JSON
-2. Next, pass the entire directory structure to `coder_master`
-3. `coder_master` will handle the implementation of all files in the structure
-4. After `coder_master` completes the code generation, you can call `reporter` to summarize the project
+2. After `directory_generator` call `code_planner`
+3. Next, pass the entire directory structure to `coder_master`
+4. `coder_master` will handle the implementation of all files in the structure
+5. After `coder_master` completes the code generation, you can call `reporter` to summarize the project

@@ -108,6 +108,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Directory Generator agent completed task")
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
+    extract_and_save_json(response_content, "directory_generator.md")
     
     logger.debug(f"Directory Generator agent response: {response_content}")
     
@@ -143,6 +144,84 @@ CODER_AGENTS = [
     "frontend_coder",
     "db_coder",
 ]
+
+
+def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
+    """Code Planner node that generate the full plan for coder master."""
+    logger.info("Code Planner generating full plan")
+
+    directory_structure = state.get('directory_structure')
+    if not directory_structure:
+        logging.warning("No Directory Object in State, Going back to supervisor")
+        return Command(goto='supervisor')
+
+    # Prepare all variables for the prompt
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        "CODER_AGENTS": ", ".join(CODER_AGENTS),  # Convert list to string
+        "directory_structure": directory_structure,
+        **state  # Include other state variables
+    }
+    
+    template = get_prompt_template('code_planner')
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME", "CODER_AGENTS"],
+        template=template,
+    ).format(**prompt_vars)
+
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": directory_structure
+        }
+    ]
+    
+    # messages = apply_prompt_template_planner("code_planner", state)
+    # whether to enable deep thinking mode
+    llm = get_llm_by_type("basic")
+    if state.get("deep_thinking_mode"):
+        llm = get_llm_by_type("reasoning")
+    if state.get("search_before_planning"):
+        searched_content = tavily_tool.invoke({"query": state["messages"][-1].content})
+        messages = deepcopy(messages)
+        messages[-1].content += f"\n\n# Relative Search Results\n\n{json.dumps([{'title': elem['title'], 'content': elem['content']} for elem in searched_content], ensure_ascii=False)}"
+        
+    response = llm.invoke(messages)
+    full_response = response.content
+    # extract_and_save_json(full_response)
+    logger.debug(f"Current state messages: {state['messages']}")
+    logger.info(f"Code Planner response: {full_response}")
+
+    extract_and_save_json(full_response, "code_planner.md")
+
+    if full_response.startswith("```json"):
+        full_response = full_response.removeprefix("```json")
+
+    if full_response.endswith("```"):
+        full_response = full_response.removesuffix("```")
+
+    goto = "supervisor"
+
+    try:
+        repaired_response = json_repair.loads(full_response)
+        full_response = json.dumps(repaired_response)
+        with open("project_requirements.json", "w", encoding="utf-8") as f:
+            json.dump(repaired_response, f, indent=2, ensure_ascii=False)
+    except json.JSONDecodeError:
+        logger.warning("Code Planner response is not a valid JSON")
+        goto = "__end__"
+
+    return Command(
+        update={
+            "messages": [HumanMessage(content=full_response, name="code_planner")],
+            "code_plan": full_response,
+        },
+        goto=goto,
+    )
 
 def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "supervisor", "__end__"]]:
     """Coder Master node that decides which agent should act next."""
@@ -415,7 +494,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     logger.debug(f"Supervisor parsed response: {goto=}")
 
     if goto == "FINISH":
-        with open("project_requirement.json") as f:
+        with open("project_requirements.json") as f:
             project_requirement = f.read()
         
         executor.execute(state, project_requirement)
