@@ -156,6 +156,8 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
     if not generated_files:
         generated_files = []
 
+    logging.debug("Files already Generated: %s", generated_files)
+
     logging.debug("Generated Files: %s", generated_files)
 
     system_prompt = PromptTemplate(
@@ -173,8 +175,6 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
             "content": f"Directory Struture: {directory_structure}\n\nGenerated Files: {str(generated_files)}"
         }
     ]
-
-    logging.debug("Coder Master Message: %s", message)
 
     response = (
         get_llm_by_type(AGENT_LLM_MAP["coder_master"])
@@ -248,6 +248,8 @@ def coder(state: State, prompt_name: str, agent):
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
     parse_response = json.loads(response_content)
+
+    logging.debug(f"{prompt_name} Response: {response_content} Processes response: {parse_response}")
 
     return Command(
         update={
