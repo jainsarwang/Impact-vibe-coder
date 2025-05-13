@@ -62,7 +62,7 @@ export async function sendMessage(
   if (window.location.search.includes("mock")) {
     stream = mockChatStream(message);
   } else {
-    stream = chatStream(message, useStore.getState().state, params, options);
+    stream = chatStream(message, useStore.getState().messages, params, options);
   }
   setResponding(true);
 
