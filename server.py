@@ -9,7 +9,7 @@ import sys
 # Configure logging
 logging.basicConfig(
     level=logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(filename)s - %(levelname)s - %(message)s",
+    format="%(asctime)s - %(name)s - %(filename)s - %(levelname)s - %(message)s - Line No : %(lineno)d",
     filename="app.log",
     filemode='a'
 )

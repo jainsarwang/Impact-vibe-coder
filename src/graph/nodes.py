@@ -156,6 +156,8 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
     if not generated_files:
         generated_files = []
 
+    logging.debug("Generated Files: %s", generated_files)
+
     system_prompt = PromptTemplate(
         input_variables=["CURRENT_TIME"],
         template=get_prompt_template('coder_master'),
@@ -171,6 +173,8 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
             "content": f"Directory Struture: {directory_structure}\n\nGenerated Files: {str(generated_files)}"
         }
     ]
+
+    logging.debug("Coder Master Message: %s", message)
 
     response = (
         get_llm_by_type(AGENT_LLM_MAP["coder_master"])
@@ -226,7 +230,7 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
                 )
             ],
             "generated_files": generated_files, 
-            "coder_instruction": parsed_response
+            "coder_instruction": response.content
         }
     )
 
@@ -235,205 +239,64 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
 
 
 
-
-
-def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
-    """Node for the Model Coder agent that generator directory structure."""
+def coder(state: State, prompt_name: str, agent):
     logger.info("Model Coder agent starting task")
     logging.warning(state.get('coder_instruction'))
 
-    result = model_coder_agent.invoke(state)
-    logger.info("Model Coder agent completed task")
+    result = agent(state)
+    logger.info(f"{prompt_name} agent completed task")
     response_content = result["messages"][-1].content
+    response_content = repair_json_output(response_content)
+    parse_response = json.loads(response_content)
 
-    logger.debug(f"Model Coder agent response: {response_content}")
     return Command(
         update={
             "messages": [
                 HumanMessage(
                     content=response_content,
-                    name="model_coder",
+                    name=prompt_name,
                 )
             ],
+            "generated_files": state['generated_files'] + parse_response['FILE']
         },
         goto="coder_master",
     )
+
+def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the Model Coder agent that generator directory structure."""
+    return coder(state, 'model_coder', model_coder_agent)
 
 def controller_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Controller Coder agent that generator directory structure."""
-    logger.info("Controller Coder agent starting task")
-    logging.warning(state.get('coder_instruction'))
-
-    result = controller_coder_agent.invoke(state)
-    logger.info("Controller Coder agent completed task")
-    response_content = result["messages"][-1].content
-
-    logger.debug(f"Controller Coder agent response: {response_content}")
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="controller_coder",
-                )
-            ],
-        },
-        goto="coder_master",
-    )
+    return coder(state, 'controller_coder', controller_coder_agent)
 
 def route_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Router Coder agent that generator directory structure."""
-    logger.info("Router Coder agent starting task")
-    logging.warning(state.get('coder_instruction'))
-
-    result = route_coder_agent.invoke(state)
-    logger.info("Router Coder agent completed task")
-    response_content = result["messages"][-1].content
-
-    logger.debug(f"Router Coder agent response: {response_content}")
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="route_coder",
-                )
-            ],
-        },
-        goto="coder_master",
-    )
+    return coder(state, 'route_coder', route_coder_agent)
 
 def service_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Service Coder agent that generator directory structure."""
-    logger.info("Service Coder agent starting task")
-    logging.warning(state.get('coder_instruction'))
-
-    result = service_coder_agent.invoke(state)
-    logger.info("Service Coder agent completed task")
-    response_content = result["messages"][-1].content
-
-    logger.debug(f"Service Coder agent response: {response_content}")
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="service_coder",
-                )
-            ],
-        },
-        goto="coder_master",
-    )
+    return coder(state, 'service_coder', service_coder_agent)
 
 def utility_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Utility Coder agent that generator directory structure."""
-    logger.info("Utility Coder agent starting task")
-    logging.warning(state.get('coder_instruction'))
-
-    result = utility_coder_agent.invoke(state)
-    logger.info("Utility Coder agent completed task")
-    response_content = result["messages"][-1].content
-
-    logger.debug(f"Utility Coder agent response: {response_content}")
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="utility_coder",
-                )
-            ],
-        },
-        goto="coder_master",
-    )
+    return coder(state, 'utility_coder', utility_coder_agent)
 
 def config_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Config Coder agent that generator directory structure."""
-    logger.info("Config Coder agent starting task")
-    logging.warning(state.get('coder_instruction'))
-
-    result = config_coder_agent.invoke(state)
-    logger.info("Config Coder agent completed task")
-    response_content = result["messages"][-1].content
-
-    logger.debug(f"Config Coder agent response: {response_content}")
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="config_coder",
-                )
-            ],
-        },
-        goto="coder_master",
-    )
+    return coder(state, 'config_coder', config_coder_agent)
 
 def test_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Test Coder agent that generator directory structure."""
-    logger.info("Test Coder agent starting task")
-    logging.warning(state.get('coder_instruction'))
-
-    result = test_coder_agent.invoke(state)
-    logger.info("Test Coder agent completed task")
-    response_content = result["messages"][-1].content
-
-    logger.debug(f"Test Coder agent response: {response_content}")
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="test_coder",
-                )
-            ],
-        },
-        goto="coder_master",
-    )
+    return coder(state, 'test_coder', test_coder_agent)
 
 def frontend_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Frontend Coder agent that generator directory structure."""
-    logger.info("Frontend Coder agent starting task")
-    logging.warning(state.get('coder_instruction'))
-
-    result = frontend_coder_agent.invoke(state)
-    logger.info("Frontend Coder agent completed task")
-    response_content = result["messages"][-1].content
-
-    logger.debug(f"Frontend Coder agent response: {response_content}")
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="frontend_coder",
-                )
-            ],
-        },
-        goto="coder_master",
-    )
+    return coder(state, 'frontend_coder', frontend_coder_agent)
 
 def db_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the DB Coder agent that generator directory structure."""
-    logger.info("DB Coder agent starting task")
-    logging.warning(state.get('coder_instruction'))
-
-    result = db_coder_agent.invoke(state)
-    logger.info("DB Coder agent completed task")
-    response_content = result["messages"][-1].content
-
-    logger.debug(f"DB Coder agent response: {response_content}")
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="db_coder",
-                )
-            ],
-        },
-        goto="coder_master",
-    )
+    return coder(state, 'db_coder', db_coder_agent)
 
 
 # def code_node(state: State) -> Command[Literal["supervisor"]]:
