@@ -32,6 +32,7 @@ from src.config import TEAM_MEMBERS
 from src.config.agents import AGENT_LLM_MAP
 from src.prompts.template import apply_prompt_template, apply_prompt_template_planner, get_prompt_template
 from src.tools.search import tavily_tool
+from src.tools.bash_tool import bash_tool
 from src.utils import executor
 from src.utils.json_utils import repair_json_output
 from .types import State, Router
@@ -311,30 +312,160 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         }
     )
 
-def coder(state: State, prompt_name: str, agent):
-    logger.info(f"{prompt_name} starting task")
-    logging.warning(state.get('coder_instruction'))
+def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_master"]]: # Added Any for agent type
+    """
+    Generic coder node that invokes a specified agent, parses its JSON response
+    to extract file paths and content, and writes those files to disk.
+    """
+    logger.info(f"Coder node '{prompt_name}' starting task.")
+    # Log the instruction from coder_master for debugging
+    logger.debug(f"Instruction for {prompt_name} from coder_master: {state.get('coder_instruction')}")
 
-    result = agent(state)
-    logger.info(f"{prompt_name} agent completed task")
-    response_content = result["messages"][-1].content
-    response_content = repair_json_output(response_content)
-    parse_response = json.loads(response_content)
+    # Invoke the specific coder agent (e.g., model_coder_agent.invoke)
+    try:
+        # Assuming 'agent' is an invokable Langchain runnable/agent_executor
+        result = agent(state) 
+    except Exception as e:
+        logger.error(f"Error invoking agent '{prompt_name}': {str(e)}", exc_info=True)
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Error during agent '{prompt_name}' execution: {str(e)}",
+                        name=prompt_name, # Or a generic error source name
+                    )
+                ]
+            },
+            goto="coder_master", # Or perhaps supervisor or an error handling node
+        )
 
-    logging.debug(f"{prompt_name} Response: {response_content} Processes response: {parse_response}")
+    logger.info(f"Coder agent '{prompt_name}' completed invocation.")
+    
+    # Extract and repair the JSON response from the agent
+    if not result or "messages" not in result or not result["messages"]:
+        logger.error(f"No messages found in result from '{prompt_name}'. Result: {result}")
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Agent '{prompt_name}' returned an empty or invalid result.",
+                        name=prompt_name,
+                    )
+                ]
+            },
+            goto="coder_master",
+        )
+
+    response_content_raw = result["messages"][-1].content
+    response_content_repaired = repair_json_output(response_content_raw)
+    
+    try:
+        parsed_response = json.loads(response_content_repaired)
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse JSON response from '{prompt_name}': {e}. "
+                     f"Raw response: '{response_content_raw[:500]}...', "
+                     f"Repaired: '{response_content_repaired[:500]}...'")
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Error parsing JSON response from '{prompt_name}': {str(e)}. "
+                                f"Repaired content (start): {response_content_repaired[:200]}...",
+                        name=prompt_name,
+                    )
+                ]
+            },
+            goto="coder_master",
+        )
+
+    # Process file specifications from the parsed_response
+    current_generated_files = state.get('generated_files', [])
+    newly_generated_this_run: List[str] = []
+    processed_file_specs: List[Dict[str, str]] = []
+
+    # Robustly extract file specifications
+    # Expected keys: "FILE" (can be str path, list of str paths, or list of dicts {path, content})
+    # and "code" (global content if "FILE" items don't specify their own)
+    files_spec_from_llm = parsed_response.get("FILE") # Use .get() to avoid KeyError if "FILE" is missing
+
+    if isinstance(files_spec_from_llm, str):
+        # Case 1: "FILE": "path/to/file.py" (implies global "code" field for content)
+        path = files_spec_from_llm
+        content = parsed_response.get("code", "") # Default to empty string if no code
+        processed_file_specs.append({"path": path, "content": content})
+    elif isinstance(files_spec_from_llm, list):
+        # Case 2: "FILE": ["path1", {"path": "path2", "content": "..."}]
+        for item in files_spec_from_llm:
+            path, content = None, None
+            if isinstance(item, str): # List item is a path string
+                path = item
+                content = parsed_response.get("code", "") # Use global code
+            elif isinstance(item, dict): # List item is a dict like {"path": "...", "content": "..."}
+                path = item.get("path")
+                # Prioritize content from item dict, fallback to global code, then empty string
+                content = item.get("content", parsed_response.get("code", ""))
+            
+            if path: # Ensure path was found
+                # Ensure content is a string (it might be None if not found anywhere)
+                processed_file_specs.append({"path": path, "content": content if content is not None else ""})
+            else:
+                logger.warning(f"'{prompt_name}' provided an item in 'FILE' list without a path: {item}")
+    elif files_spec_from_llm is None:
+        # Case 3: "FILE" key is missing. Check for top-level "path" and "code".
+        # e.g., {"path": "path/to/file.py", "code": "content..."}
+        top_level_path = parsed_response.get("path")
+        if top_level_path:
+            top_level_content = parsed_response.get("code", "")
+            processed_file_specs.append({"path": top_level_path, "content": top_level_content})
+        else:
+            logger.warning(f"'{prompt_name}' response had no 'FILE' key and no top-level 'path'. Response: {parsed_response}")
+    else: # "FILE" is an unexpected type
+        logger.warning(f"'{prompt_name}' returned 'FILE' with unexpected type: {type(files_spec_from_llm)}. Value: {files_spec_from_llm}")
+
+
+    # Write files to disk
+    for file_spec in processed_file_specs:
+        file_path = file_spec.get("path")
+        file_content = file_spec.get("content", "") # Default to empty string if content is missing/None
+
+        if not file_path:
+            logger.warning(f"'{prompt_name}' produced a file spec with no path. Spec: {file_spec}. Skipping.")
+            continue
+
+        try:
+            # Ensure the directory exists
+            dir_path = os.path.dirname(file_path)
+            if dir_path:  # Only attempt to create if dir_path is not empty (e.g. for root files)
+                os.makedirs(dir_path, exist_ok=True)
+                logger.debug(f"Ensured directory exists: {dir_path} (for file {file_path})")
+            
+            # Write the file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(file_content)
+            
+            newly_generated_this_run.append(file_path)
+            logger.info(f"Successfully wrote file by '{prompt_name}': {file_path}")
+
+        except Exception as e:
+            logger.error(f"Error writing file {file_path} by '{prompt_name}': {str(e)}", exc_info=True)
+            # Optionally, you could add this error to the message content returned to supervisor/coder_master
+
+    # Update the state's list of generated files, avoiding duplicates
+    updated_generated_files = list(set(current_generated_files + newly_generated_this_run))
 
     return Command(
         update={
             "messages": [
                 HumanMessage(
-                    content=response_content,
+                    content=response_content_repaired, # Return the (repaired) JSON that was processed
                     name=prompt_name,
                 )
             ],
-            "generated_files": state['generated_files'] + parse_response['FILE']
+            "generated_files": updated_generated_files
         },
         goto="coder_master",
     )
+
 
 def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Model Coder agent that generator directory structure."""
