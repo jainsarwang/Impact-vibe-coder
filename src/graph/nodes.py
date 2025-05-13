@@ -142,6 +142,7 @@ CODER_AGENTS = [
     "frontend_coder",
     "db_coder",
 ]
+
 def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "supervisor", "__end__"]]:
     """Coder Master node that decides which agent should act next."""
     
@@ -152,18 +153,22 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         logging.warning("No Directory Object in State, Going back to supervisor")
         return Command(goto='supervisor')
     
-    generated_files = state.get('generated_files')
-    if not generated_files:
-        generated_files = []
-
+    generated_files = state.get('generated_files', [])
     logging.debug("Files already Generated: %s", generated_files)
 
-    logging.debug("Generated Files: %s", generated_files)
+    # Prepare all variables for the prompt
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        "CODER_AGENTS": ", ".join(CODER_AGENTS),  # Convert list to string
+        **state  # Include other state variables
+    }
 
+    # Get and format the prompt template
+    template = get_prompt_template('coder_master')
     system_prompt = PromptTemplate(
-        input_variables=["CURRENT_TIME"],
-        template=get_prompt_template('coder_master'),
-    ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
+        input_variables=["CURRENT_TIME", "CODER_AGENTS"],
+        template=template,
+    ).format(**prompt_vars)
 
     message = [
         {
@@ -172,48 +177,40 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         },
         {
             "role": "user",
-            "content": f"Directory Struture: {directory_structure}\n\nGenerated Files: {str(generated_files)}"
+            "content": f"Directory Structure: {directory_structure}\n\nGenerated Files: {str(generated_files)}"
         }
     ]
 
-    response = (
-        get_llm_by_type(AGENT_LLM_MAP["coder_master"])
-        # Remove .with_structured_output for streaming compatibility
-        .invoke(message)
-    )
+    # Rest of your function remains the same...
+    response = get_llm_by_type(AGENT_LLM_MAP["coder_master"]).invoke(message)
 
-    # Parse the JSON manually if the LLM doesn't directly output structured data
     try:
         if isinstance(response, str):
-            # Handle Markdown JSON formatting if present
             if response.startswith('```json') and response.endswith('```'):
-                response = response[7:-3].strip()  # Remove ```json and ```
+                response = response[7:-3].strip()
             parsed_response = json.loads(response)
         elif hasattr(response, 'content'):
             content = response.content
-            # Handle Markdown JSON formatting if present
             if content.startswith('```json') and content.endswith('```'):
-                content = content[7:-3].strip()  # Remove ```json and ```
+                content = content[7:-3].strip()
             parsed_response = json.loads(content)
         else:
             raise ValueError("Unexpected response format from Coder master LLM")
         goto = parsed_response.get("next")
-
     except (json.JSONDecodeError, ValueError) as e:
         logger.error(f"Error parsing Coder master response: {e}, raw response: {response}")
-        goto = "__end__"  # Default to end if parsing fails
+        goto = "__end__"
 
     logger.debug(f"Current state messages: {state['messages']}")
     logger.debug(f"Coder master raw response: {response.content}")
     logger.debug(f"Coder master parsed response: {goto=}")
 
     if goto == "FINISH":
-        goto = "__end__"
+        goto = "supervisor"
         logger.info("Coder Master workflow completed")
     elif goto == "INSTALLATION":
-        goto = "__end__"
-        # TODO: Module installtion handling left
-        logger.info("Module Installtion required")
+        goto = "supervisor"
+        logger.info("Module Installation required")
     elif goto in CODER_AGENTS:
         logger.info(f"Coder Master delegating to: {goto}")
     else:
@@ -234,13 +231,8 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         }
     )
 
-
-
-
-
-
 def coder(state: State, prompt_name: str, agent):
-    logger.info("Model Coder agent starting task")
+    logger.info(f"{prompt_name} starting task")
     logging.warning(state.get('coder_instruction'))
 
     result = agent(state)
