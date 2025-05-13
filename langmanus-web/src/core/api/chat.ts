@@ -7,13 +7,13 @@ import { type ChatEvent } from "./types";
 
 export function chatStream(
   userMessage: Message,
-  state: { messages: { role: string; content: string }[] },
+  messages: Message[],
   params: { deepThinkingMode: boolean; searchBeforePlanning: boolean },
   options: { abortSignal?: AbortSignal } = {},
 ) {
   return fetchStream<ChatEvent>(env.NEXT_PUBLIC_API_URL + "/chat/stream", {
     body: JSON.stringify({
-      messages: [...state.messages, userMessage],
+      messages: [...messages, userMessage],
       deep_thinking_mode: params.deepThinkingMode,
       search_before_planning: params.searchBeforePlanning,
       debug:
