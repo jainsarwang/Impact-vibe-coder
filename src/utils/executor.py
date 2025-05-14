@@ -6,6 +6,7 @@ import re
 import shlex
 import subprocess
 import sys
+import traceback
 from typing import Dict, List, Tuple
 
 from src.graph.types import State
@@ -182,10 +183,16 @@ def execute(state: State, project_requirement: str):
     """ Execute the commands in the command groups"""
 
     try:
+        logging.debug("Executor started execution")
         requirement = json.loads(project_requirement)
+        directory_structure = json.loads(state['directory_structure'])
 
+        logging.debug(requirement)
+        logging.debug("Step 1")
         ROOT_DIR = f"projects/{requirement['project_name']}"
-        for file in state['directory_structure']['file_documentation'].keys():
+        logging.debug("Step 2")
+
+        for file in directory_structure['file_documentation'].keys():
             if 'readme' in file.lower():
                 README_PATH = file
 
@@ -195,11 +202,13 @@ def execute(state: State, project_requirement: str):
         # Removing any trailing slash ('/')
         if README_PATH.startswith('/'):
             README_PATH = README_PATH[1:]
+        logging.debug("Step 3")
 
         # If no projects folder in starting, append it to readme
         if not README_PATH.startswith('projects'):
             README_PATH = f"projects/{README_PATH}"
             
+        logging.debug("step 4")
         command_groups = extract_commands_from_readme(README_PATH)
 
         logging.debug("Extracted Commands:")
@@ -232,5 +241,7 @@ def execute(state: State, project_requirement: str):
                 logging.debug(f"   Reason: {output}")
 
         return True
-    except:
+    except Exception as e:
+        logging.error(e)
+        logging.error(traceback.format_exc(e))
         return False

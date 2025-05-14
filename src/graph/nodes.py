@@ -197,7 +197,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     logger.debug(f"Current state messages: {state['messages']}")
     logger.info(f"Code Planner response: {full_response}")
 
-    extract_and_save_json(full_response, "code_planner.json")
+    # extract_and_save_json(full_response, "code_planner.json")
 
     if full_response.startswith("```json"):
         full_response = full_response.removeprefix("```json")
@@ -210,8 +210,10 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     try:
         repaired_response = json_repair.loads(full_response)
         full_response = json.dumps(repaired_response)
-        with open("project_requirements.json", "w", encoding="utf-8") as f:
+
+        with open("code_planner.json", "w", encoding="utf-8") as f:
             json.dump(repaired_response, f, indent=2, ensure_ascii=False)
+            
     except json.JSONDecodeError:
         logger.warning("Code Planner response is not a valid JSON")
         goto = "__end__"
@@ -631,7 +633,9 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         with open("project_requirements.json") as f:
             project_requirement = f.read()
         
+        logging.debug("**Executor Started")
         executor.execute(state, project_requirement)
+        logging.debug("**Executor Ended")
         
         goto = "__end__"
         logger.info("Workflow completed")
