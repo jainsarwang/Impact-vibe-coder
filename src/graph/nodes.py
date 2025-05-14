@@ -5,7 +5,7 @@ import os
 import json_repair
 import logging
 from copy import deepcopy
-from typing import Literal
+from typing import Dict, List, Literal
 from langchain_core.messages import HumanMessage, BaseMessage
 
 import json_repair
@@ -109,7 +109,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Directory Generator agent completed task")
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "directory_generator.md")
+    extract_and_save_json(response_content, "directory_structure.json")
     
     logger.debug(f"Directory Generator agent response: {response_content}")
     
@@ -197,7 +197,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     logger.debug(f"Current state messages: {state['messages']}")
     logger.info(f"Code Planner response: {full_response}")
 
-    extract_and_save_json(full_response, "code_planner.md")
+    extract_and_save_json(full_response, "code_planner.json")
 
     if full_response.startswith("```json"):
         full_response = full_response.removeprefix("```json")
@@ -230,8 +230,10 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
     logger.info("Coder master evaluating next action")
 
     directory_structure = state.get('directory_structure')
-    if not directory_structure:
-        logging.warning("No Directory Object in State, Going back to supervisor")
+    code_plan = state.get('code_plan')
+
+    if not directory_structure or not code_plan:
+        logging.warning("No Directory Object or code plan in State, Going back to supervisor")
         return Command(goto='supervisor')
     
     generated_files = state.get('generated_files', [])
@@ -241,6 +243,7 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
     prompt_vars = {
         "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
         "CODER_AGENTS": ", ".join(CODER_AGENTS),  # Convert list to string
+        "CODE_PLAN": code_plan,
         **state  # Include other state variables
     }
 
