@@ -8,7 +8,7 @@ from google import genai
 # Groq Configuration
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 # Updated model names based on Groq's current offerings
-REASONING_MODEL_GROQ = "llama3-70b-8192"  # Good for reasoning tasks
+REASONING_MODEL_GROQ = "meta-llama/llama-4-maverick-17b-128e-instruct"  # Good for reasoning tasks
 BASIC_MODEL_GROQ = "llama-3.3-70b-versatile"  # Good general purpose model
 VL_MODEL_GROQ = "llama-3.2-11b-vision-preview"  # Most capable model available
 
@@ -53,7 +53,8 @@ def get_llm_by_type(llm_type: LLMType) -> ChatOpenAI | genai.Client:
             # Or "gemini-pro-vision" if needed
     elif llm_type == "reasoning":
         if GROQ_API_KEY:
-            llm = create_gemini_llm(model="gemini-2.0-flash")
+            # llm = create_gemini_llm(model="gemini-2.0-flash")
+            llm = create_groq_llm(BASIC_MODEL_GROQ)
         else:
             raise ValueError("GROQ_API_KEY environment variable not set for basic LLM.")
     elif llm_type == "vision":
