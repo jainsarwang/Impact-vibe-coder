@@ -1,148 +1,157 @@
 {
-  "VibrantChat\\frontend\\package.json": {
+  "ResumeWriterPro/README.md": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "utility_coder"
+  },
+  "ResumeWriterPro/.gitignore": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "utility_coder"
+  },
+  "ResumeWriterPro/frontend/package.json": {
     "plan_created": true,
     "file_created": true,
     "coder": "config_coder"
   },
-  "VibrantChat\\frontend\\src\\App.js": {
-    "plan_created": true,
+  "ResumeWriterPro/frontend/package-lock.json": {
+    "plan_created": false,
     "file_created": false,
-    "coder": "frontend_coder"
+    "coder": null
   },
-  "VibrantChat\\frontend\\src\\index.js": {
+  "ResumeWriterPro/frontend/webpack.config.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "VibrantChat\\frontend\\src\\components\\Chat.js": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "VibrantChat\\frontend\\src\\components\\Login.js": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "VibrantChat\\frontend\\src\\components\\UserList.js": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "VibrantChat\\frontend\\src\\styles\\Chat.css": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "VibrantChat\\frontend\\src\\styles\\Login.css": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "VibrantChat\\frontend\\src\\styles\\UserList.css": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "VibrantChat\\frontend\\public\\index.html": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "VibrantChat\\backend\\package.json": {
-    "plan_created": true,
-    "file_created": false,
+    "file_created": true,
     "coder": "config_coder"
   },
-  "VibrantChat\\backend\\server.js": {
+  "ResumeWriterPro/frontend/src/index.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "server.js"
+    "file_created": true,
+    "coder": "frontend_coder"
   },
-  "VibrantChat\\backend\\data\\users.json": {
+  "ResumeWriterPro/frontend/src/App.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "db_coder"
+    "file_created": true,
+    "coder": "frontend_coder"
   },
-  "VibrantChat\\backend\\data\\messages.json": {
+  "ResumeWriterPro/frontend/src/components/ResumeForm/PersonalDetails.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "db_coder"
+    "file_created": true,
+    "coder": "frontend_coder"
   },
-  "VibrantChat\\backend\\utils\\auth.js": {
+  "ResumeWriterPro/frontend/src/components/ResumeForm/Education.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "utility_coder"
+    "file_created": true,
+    "coder": "frontend_coder"
   },
-  "VibrantChat\\backend\\utils\\message.js": {
+  "ResumeWriterPro/frontend/src/components/ResumeForm/Experience.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "utility_coder"
+    "file_created": true,
+    "coder": "frontend_coder"
   },
-  "VibrantChat\\backend\\services\\socketService.js": {
+  "ResumeWriterPro/frontend/src/components/ResumeForm/Skills.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "service_coder"
+    "file_created": true,
+    "coder": "frontend_coder"
   },
-  "VibrantChat\\backend\\controllers\\userController.js": {
+  "ResumeWriterPro/frontend/src/components/ResumeForm/TemplateSelector.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "controller_coder"
+    "file_created": true,
+    "coder": "frontend_coder"
   },
-  "VibrantChat\\backend\\routes\\userRoutes.js": {
+  "ResumeWriterPro/frontend/src/components/ResumeTemplates/Template1.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "route_coder"
+    "file_created": true,
+    "coder": "frontend_coder"
   },
-  "VibrantChat\\backend\\.env": {
+  "ResumeWriterPro/frontend/src/components/ResumeTemplates/Template2.js": {
     "plan_created": true,
-    "file_created": false,
+    "file_created": true,
+    "coder": "frontend_coder"
+  },
+  "ResumeWriterPro/frontend/src/components/ResumeTemplates/Template3.js": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "frontend_coder"
+  },
+  "ResumeWriterPro/frontend/src/pages/Home.js": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "frontend_coder"
+  },
+  "ResumeWriterPro/frontend/src/pages/Login.js": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "frontend_coder"
+  },
+  "ResumeWriterPro/frontend/src/pages/Register.js": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "frontend_coder"
+  },
+  "ResumeWriterPro/frontend/src/pages/ResumeBuilder.js": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "frontend_coder"
+  },
+  "ResumeWriterPro/frontend/src/utils/api.js": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "frontend_coder"
+  },
+  "ResumeWriterPro/frontend/src/utils/auth.js": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "frontend_coder"
+  },
+  "ResumeWriterPro/backend/package.json": {
+    "plan_created": true,
+    "file_created": true,
     "coder": "config_coder"
   },
-  "VibrantChat\\backend\\utils\\index.js": {
-    "plan_created": true,
+  "ResumeWriterPro/backend/package-lock.json": {
+    "plan_created": false,
     "file_created": false,
-    "coder": "utility_coder"
+    "coder": null
   },
-  "VibrantChat\\backend\\controllers\\index.js": {
+  "ResumeWriterPro/backend/server.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "controller_coder"
+    "file_created": true,
+    "coder": "db_coder"
   },
-  "VibrantChat\\backend\\routes\\index.js": {
+  "ResumeWriterPro/backend/routes/resumeRoutes.js": {
     "plan_created": true,
-    "file_created": false,
+    "file_created": true,
     "coder": "route_coder"
   },
-  "VibrantChat\\backend\\services\\index.js": {
+  "ResumeWriterPro/backend/routes/authRoutes.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "service_coder"
+    "file_created": true,
+    "coder": "route_coder"
   },
-  "VibrantChat\\backend\\test\\server.test.js": {
+  "ResumeWriterPro/backend/controllers/resumeController.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "test_coder"
+    "file_created": true,
+    "coder": "controller_coder"
   },
-  "VibrantChat\\frontend\\src\\test\\Login.test.js": {
+  "ResumeWriterPro/backend/controllers/authController.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "test_coder"
+    "file_created": true,
+    "coder": "controller_coder"
   },
-  "VibrantChat\\frontend\\src\\test\\Chat.test.js": {
+  "ResumeWriterPro/backend/models/User.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "test_coder"
+    "file_created": true,
+    "coder": "model_coder"
   },
-  "VibrantChat\\frontend\\src\\test\\UserList.test.js": {
+  "ResumeWriterPro/backend/models/Resume.js": {
     "plan_created": true,
-    "file_created": false,
-    "coder": "test_coder"
+    "file_created": true,
+    "coder": "model_coder"
   },
-  "VibrantChat\\README.md": {
+  "ResumeWriterPro/backend/utils/pdfGenerator.js": {
     "plan_created": true,
-    "file_created": false,
+    "file_created": true,
     "coder": "utility_coder"
   }
 }
-

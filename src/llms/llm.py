@@ -10,7 +10,7 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 # Updated model names based on Groq's current offerings
 REASONING_MODEL_GROQ = "llama3-70b-8192"  # Good for reasoning tasks
 BASIC_MODEL_GROQ = "llama-3.3-70b-versatile"  # Good general purpose model
-VL_MODEL_GROQ = "llama-3.2-11b-vision-preview"  # Most capable model available
+VL_MODEL_GROQ = "meta-llama/llama-4-scout-17b-16e-instruct"  # Most capable model available
 
 # Gemini Configuration
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
