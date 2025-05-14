@@ -1,0 +1,148 @@
+{
+  "VibrantChat\\frontend\\package.json": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "config_coder"
+  },
+  "VibrantChat\\frontend\\src\\App.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "VibrantChat\\frontend\\src\\index.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "VibrantChat\\frontend\\src\\components\\Chat.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "VibrantChat\\frontend\\src\\components\\Login.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "VibrantChat\\frontend\\src\\components\\UserList.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "VibrantChat\\frontend\\src\\styles\\Chat.css": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "VibrantChat\\frontend\\src\\styles\\Login.css": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "VibrantChat\\frontend\\src\\styles\\UserList.css": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "VibrantChat\\frontend\\public\\index.html": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "VibrantChat\\backend\\package.json": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "config_coder"
+  },
+  "VibrantChat\\backend\\server.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "server.js"
+  },
+  "VibrantChat\\backend\\data\\users.json": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "db_coder"
+  },
+  "VibrantChat\\backend\\data\\messages.json": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "db_coder"
+  },
+  "VibrantChat\\backend\\utils\\auth.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "utility_coder"
+  },
+  "VibrantChat\\backend\\utils\\message.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "utility_coder"
+  },
+  "VibrantChat\\backend\\services\\socketService.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "service_coder"
+  },
+  "VibrantChat\\backend\\controllers\\userController.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "controller_coder"
+  },
+  "VibrantChat\\backend\\routes\\userRoutes.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "route_coder"
+  },
+  "VibrantChat\\backend\\.env": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "config_coder"
+  },
+  "VibrantChat\\backend\\utils\\index.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "utility_coder"
+  },
+  "VibrantChat\\backend\\controllers\\index.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "controller_coder"
+  },
+  "VibrantChat\\backend\\routes\\index.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "route_coder"
+  },
+  "VibrantChat\\backend\\services\\index.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "service_coder"
+  },
+  "VibrantChat\\backend\\test\\server.test.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "test_coder"
+  },
+  "VibrantChat\\frontend\\src\\test\\Login.test.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "test_coder"
+  },
+  "VibrantChat\\frontend\\src\\test\\Chat.test.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "test_coder"
+  },
+  "VibrantChat\\frontend\\src\\test\\UserList.test.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "test_coder"
+  },
+  "VibrantChat\\README.md": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "utility_coder"
+  }
+}
+
