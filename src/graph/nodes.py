@@ -5,7 +5,7 @@ import os
 import json_repair
 import logging
 from copy import deepcopy
-from typing import Literal
+from typing import Dict, List, Literal
 from langchain_core.messages import HumanMessage, BaseMessage
 
 import json_repair
@@ -32,6 +32,8 @@ from src.config import TEAM_MEMBERS
 from src.config.agents import AGENT_LLM_MAP
 from src.prompts.template import apply_prompt_template, apply_prompt_template_planner, get_prompt_template
 from src.tools.search import tavily_tool
+from src.tools.bash_tool import bash_tool
+from src.utils import executor
 from src.utils.json_utils import repair_json_output
 from .types import State, Router
 import re
@@ -107,6 +109,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Directory Generator agent completed task")
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
+    extract_and_save_json(response_content, "directory_structure.json")
     
     logger.debug(f"Directory Generator agent response: {response_content}")
     
@@ -142,28 +145,114 @@ CODER_AGENTS = [
     "frontend_coder",
     "db_coder",
 ]
+
+
+def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
+    """Code Planner node that generate the full plan for coder master."""
+    logger.info("Code Planner generating full plan")
+
+    directory_structure = state.get('directory_structure')
+    if not directory_structure:
+        logging.warning("No Directory Object in State, Going back to supervisor")
+        return Command(goto='supervisor')
+
+    # Prepare all variables for the prompt
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        "CODER_AGENTS": ", ".join(CODER_AGENTS),  # Convert list to string
+        "directory_structure": directory_structure,
+        **state  # Include other state variables
+    }
+    
+    template = get_prompt_template('code_planner')
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME", "CODER_AGENTS"],
+        template=template,
+    ).format(**prompt_vars)
+
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": directory_structure
+        }
+    ]
+    
+    # messages = apply_prompt_template_planner("code_planner", state)
+    # whether to enable deep thinking mode
+    llm = get_llm_by_type("basic")
+    if state.get("deep_thinking_mode"):
+        llm = get_llm_by_type("reasoning")
+    if state.get("search_before_planning"):
+        searched_content = tavily_tool.invoke({"query": state["messages"][-1].content})
+        messages = deepcopy(messages)
+        messages[-1].content += f"\n\n# Relative Search Results\n\n{json.dumps([{'title': elem['title'], 'content': elem['content']} for elem in searched_content], ensure_ascii=False)}"
+        
+    response = llm.invoke(messages)
+    full_response = response.content
+    # extract_and_save_json(full_response)
+    logger.debug(f"Current state messages: {state['messages']}")
+    logger.info(f"Code Planner response: {full_response}")
+
+    extract_and_save_json(full_response, "code_planner.json")
+
+    if full_response.startswith("```json"):
+        full_response = full_response.removeprefix("```json")
+
+    if full_response.endswith("```"):
+        full_response = full_response.removesuffix("```")
+
+    goto = "supervisor"
+
+    try:
+        repaired_response = json_repair.loads(full_response)
+        full_response = json.dumps(repaired_response)
+        with open("project_requirements.json", "w", encoding="utf-8") as f:
+            json.dump(repaired_response, f, indent=2, ensure_ascii=False)
+    except json.JSONDecodeError:
+        logger.warning("Code Planner response is not a valid JSON")
+        goto = "__end__"
+
+    return Command(
+        update={
+            "messages": [HumanMessage(content=full_response, name="code_planner")],
+            "code_plan": full_response,
+        },
+        goto=goto,
+    )
+
 def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "supervisor", "__end__"]]:
     """Coder Master node that decides which agent should act next."""
     
     logger.info("Coder master evaluating next action")
 
     directory_structure = state.get('directory_structure')
-    if not directory_structure:
-        logging.warning("No Directory Object in State, Going back to supervisor")
+    code_plan = state.get('code_plan')
+
+    if not directory_structure or not code_plan:
+        logging.warning("No Directory Object or code plan in State, Going back to supervisor")
         return Command(goto='supervisor')
     
-    generated_files = state.get('generated_files')
-    if not generated_files:
-        generated_files = []
-
+    generated_files = state.get('generated_files', [])
     logging.debug("Files already Generated: %s", generated_files)
 
-    logging.debug("Generated Files: %s", generated_files)
+    # Prepare all variables for the prompt
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        "CODER_AGENTS": ", ".join(CODER_AGENTS),  # Convert list to string
+        "CODE_PLAN": code_plan,
+        **state  # Include other state variables
+    }
 
+    # Get and format the prompt template
+    template = get_prompt_template('coder_master')
     system_prompt = PromptTemplate(
-        input_variables=["CURRENT_TIME"],
-        template=get_prompt_template('coder_master'),
-    ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
+        input_variables=["CURRENT_TIME", "CODER_AGENTS"],
+        template=template,
+    ).format(**prompt_vars)
 
     message = [
         {
@@ -172,48 +261,40 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         },
         {
             "role": "user",
-            "content": f"Directory Struture: {directory_structure}\n\nGenerated Files: {str(generated_files)}"
+            "content": f"Directory Structure: {directory_structure}\n\nGenerated Files: {str(generated_files)}"
         }
     ]
 
-    response = (
-        get_llm_by_type(AGENT_LLM_MAP["coder_master"])
-        # Remove .with_structured_output for streaming compatibility
-        .invoke(message)
-    )
+    # Rest of your function remains the same...
+    response = get_llm_by_type(AGENT_LLM_MAP["coder_master"]).invoke(message)
 
-    # Parse the JSON manually if the LLM doesn't directly output structured data
     try:
         if isinstance(response, str):
-            # Handle Markdown JSON formatting if present
             if response.startswith('```json') and response.endswith('```'):
-                response = response[7:-3].strip()  # Remove ```json and ```
+                response = response[7:-3].strip()
             parsed_response = json.loads(response)
         elif hasattr(response, 'content'):
             content = response.content
-            # Handle Markdown JSON formatting if present
             if content.startswith('```json') and content.endswith('```'):
-                content = content[7:-3].strip()  # Remove ```json and ```
+                content = content[7:-3].strip()
             parsed_response = json.loads(content)
         else:
             raise ValueError("Unexpected response format from Coder master LLM")
         goto = parsed_response.get("next")
-
     except (json.JSONDecodeError, ValueError) as e:
         logger.error(f"Error parsing Coder master response: {e}, raw response: {response}")
-        goto = "__end__"  # Default to end if parsing fails
+        goto = "__end__"
 
     logger.debug(f"Current state messages: {state['messages']}")
     logger.debug(f"Coder master raw response: {response.content}")
     logger.debug(f"Coder master parsed response: {goto=}")
 
     if goto == "FINISH":
-        goto = "__end__"
+        goto = "supervisor"
         logger.info("Coder Master workflow completed")
     elif goto == "INSTALLATION":
-        goto = "__end__"
-        # TODO: Module installtion handling left
-        logger.info("Module Installtion required")
+        goto = "supervisor"
+        logger.info("Module Installation required")
     elif goto in CODER_AGENTS:
         logger.info(f"Coder Master delegating to: {goto}")
     else:
@@ -234,35 +315,160 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         }
     )
 
+def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_master"]]: # Added Any for agent type
+    """
+    Generic coder node that invokes a specified agent, parses its JSON response
+    to extract file paths and content, and writes those files to disk.
+    """
+    logger.info(f"Coder node '{prompt_name}' starting task.")
+    # Log the instruction from coder_master for debugging
+    logger.debug(f"Instruction for {prompt_name} from coder_master: {state.get('coder_instruction')}")
+
+    # Invoke the specific coder agent (e.g., model_coder_agent.invoke)
+    try:
+        # Assuming 'agent' is an invokable Langchain runnable/agent_executor
+        result = agent(state) 
+    except Exception as e:
+        logger.error(f"Error invoking agent '{prompt_name}': {str(e)}", exc_info=True)
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Error during agent '{prompt_name}' execution: {str(e)}",
+                        name=prompt_name, # Or a generic error source name
+                    )
+                ]
+            },
+            goto="coder_master", # Or perhaps supervisor or an error handling node
+        )
+
+    logger.info(f"Coder agent '{prompt_name}' completed invocation.")
+    
+    # Extract and repair the JSON response from the agent
+    if not result or "messages" not in result or not result["messages"]:
+        logger.error(f"No messages found in result from '{prompt_name}'. Result: {result}")
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Agent '{prompt_name}' returned an empty or invalid result.",
+                        name=prompt_name,
+                    )
+                ]
+            },
+            goto="coder_master",
+        )
+
+    response_content_raw = result["messages"][-1].content
+    response_content_repaired = repair_json_output(response_content_raw)
+    
+    try:
+        parsed_response = json.loads(response_content_repaired)
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse JSON response from '{prompt_name}': {e}. "
+                     f"Raw response: '{response_content_raw[:500]}...', "
+                     f"Repaired: '{response_content_repaired[:500]}...'")
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Error parsing JSON response from '{prompt_name}': {str(e)}. "
+                                f"Repaired content (start): {response_content_repaired[:200]}...",
+                        name=prompt_name,
+                    )
+                ]
+            },
+            goto="coder_master",
+        )
+
+    # Process file specifications from the parsed_response
+    current_generated_files = state.get('generated_files', [])
+    newly_generated_this_run: List[str] = []
+    processed_file_specs: List[Dict[str, str]] = []
+
+    # Robustly extract file specifications
+    # Expected keys: "FILE" (can be str path, list of str paths, or list of dicts {path, content})
+    # and "code" (global content if "FILE" items don't specify their own)
+    files_spec_from_llm = parsed_response.get("FILE") # Use .get() to avoid KeyError if "FILE" is missing
+
+    if isinstance(files_spec_from_llm, str):
+        # Case 1: "FILE": "path/to/file.py" (implies global "code" field for content)
+        path = files_spec_from_llm
+        content = parsed_response.get("code", "") # Default to empty string if no code
+        processed_file_specs.append({"path": path, "content": content})
+    elif isinstance(files_spec_from_llm, list):
+        # Case 2: "FILE": ["path1", {"path": "path2", "content": "..."}]
+        for item in files_spec_from_llm:
+            path, content = None, None
+            if isinstance(item, str): # List item is a path string
+                path = item
+                content = parsed_response.get("code", "") # Use global code
+            elif isinstance(item, dict): # List item is a dict like {"path": "...", "content": "..."}
+                path = item.get("path")
+                # Prioritize content from item dict, fallback to global code, then empty string
+                content = item.get("content", parsed_response.get("code", ""))
+            
+            if path: # Ensure path was found
+                # Ensure content is a string (it might be None if not found anywhere)
+                processed_file_specs.append({"path": path, "content": content if content is not None else ""})
+            else:
+                logger.warning(f"'{prompt_name}' provided an item in 'FILE' list without a path: {item}")
+    elif files_spec_from_llm is None:
+        # Case 3: "FILE" key is missing. Check for top-level "path" and "code".
+        # e.g., {"path": "path/to/file.py", "code": "content..."}
+        top_level_path = parsed_response.get("path")
+        if top_level_path:
+            top_level_content = parsed_response.get("code", "")
+            processed_file_specs.append({"path": top_level_path, "content": top_level_content})
+        else:
+            logger.warning(f"'{prompt_name}' response had no 'FILE' key and no top-level 'path'. Response: {parsed_response}")
+    else: # "FILE" is an unexpected type
+        logger.warning(f"'{prompt_name}' returned 'FILE' with unexpected type: {type(files_spec_from_llm)}. Value: {files_spec_from_llm}")
 
 
+    # Write files to disk
+    for file_spec in processed_file_specs:
+        file_path = file_spec.get("path")
+        file_content = file_spec.get("content", "") # Default to empty string if content is missing/None
 
+        if not file_path:
+            logger.warning(f"'{prompt_name}' produced a file spec with no path. Spec: {file_spec}. Skipping.")
+            continue
 
+        try:
+            # Ensure the directory exists
+            dir_path = os.path.dirname(file_path)
+            if dir_path:  # Only attempt to create if dir_path is not empty (e.g. for root files)
+                os.makedirs(dir_path, exist_ok=True)
+                logger.debug(f"Ensured directory exists: {dir_path} (for file {file_path})")
+            
+            # Write the file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(file_content)
+            
+            newly_generated_this_run.append(file_path)
+            logger.info(f"Successfully wrote file by '{prompt_name}': {file_path}")
 
-def coder(state: State, prompt_name: str, agent):
-    logger.info("Model Coder agent starting task")
-    logging.warning(state.get('coder_instruction'))
+        except Exception as e:
+            logger.error(f"Error writing file {file_path} by '{prompt_name}': {str(e)}", exc_info=True)
+            # Optionally, you could add this error to the message content returned to supervisor/coder_master
 
-    result = agent(state)
-    logger.info(f"{prompt_name} agent completed task")
-    response_content = result["messages"][-1].content
-    response_content = repair_json_output(response_content)
-    parse_response = json.loads(response_content)
-
-    logging.debug(f"{prompt_name} Response: {response_content} Processes response: {parse_response}")
+    # Update the state's list of generated files, avoiding duplicates
+    updated_generated_files = list(set(current_generated_files + newly_generated_this_run))
 
     return Command(
         update={
             "messages": [
                 HumanMessage(
-                    content=response_content,
+                    content=response_content_repaired, # Return the (repaired) JSON that was processed
                     name=prompt_name,
                 )
             ],
-            "generated_files": state['generated_files'] + parse_response['FILE']
+            "generated_files": updated_generated_files
         },
         goto="coder_master",
     )
+
 
 def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Model Coder agent that generator directory structure."""
@@ -422,6 +628,11 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     logger.debug(f"Supervisor parsed response: {goto=}")
 
     if goto == "FINISH":
+        with open("project_requirements.json") as f:
+            project_requirement = f.read()
+        
+        executor.execute(state, project_requirement)
+        
         goto = "__end__"
         logger.info("Workflow completed")
     elif goto in TEAM_MEMBERS:

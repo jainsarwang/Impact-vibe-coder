@@ -33,6 +33,7 @@ TEAM_MEMBERS = [
     "browser",
     "reporter",
     "directory_generator",
+    "code_planner",
     "coder_master"
 ]
 
