@@ -5,6 +5,7 @@ from .nodes import (
     supervisor_node,
     research_node,
     directory_generator_node,
+    code_planner_node,
     coder_master_node,
     model_coder_node,
     controller_coder_node,
@@ -34,6 +35,7 @@ def build_graph():
     builder.add_node("supervisor", supervisor_node)
     builder.add_node("researcher", research_node)
     builder.add_node("directory_generator", directory_generator_node)
+    builder.add_node("code_planner", code_planner_node)
     builder.add_node("coder_master", coder_master_node)
     builder.add_node("model_coder", model_coder_node)
     builder.add_node("controller_coder", controller_coder_node)

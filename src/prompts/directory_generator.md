@@ -130,7 +130,9 @@ Provide the results in this JSON structure:
 5. **Document Thoroughly**: Provide complete information about all components
 6. **Consider Build Process**: Account for compilation, bundling, and deployment needs
 7. **Handle Configuration**: Address environment-specific settings
-8. **Enable Testing**: Structure code to facilitate comprehensive testing
+8. **Enable Testing**: Structure code to facilitate comprehensive testing.
+9. **README.MD**: Always give path for a Readme file.
+10. Create backend logic files before the frontend files.
 
 ## Example Trigger
 

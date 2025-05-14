@@ -29,3 +29,4 @@ class State(MessagesState):
     directory_structure: str
     generated_files: list[str]
     coder_instruction: Any
+    code_plan: str

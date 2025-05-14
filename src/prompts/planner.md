@@ -18,8 +18,9 @@ As a Deep Researcher, you can breakdown the major subject into sub-topics and ex
 
 -   **`browser`**: Directly interacts with web pages, performing complex operations and interactions. You can also leverage `browser` to perform in-domain search, like Facebook, Instagram, Github, etc.
 -   **`reporter`**: Write a professional report based on the result of each step.
--   **`researcher`**if any specific frontend requirements come research them using the `researcher` tool specifically api docs for anything.
--   **`coder_master`** Main Coder agent this agent writes the complete project code. Call this agent with all the details regargin the project.
+-   **`researcher`**: if any specific frontend requirements come research them using the `researcher` tool specifically api docs for anything.
+-   **`code_planner`**: Generates a workflow which includes the task assigning to respective coders which are managed by `coder_master`. It must be called before the coder_master and after the `directory_generator`.
+-   **`coder_master`**: Main Coder agent this agent writes the complete project code. Call this agent with all the details regargin the project.
 
 **Note**: Ensure that each step using `coder` and `browser` completes a full task, as session continuity cannot be preserved.
 
