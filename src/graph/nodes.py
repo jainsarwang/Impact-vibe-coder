@@ -210,7 +210,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     try:
         repaired_response = json_repair.loads(full_response)
         full_response = json.dumps(repaired_response)
-        with open("project_requirements.json", "w", encoding="utf-8") as f:
+        with open("code_planner.json", "w", encoding="utf-8") as f:
             json.dump(repaired_response, f, indent=2, ensure_ascii=False)
     except json.JSONDecodeError:
         logger.warning("Code Planner response is not a valid JSON")
