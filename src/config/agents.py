@@ -26,4 +26,5 @@ AGENT_LLM_MAP: dict[str, LLMType] = {
     "backend_coder":"basic",
     "browser": "vision",  # 浏览器操作使用vision llm
     "reporter": "reasoning",  # 编写报告使用basic llm
+    "react_coder":"basic"
 }

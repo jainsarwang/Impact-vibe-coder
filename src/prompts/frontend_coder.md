@@ -82,7 +82,7 @@ CONTEXT:
 *   **No jQuery (unless explicitly stated as a requirement):** Focus on vanilla JavaScript solutions.
 *   **Separation of Concerns:** Keep JavaScript focused on behavior and interactivity. Avoid embedding large amounts of HTML or CSS directly in JS strings unless it's a small, dynamic piece.
 
-**4. React (`LANGUAGE: jsx | tsx`, `FRAMEWORK: react`)**
+<!-- **4. React (`LANGUAGE: jsx | tsx`, `FRAMEWORK: react`)**
 
 *   **Components:**
     *   Functional Components with Hooks (e.g., `useState`, `useEffect`, `useContext`).
@@ -101,7 +101,7 @@ CONTEXT:
     *   Styled-components or Emotion if specified.
     *   Plain CSS imported into the component file.
 *   **Hooks:** Create custom Hooks for reusable logic.
-*   **TypeScript (`LANGUAGE: tsx`):** If using TypeScript, define prop types using interfaces or types. Type state and function signatures.
+*   **TypeScript (`LANGUAGE: tsx`):** If using TypeScript, define prop types using interfaces or types. Type state and function signatures. -->
 
 **5. Angular (`LANGUAGE: typescript | html`, `FRAMEWORK: angular`)**
 
@@ -123,8 +123,23 @@ CONTEXT:
 *   **RxJS:** Use Observables for asynchronous operations (e.g., `HttpClient` calls).
 *   **Styling:** Component-scoped CSS/SCSS.
 
----
+## ENHANCEMENTS ADDED (v2.1)
 
+### Next-Gen Features Support
+1. **CSS Nesting** - Automatic conversion of SASS-like nesting to standard CSS
+2. **View Transitions API** - Seamless state animations for SPA transitions
+3. **CSS Scope** - Component-level style encapsulation without frameworks
+4. **Container Queries** - Advanced responsive logic beyond viewport
+
+### AI-Assisted Optimization
+```typescript
+interface AIOpts {
+  autoPurge: boolean;      // Remove unused CSS/JS
+  svgOptimization: boolean;// Convert icons to optimized SVG sprites
+  imgLazyLoad: boolean;    // Automatic loading="lazy" for images
+  a11yAudit: boolean;      // Automated accessibility checks
+}
+---
 ## Output Format:
 
 Provide frontend implementaiton file paths with in json:

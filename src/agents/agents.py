@@ -108,3 +108,9 @@ browser_agent = create_react_agent(
     tools=[browser_tool],
     prompt=lambda state: apply_prompt_template("browser", state),
 )
+
+react_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
+    get_llm_by_type(AGENT_LLM_MAP['react_coder']),
+    tools=[bash_tool],
+    prompt=lambda state: apply_prompt_template_for_coder("react_coder", app_state),
+))

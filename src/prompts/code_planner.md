@@ -23,7 +23,8 @@ As a Deep Researcher, you can breakdown the major subject into sub-topics and ex
 -   **`utility_coder`**: Handles thr files, which contains the utility functionality of the application, it can be function or class or whole file. Generally `utils` folder is used for such kind of files.
 -   **`db_coder`**: A skilled member, who have expertise in database related code generation. Mainly it handle the work of database connectivity, any kind of data transaction module between application and database.
 -   **`config_coder`**: A member which handles the work related to creation of any kind of configuration files. For example: creation of `package.json`, `.env`, `tsconfig.js`, etc.
--   **`frontend_coder`**: A highly specialised member, who have expertise in all the frontend technologies, like react.js, angular.js, tailwindcss, etc.
+-   **`frontend_coder`**: A highly specialised member, who have expertise in all the frontend technologies, like, angular.js, tailwindcss, etc.
+- **`react_coder`**: A highly specialised member, who have expertise in the react technologies.
 -   **`test_coder`**: Works on creation of test cases or any test module that is required for the testing of the application and it's various modules.
 
 **Note**: Ensure that each step using `coder` and `browser` completes a full task, as session continuity cannot be preserved.

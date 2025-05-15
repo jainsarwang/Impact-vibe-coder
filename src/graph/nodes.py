@@ -25,7 +25,8 @@ from src.agents import  (
     config_coder_agent,
     test_coder_agent,
     frontend_coder_agent,db_coder_agent,
-    browser_agent
+    browser_agent,
+    react_coder_agent
 )
 from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS
@@ -144,6 +145,7 @@ CODER_AGENTS = [
     "config_coder",
     "frontend_coder",
     "db_coder",
+    "react_coder",
 ]
 
 
@@ -366,8 +368,8 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
         parsed_response = json.loads(response_content_repaired)
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse JSON response from '{prompt_name}': {e}. "
-                     f"Raw response: '{response_content_raw[:500]}...', "
-                     f"Repaired: '{response_content_repaired[:500]}...'")
+                    f"Raw response: '{response_content_raw[:500]}...', "
+                    f"Repaired: '{response_content_repaired[:500]}...'")
         return Command(
             update={
                 "messages": [
@@ -497,6 +499,10 @@ def config_coder_node(state: State) -> Command[Literal["coder_master"]]:
 def test_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Test Coder agent that generator directory structure."""
     return coder(state, 'test_coder', test_coder_agent)
+
+def react_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the React Coder agent"""
+    return coder(state, 'react_coder', react_coder_agent)
 
 def frontend_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Frontend Coder agent that generator directory structure."""
