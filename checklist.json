@@ -1,157 +1,57 @@
 {
-  "ResumeWriterPro/README.md": {
+  "SimpleCRUDApp/public/index.html": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "frontend_coder"
+  },
+  "SimpleCRUDApp/public/style.css": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "frontend_coder"
+  },
+  "SimpleCRUDApp/server/server.js": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "config_coder"
+  },
+  "SimpleCRUDApp/server/data.json": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "service_coder"
+  },
+  "SimpleCRUDApp/.gitignore": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "config_coder"
+  },
+  "SimpleCRUDApp/README.md": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "config_coder"
+  },
+  "SimpleCRUDApp/package.json": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "config_coder"
+  },
+  "SimpleCRUDApp/.env": {
+    "plan_created": true,
+    "file_created": true,
+    "coder": "config_coder"
+  },
+  "SimpleCRUDApp/server/utils.js": {
     "plan_created": true,
     "file_created": true,
     "coder": "utility_coder"
   },
-  "ResumeWriterPro/.gitignore": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "utility_coder"
-  },
-  "ResumeWriterPro/frontend/package.json": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "config_coder"
-  },
-  "ResumeWriterPro/frontend/package-lock.json": {
-    "plan_created": false,
-    "file_created": false,
-    "coder": null
-  },
-  "ResumeWriterPro/frontend/webpack.config.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "config_coder"
-  },
-  "ResumeWriterPro/frontend/src/index.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/App.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/components/ResumeForm/PersonalDetails.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/components/ResumeForm/Education.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/components/ResumeForm/Experience.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/components/ResumeForm/Skills.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/components/ResumeForm/TemplateSelector.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/components/ResumeTemplates/Template1.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/components/ResumeTemplates/Template2.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/components/ResumeTemplates/Template3.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/pages/Home.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/pages/Login.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/pages/Register.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/pages/ResumeBuilder.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/utils/api.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/frontend/src/utils/auth.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "frontend_coder"
-  },
-  "ResumeWriterPro/backend/package.json": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "config_coder"
-  },
-  "ResumeWriterPro/backend/package-lock.json": {
-    "plan_created": false,
-    "file_created": false,
-    "coder": null
-  },
-  "ResumeWriterPro/backend/server.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "db_coder"
-  },
-  "ResumeWriterPro/backend/routes/resumeRoutes.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "route_coder"
-  },
-  "ResumeWriterPro/backend/routes/authRoutes.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "route_coder"
-  },
-  "ResumeWriterPro/backend/controllers/resumeController.js": {
+  "SimpleCRUDApp/server/controllers/dataController.js": {
     "plan_created": true,
     "file_created": true,
     "coder": "controller_coder"
   },
-  "ResumeWriterPro/backend/controllers/authController.js": {
+  "SimpleCRUDApp/server/routes/dataRoutes.js": {
     "plan_created": true,
     "file_created": true,
-    "coder": "controller_coder"
-  },
-  "ResumeWriterPro/backend/models/User.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "model_coder"
-  },
-  "ResumeWriterPro/backend/models/Resume.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "model_coder"
-  },
-  "ResumeWriterPro/backend/utils/pdfGenerator.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "utility_coder"
+    "coder": "route_coder"
   }
 }

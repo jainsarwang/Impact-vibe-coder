@@ -39,6 +39,8 @@ from .types import State, Router
 import re
 import json
 
+logger = logging.getLogger(__name__)
+
 def extract_and_save_json(response_text: str, output_file: str = 'project_requirements.json') -> bool:
     """
     Extracts JSON from response text and saves to file.
@@ -77,7 +79,7 @@ def extract_and_save_json(response_text: str, output_file: str = 'project_requir
     except Exception as e:
         raise ValueError(f"Could not extract valid JSON: {str(e)}")
 
-logger = logging.getLogger(__name__)
+
 
 RESPONSE_FORMAT = "Response from {}:\n\n<response>\n{}\n</response>\n\n*Please execute the next step.*"
 
@@ -577,6 +579,7 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
             if item_file_path and checklist_manager._normalize_path(item_file_path) == normalized_file_path_to_process:
                  # Pass the entire plan item for this file as instruction
                  instruction_content = json.dumps(item, indent=2)
+                 logger.info(f"instruction_content: {instruction_content}")
                  found_plan_item = item
                  break
 
