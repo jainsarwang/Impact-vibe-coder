@@ -230,4 +230,4 @@ Provide the results in this JSON structure:
 **Note**:
 
 -   Always provide `README.md` file, with all the necessary description of the project required to build a GOOD README.
-- `README.md` file should always be at root of project_name directory
+-   `README.md` file should always be at root of project_name directory

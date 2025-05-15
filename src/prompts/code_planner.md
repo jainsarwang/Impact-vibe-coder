@@ -163,6 +163,11 @@ interface Step {
 -   Always include the commands to setup te project Correctly
 -   Always include the `api_endpoints`, if exists.
 
+## .env
+
+-   Generate .env file for the project to store the secure/secrets, like API KEYS, PORT, etc.
+-   For the port number avoid using 3000 and 8080.
+
 # Notes
 
 -   Ensure the plan is clear and logical, with tasks assigned to the correct member based on their capabilities.

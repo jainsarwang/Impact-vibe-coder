@@ -28,7 +28,7 @@ from src.agents import  (
     browser_agent
 )
 from src.llms.llm import get_llm_by_type
-from src.config import TEAM_MEMBERS
+from src.config import TEAM_MEMBERS, CODER_AGENTS
 from src.config.agents import AGENT_LLM_MAP
 from src.prompts.template import apply_prompt_template, apply_prompt_template_planner, get_prompt_template
 from src.tools.search import tavily_tool
@@ -134,17 +134,6 @@ Directory  ->  Image Generation  -> Dependencies Graph  ->  Coder Master  -> (
 
 """
 
-CODER_AGENTS = [
-    "model_coder",
-    "controller_coder",
-    "route_coder",
-    "service_coder",
-    "utility_coder",
-    "test_coder",
-    "config_coder",
-    "frontend_coder",
-    "db_coder",
-]
 
 
 def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
