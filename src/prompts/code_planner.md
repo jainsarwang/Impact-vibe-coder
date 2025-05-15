@@ -89,10 +89,79 @@ interface Step {
         "coder": "controller_coder",
         "file": "\\src\\controllers\\userController.js",
         "next_coder_instruction": "Create a user controller with methods for creating, reading, updating , and deleting users. The methods must be named create, read, update, and delete respectively. The methods must return a promise that resolves to the user object or an error object.",
-        "note": "Use the user model created in the previous step."
+        "note": "Use the user model created in the previous step.",
+        "functions": {
+            "functionName": {
+                "params": "Parameter descriptions with types",
+                "returns": "Return type and description",
+                "description": "Detailed function documentation"
+            }
+        },
+        "variables": {
+            "variableName": {
+            "type": "Variable type",
+            "description": "Variable purpose and usage"
+            }
+        },
+        "imports": ["list", "of", "imports"],
+        "exports": ["list", "of", "exports"],
+        "api_endpoints": {
+            "METHOD /path": {
+            "controller": "path\\to\\controller.file",
+            "function": "handlerFunction",
+            "request": {
+                "params": {},
+                "query": {},
+                "body": {}
+            },
+            "response": {
+                "success": {},
+                "errors": []
+            },
+            "description": "Endpoint purpose"
+            }
+        },
+        "data_models": {
+            "ModelName": {
+            "fields": {
+                "fieldName": {
+                "type": "Field type",
+                "required": true/false,
+                "description": "Field purpose"
+                }
+            },
+            "relationships": [
+                {
+                "model": "RelatedModel",
+                "type": "one-to-many/many-to-one/etc.",
+                "field": "relationField"
+                }
+            ]
+            }
+        },
+        "dependencies": {
+            "production": {
+            "dependency-name": "^version"
+            },
+            "development": {
+            "dev-dependency": "^version"
+            }
+        }
     }
 ]
 ```
+
+# Important Points to remeber for specific module
+
+## Frontend
+
+-   While building the frontend always pass the relevant `api_endpoints` to the member.
+
+## README.md
+
+-   Remeber to always provide `README.md` file
+-   Always include the commands to setup te project Correctly
+-   Always include the `api_endpoints`, if exists.
 
 # Notes
 
@@ -100,3 +169,5 @@ interface Step {
 -   Always Use the same language as the user.
 -   You are FORBIDDEN to write any kind of code.
 -   Include all the files that are listed in the `directory_structure` in the plan.
+-   Always share the `api_endpoints` if available for to the `frontend_member`.
+-   Always include `README.md` File

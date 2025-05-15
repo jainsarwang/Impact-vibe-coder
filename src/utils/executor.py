@@ -15,19 +15,22 @@ from src.graph.types import State
 def extract_commands_from_readme(readme_file_path: str) -> Dict[str, List[str]]:
     """Extract and categorize executable commands from README.md"""
     try:
+        logging.debug(f"Step 5:{readme_file_path}")
         with open(readme_file_path, 'r', encoding='utf-8') as file:
             content = file.read()
     except FileNotFoundError:
         logging.debug(f"Error: File not found at {readme_file_path}")
+        logging.debug("Step 6")
         return {'venv': [], 'frontend': [], 'backend': [], 'other': []}
     except Exception as e:
         logging.debug(f"Error reading file: {e}")
+        logging.debug("Step 7")
         return {'venv': [], 'frontend': [], 'backend': [], 'other': []}
 
     # Updated pattern to handle comma-separated commands
     pattern = r'```(?:bash|sh)?(.*?)```|^\$\s*(.+)$|`([^`]+)`'
     matches = re.findall(pattern, content, re.DOTALL | re.MULTILINE)
-
+    logging.debug("Step 8")
     venv_commands = []
     frontend_commands = []
     backend_commands = []
@@ -42,13 +45,17 @@ def extract_commands_from_readme(readme_file_path: str) -> Dict[str, List[str]]:
     # Backend indicators
     backend_keywords = ['backend', 'pip', 'django', 'flask', 'fastapi',
                     'uvicorn', 'gunicorn', 'node server', 'express', 'migrate']
-
+    logging.debug("Matches", matches)
     for match in matches:
         cmd = match[0] or match[1] or match[2]
+        logging.debug("Step 8.1", cmd)
         if cmd.strip():
+            logging.debug("Step 8.2", cmd.strip())
+
             # Split by commas first, then by newlines
             for part in cmd.split(','):
                 for line in part.split(''):
+                    logging.debug("Step 8.3")
                     line = line.strip()
                     if line and not line.startswith('#'):
                         # Normalize for case-insensitive comparison
@@ -74,10 +81,13 @@ def extract_commands_from_readme(readme_file_path: str) -> Dict[str, List[str]]:
                             backend_commands.append(line)
                         else:
                             other_commands.append(line)
+    logging.debug("Step 9")
 
     def is_executable_command(cmd):
+        logging.debug("Step 10", cmd)
         if re.search(r'git\s+(clone|pull|fetch|remote\s+add)', cmd, re.IGNORECASE):
             return False
+        logging.debug("Step 11")
         return (re.search(r'[/.=-]', cmd) or
                 len(cmd.split()) > 1 or
                 re.match(r'^(php|npm|composer|python|pip|docker|streamlit)\b', cmd, re.IGNORECASE))
@@ -243,5 +253,5 @@ def execute(state: State, project_requirement: str):
         return True
     except Exception as e:
         logging.error(e)
-        logging.error(traceback.format_exc(e))
+        logging.error(traceback.print_exc(e))
         return False
