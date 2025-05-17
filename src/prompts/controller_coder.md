@@ -55,7 +55,7 @@ Generate code compatible with the following installed software versions:
 
 Example Express controller:
 
-```typescript
+````typescript
 export class UserController {
     async createUser(req: Request, res: Response): Promise<void> {
         try {
@@ -100,7 +100,8 @@ Provide files created in json with and only in json with the following format to
     "programming_language": "programmin_language",
     "code": "The code to be written in file"
 }
-```
+````
+
 ## Best Practices to Follow
 
 1. **Separation of Concerns**: Controllers should handle HTTP concerns but delegate business logic to services
@@ -110,6 +111,8 @@ Provide files created in json with and only in json with the following format to
 5. **Status Codes**: Use correct HTTP status codes for different response scenarios
 6. **Consistency**: Maintain consistent response formats across endpoints
 7. **Security**: Implement proper security measures like input sanitization
+
+<<ADDITIONAL_RULES>>
 
 ## Special Considerations
 

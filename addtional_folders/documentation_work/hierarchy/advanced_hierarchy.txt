@@ -1,0 +1,804 @@
+Folder Hierarchy and Python Analysis for: D:\A APRIL\LANGMANUS FRAMEWORK VIBE CODER\Impact-vibe-coder\src
+======================================================================
+
+├── workflow.py
+│   │   Imports:
+│   │     import logging
+│   │     from src.config import TEAM_MEMBERS
+│   │     from src.graph import build_graph
+│   │   Functions:
+│   │     def enable_debug_logging():
+│   │       """Enable debug level logging for more detailed execution information.
+│   │       """
+
+│   │     def run_agent_workflow(user_input: str, debug: bool):
+│   │       """Run the agent workflow with the given user input.
+│   │       
+│   │       Args:
+│   │           user_input: The user's query or request
+│   │           debug: If True, enables debug level logging
+│   │       
+│   │       Returns:
+│   │           The final state after the workflow completes
+│   │       """
+│   │       Returns:
+│   │         return result
+│   │       Comments:
+│   │         Line 42: Constants
+│   │         Line 44: Runtime Variables
+
+│   ├── agents/
+│   └── agents.py
+│   │   │   Imports:
+│   │   │     from langgraph.prebuilt import create_react_agent
+│   │   │     from langchain_openai import ChatOpenAI
+│   │   │     from src.prompts import apply_prompt_template, apply_prompt_template_planner, apply_prompt_template_for_coder
+│   │   │     from src.tools import bash_tool, browser_tool, crawl_tool, python_repl_tool, tavily_tool, project_zip_tool
+│   │   │     from src.llms.llm import get_llm_by_type
+│   │   │     from src.config.agents import AGENT_LLM_MAP
+│   │   │     from graph.types import State
+│   │   │   Functions:
+│   │   │     def coder_wrapper(react_agent):
+│   │   │       Returns:
+│   │   │         return intermediate
+│   │   │         return agent.invoke(state)
+
+│   │   │     def intermediate(state: State):
+│   │   │       Returns:
+│   │   │         return agent.invoke(state)
+
+│   ├── api/
+│   └── app.py
+│   │   │   Imports:
+│   │   │     import json
+│   │   │     import logging
+│   │   │     import os
+│   │   │     from typing import Dict, List, Any, Optional, Union
+│   │   │     from fastapi import FastAPI, HTTPException, Request
+│   │   │     from fastapi.middleware.cors import CORSMiddleware
+│   │   │     from fastapi.responses import FileResponse
+│   │   │     from pydantic import BaseModel, Field
+│   │   │     from sse_starlette.sse import EventSourceResponse
+│   │   │     import asyncio
+│   │   │     from typing import AsyncGenerator, Dict, List, Any
+│   │   │     from src.graph import build_graph
+│   │   │     from src.config import TEAM_MEMBERS, BROWSER_HISTORY_DIR
+│   │   │     from src.service.workflow_service import run_agent_workflow
+│   ├── config/
+│   ├── agents.py
+│   │   │   Imports:
+│   │   │     from typing import Literal
+│   ├── env.py
+│   │   │   Imports:
+│   │   │     import os
+│   │   │     from dotenv import load_dotenv
+│   └── tools.py
+│   ├── crawler/
+│   ├── article.py
+│   │   │   Imports:
+│   │   │     import re
+│   │   │     from urllib.parse import urljoin
+│   │   │     from markdownify import markdownify
+│   │   │   Functions:
+│   │   │     def __init__(self, title: str, html_content: str):
+
+│   │   │     def to_markdown(self, including_title: bool):
+│   │   │       Returns:
+│   │   │         return markdown
+│   │   │       Comments:
+│   │   │         Line 17: {self.title}\n\n"
+
+│   │   │     def to_message(self):
+│   │   │       Returns:
+│   │   │         return content
+
+│   ├── crawler.py
+│   │   │   Imports:
+│   │   │     import sys
+│   │   │     from article import Article
+│   │   │     from jina_client import JinaClient
+│   │   │     from readability_extractor import ReadabilityExtractor
+│   │   │   Functions:
+│   │   │     def crawl(self, url: str):
+│   │   │       Returns:
+│   │   │         return article
+│   │   │       Comments:
+│   │   │         Line 10: To help LLMs better understand content, we extract clean
+│   │   │         Line 11: articles from HTML, convert them to markdown, and split
+│   │   │         Line 12: them into text and image blocks for one single and unified
+│   │   │         Line 13: LLM message.
+│   │   │         Line 15: Jina is not the best crawler on readability, however it's
+│   │   │         Line 16: much easier and free to use.
+│   │   │         Line 18: Instead of using Jina's own markdown converter, we'll use
+│   │   │         Line 19: our own solution to get better readability results.
+
+│   ├── jina_client.py
+│   │   │   Imports:
+│   │   │     import logging
+│   │   │     import os
+│   │   │     import requests
+│   │   │   Functions:
+│   │   │     def crawl(self, url: str, return_format: str):
+│   │   │       Returns:
+│   │   │         return response.text
+
+│   └── readability_extractor.py
+│   │   │   Imports:
+│   │   │     from readabilipy import simple_json_from_html_string
+│   │   │     from article import Article
+│   │   │   Functions:
+│   │   │     def extract_article(self, html: str):
+│   │   │       Returns:
+│   │   │         return Article(title=article.get('title'), html_content=article.get('content'))
+
+│   ├── graph/
+│   ├── builder.py
+│   │   │   Imports:
+│   │   │     from langgraph.graph import StateGraph, START
+│   │   │     from types import State
+│   │   │     from nodes import supervisor_node, research_node, directory_generator_node, code_planner_node, coder_master_node, model_coder_node, controller_coder_node, route_coder_node, service_coder_node, utility_coder_node, config_coder_node, test_coder_node, frontend_coder_node, db_coder_node, coordinator_node, browser_node, reporter_node, planner_node
+│   │   │   Functions:
+│   │   │     def build_graph():
+│   │   │       """Build and return the agent workflow graph.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return builder.compile()
+│   │   │       Comments:
+│   │   │         Line 49: builder.add_node("coder", code_node)
+│   │   │         Line 50: builder.add_node("frontend_coder", frontend_code_node)
+│   │   │         Line 51: builder.add_node("backend_coder", backend_code_node)
+
+│   ├── nodes.py
+│   │   │   Imports:
+│   │   │     from datetime import datetime
+│   │   │     import logging
+│   │   │     import json
+│   │   │     import os
+│   │   │     import json_repair
+│   │   │     import logging
+│   │   │     from copy import deepcopy
+│   │   │     from typing import Dict, List, Literal
+│   │   │     from langchain_core.messages import HumanMessage, BaseMessage
+│   │   │     import json_repair
+│   │   │     from langchain_core.messages import HumanMessage
+│   │   │     from langchain_core.prompts import PromptTemplate
+│   │   │     from langgraph.types import Command
+│   │   │     from src.agents import research_agent, directory_generator_agent, coder_master_agent, model_coder_agent, controller_coder_agent, route_coder_agent, service_coder_agent, utility_coder_agent, config_coder_agent, test_coder_agent, frontend_coder_agent, db_coder_agent, browser_agent
+│   │   │     from src.llms.llm import get_llm_by_type
+│   │   │     from src.config import TEAM_MEMBERS
+│   │   │     from src.config.agents import AGENT_LLM_MAP
+│   │   │     from src.prompts.template import apply_prompt_template, apply_prompt_template_planner, get_prompt_template
+│   │   │     from src.tools.search import tavily_tool
+│   │   │     from src.tools.bash_tool import bash_tool
+│   │   │     from src.utils import executor
+│   │   │     from src.utils.json_utils import repair_json_output
+│   │   │     from types import State, Router
+│   │   │     import re
+│   │   │     import json
+│   │   │   Functions:
+│   │   │     def extract_and_save_json(response_text: str, output_file: str):
+│   │   │       """Extracts JSON from response text and saves to file.
+│   │   │       Uses a non-recursive approach to handle nested structures.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return True
+│   │   │         return True
+│   │   │       Comments:
+│   │   │         Line 48: First try parsing the entire response as JSON
+│   │   │         Line 55: Continue to try partial extraction
+│   │   │         Line 57: Improved pattern without recursive extension
+│   │   │         Line 60: Alternative simpler pattern that works with standard re
+
+│   │   │     def research_node(state: State):
+│   │   │       """Node for the researcher agent that performs research tasks.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return Command(update={'messages': [HumanMessage(content=response_content, name='researcher')]}, goto='supervisor')
+
+│   │   │     def directory_generator_node(state: State):
+│   │   │       """Node for the directory generator agent that generator directory structure.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return Command(update={'messages': [HumanMessage(content=response_content, name='directory_generator')], 'directory_structure': response_content}, goto='supervisor')
+
+│   │   │     def code_planner_node(state: State):
+│   │   │       """Code Planner node that generate the full plan for coder master.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return Command(update={'messages': [HumanMessage(content=full_response, name='code_planner')], 'code_plan': full_response}, goto=goto)
+│   │   │         return Command(goto='supervisor')
+│   │   │       Comments:
+│   │   │         Line 159: Prepare all variables for the prompt
+│   │   │         Line 162: Convert list to string
+│   │   │         Line 164: Include other state variables
+│   │   │         Line 184: messages = apply_prompt_template_planner("code_planner", state)
+│   │   │         Line 185: whether to enable deep thinking mode
+│   │   │         Line 192: Relative Search Results\n\n{json.dumps([{'title': elem['title'], 'content': elem['content']} for elem in searched_content], ensure_ascii=False)}"
+│   │   │         Line 196: extract_and_save_json(full_response)
+
+│   │   │     def coder_master_node(state: State):
+│   │   │       """Coder Master node that decides which agent should act next.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return Command(goto=goto, update={'messages': [HumanMessage(content=response.content, name='coder_master')], 'generated_files': generated_files, 'coder_instruction': response.content})
+│   │   │         return Command(goto='supervisor')
+│   │   │       Comments:
+│   │   │         Line 242: Prepare all variables for the prompt
+│   │   │         Line 245: Convert list to string
+│   │   │         Line 247: Include other state variables
+│   │   │         Line 250: Get and format the prompt template
+│   │   │         Line 268: Rest of your function remains the same...
+
+│   │   │     def coder(state: State, prompt_name: str, agent):
+│   │   │       """Generic coder node that invokes a specified agent, parses its JSON response
+│   │   │       to extract file paths and content, and writes those files to disk.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return Command(update={'messages': [HumanMessage(content=response_content_repaired, name=prompt_name)], 'generated_files': updated_generated_files}, goto='coder_master')
+│   │   │         return Command(update={'messages': [HumanMessage(content=f"Agent '{prompt_name}' returned an empty or invalid result.", name=prompt_name)]}, goto='coder_master')
+│   │   │         return Command(update={'messages': [HumanMessage(content=f"Error during agent '{prompt_name}' execution: {str(e)}", name=prompt_name)]}, goto='coder_master')
+│   │   │         return Command(update={'messages': [HumanMessage(content=f"Error parsing JSON response from '{prompt_name}': {str(e)}. Repaired content (start): {response_content_repaired[:200]}...", name=prompt_name)]}, goto='coder_master')
+│   │   │       Comments:
+│   │   │         Line 318: Added Any for agent type
+│   │   │         Line 324: Log the instruction from coder_master for debugging
+│   │   │         Line 327: Invoke the specific coder agent (e.g., model_coder_agent.invoke)
+│   │   │         Line 329: Assuming 'agent' is an invokable Langchain runnable/agent_executor
+│   │   │         Line 338: Or a generic error source name
+│   │   │         Line 342: Or perhaps supervisor or an error handling node
+│   │   │         Line 347: Extract and repair the JSON response from the agent
+│   │   │         Line 384: Process file specifications from the parsed_response
+│   │   │         Line 389: Robustly extract file specifications
+│   │   │         Line 390: Expected keys: "FILE" (can be str path, list of str paths, or list of dicts {path, content})
+│   │   │         Line 391: and "code" (global content if "FILE" items don't specify their own)
+│   │   │         Line 392: Use .get() to avoid KeyError if "FILE" is missing
+│   │   │         Line 395: Case 1: "FILE": "path/to/file.py" (implies global "code" field for content)
+│   │   │         Line 397: Default to empty string if no code
+│   │   │         Line 400: Case 2: "FILE": ["path1", {"path": "path2", "content": "..."}]
+│   │   │         Line 403: List item is a path string
+│   │   │         Line 405: Use global code
+│   │   │         Line 406: List item is a dict like {"path": "...", "content": "..."}
+│   │   │         Line 408: Prioritize content from item dict, fallback to global code, then empty string
+│   │   │         Line 411: Ensure path was found
+│   │   │         Line 412: Ensure content is a string (it might be None if not found anywhere)
+│   │   │         Line 417: Case 3: "FILE" key is missing. Check for top-level "path" and "code".
+│   │   │         Line 418: e.g., {"path": "path/to/file.py", "code": "content..."}
+│   │   │         Line 425: "FILE" is an unexpected type
+│   │   │         Line 429: Write files to disk
+│   │   │         Line 432: Default to empty string if content is missing/None
+│   │   │         Line 439: Ensure the directory exists
+│   │   │         Line 441: Only attempt to create if dir_path is not empty (e.g. for root files)
+│   │   │         Line 445: Write the file
+│   │   │         Line 454: Optionally, you could add this error to the message content returned to supervisor/coder_master
+│   │   │         Line 456: Update the state's list of generated files, avoiding duplicates
+│   │   │         Line 463: Return the (repaired) JSON that was processed
+
+│   │   │     def model_coder_node(state: State):
+│   │   │       """Node for the Model Coder agent that generator directory structure.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return coder(state, 'model_coder', model_coder_agent)
+
+│   │   │     def controller_coder_node(state: State):
+│   │   │       """Node for the Controller Coder agent that generator directory structure.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return coder(state, 'controller_coder', controller_coder_agent)
+
+│   │   │     def route_coder_node(state: State):
+│   │   │       """Node for the Router Coder agent that generator directory structure.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return coder(state, 'route_coder', route_coder_agent)
+
+│   │   │     def service_coder_node(state: State):
+│   │   │       """Node for the Service Coder agent that generator directory structure.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return coder(state, 'service_coder', service_coder_agent)
+
+│   │   │     def utility_coder_node(state: State):
+│   │   │       """Node for the Utility Coder agent that generator directory structure.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return coder(state, 'utility_coder', utility_coder_agent)
+
+│   │   │     def config_coder_node(state: State):
+│   │   │       """Node for the Config Coder agent that generator directory structure.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return coder(state, 'config_coder', config_coder_agent)
+
+│   │   │     def test_coder_node(state: State):
+│   │   │       """Node for the Test Coder agent that generator directory structure.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return coder(state, 'test_coder', test_coder_agent)
+
+│   │   │     def frontend_coder_node(state: State):
+│   │   │       """Node for the Frontend Coder agent that generator directory structure.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return coder(state, 'frontend_coder', frontend_coder_agent)
+
+│   │   │     def db_coder_node(state: State):
+│   │   │       """Node for the DB Coder agent that generator directory structure.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return coder(state, 'db_coder', db_coder_agent)
+
+│   │   │     def browser_node(state: State):
+│   │   │       """Node for the browser agent that performs web browsing tasks.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return Command(update={'messages': [HumanMessage(content=response_content, name='browser')]}, goto='supervisor')
+│   │   │       Comments:
+│   │   │         Line 577: 尝试修复可能的JSON输出
+
+│   │   │     def supervisor_node(state: State):
+│   │   │       """Supervisor node that decides which agent should act next.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return Command(goto=goto, update={'next': goto})
+│   │   │       Comments:
+│   │   │         Line 596: preprocess messages to make supervisor execute better.
+│   │   │         Line 603: Remove .with_structured_output for streaming compatibility
+│   │   │         Line 606: Parse the JSON manually if the LLM doesn't directly output structured data
+│   │   │         Line 609: Handle Markdown JSON formatting if present
+│   │   │         Line 611: Remove ```json and ```
+│   │   │         Line 615: Handle Markdown JSON formatting if present
+│   │   │         Line 617: Remove ```json and ```
+│   │   │         Line 624: Default to end if parsing fails
+
+│   │   │     def planner_node(state: State):
+│   │   │       """Planner node that generate the full plan.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return Command(update={'messages': [HumanMessage(content=full_response, name='planner')], 'full_plan': full_response}, goto=goto)
+│   │   │       Comments:
+│   │   │         Line 650: whether to enable deep thinking mode
+│   │   │         Line 657: Relative Search Results\n\n{json.dumps([{'title': elem['title'], 'content': elem['content']} for elem in searched_content], ensure_ascii=False)}"
+│   │   │         Line 660: extract_and_save_json(full_response)
+
+│   │   │     def coordinator_node(state: State):
+│   │   │       """Coordinator node that communicates with customers, showing only non-JSON context.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return Command(goto=goto)
+│   │   │       Comments:
+│   │   │         Line 695: Keep original response
+│   │   │         Line 698: Process JSON for internal use
+│   │   │         Line 702: Extract non-JSON context to show user
+│   │   │         Line 705: Set the user-visible content
+│   │   │         Line 708: Handle planner handoff
+
+│   │   │     def extract_user_content(full_content: str):
+│   │   │       """Extracts non-JSON parts of the response for user display.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return '\n'.join((line.strip() for line in no_json.splitlines() if line.strip()))
+│   │   │       Comments:
+│   │   │         Line 718: Remove JSON blocks (both ```json``` and raw {})
+│   │   │         Line 722: Remove technical markers like handoff_to_planner()
+│   │   │         Line 725: Clean up resulting whitespace
+
+│   │   │     def reporter_node(state: State):
+│   │   │       """Reporter node that write a final report.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return Command(update={'messages': [HumanMessage(content=response_content, name='reporter')]}, goto='supervisor')
+│   │   │       Comments:
+│   │   │         Line 735: 尝试修复可能的JSON输出
+
+│   └── types.py
+│   │   │   Imports:
+│   │   │     from typing import Any, Literal
+│   │   │     from typing_extensions import TypedDict
+│   │   │     from langgraph.graph import MessagesState
+│   │   │     from langchain_core.messages import BaseMessage
+│   │   │     from src.config import TEAM_MEMBERS
+│   ├── llms/
+│   └── llm.py
+│   │   │   Imports:
+│   │   │     import os
+│   │   │     from typing import Optional
+│   │   │     from langchain_openai import ChatOpenAI
+│   │   │     from langchain_google_genai import ChatGoogleGenerativeAI
+│   │   │     from src.config.agents import LLMType
+│   │   │     from google import genai
+│   │   │   Functions:
+│   │   │     def create_groq_llm(model: str, temperature: float):
+│   │   │       """Create a Groq LLM instance using LangChain's ChatOpenAI with Groq's API
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return ChatOpenAI(model=model, base_url='https://api.groq.com/openai/v1', api_key=GROQ_API_KEY, temperature=temperature)
+
+│   │   │     def create_gemini_llm(model: str, temperature: float):
+│   │   │       Returns:
+│   │   │         return ChatGemini(model=model, temperature=0, max_tokens=None, timeout=None, max_retries=2)
+
+│   │   │     def get_llm_by_type(llm_type: LLMType):
+│   │   │       """Get LLM instance by type. Returns cached instance if available.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return llm
+│   │   │       Comments:
+│   │   │         Line 53: Or "gemini-pro-vision" if needed
+
+│   ├── prompts/
+│   ├── backend_coder.md
+│   ├── browser.md
+│   ├── code_planner.md
+│   ├── coder.md
+│   ├── coder_master.md
+│   ├── config_coder.md
+│   ├── controller_coder.md
+│   ├── coordinator.md
+│   ├── db_coder.md
+│   ├── directory_generator.md
+│   ├── file_manager.md
+│   ├── frontend_coder.md
+│   ├── frontend_coder_old.md
+│   ├── model_coder.md
+│   ├── planner.md
+│   ├── reporter.md
+│   ├── researcher.md
+│   ├── route_coder.md
+│   ├── service_coder.md
+│   ├── supervisor.md
+│   ├── template.py
+│   │   │   Imports:
+│   │   │     import logging
+│   │   │     import os
+│   │   │     import re
+│   │   │     import json
+│   │   │     from datetime import datetime
+│   │   │     from langchain_core.prompts import PromptTemplate
+│   │   │     from langgraph.prebuilt.chat_agent_executor import AgentState
+│   │   │     from graph.types import State
+│   │   │   Functions:
+│   │   │     def get_prompt_template(prompt_name: str):
+│   │   │       Returns:
+│   │   │         return template
+│   │   │       Comments:
+│   │   │         Line 14: Escape curly braces using backslash
+│   │   │         Line 16: Replace `<<VAR>>` with `{VAR}`
+
+│   │   │     def apply_prompt_template(prompt_name: str, state: AgentState):
+│   │   │       Returns:
+│   │   │         return [{'role': 'system', 'content': system_prompt}] + state['messages']
+
+│   │   │     def apply_prompt_template_for_coder(prompt_name: str, state: State):
+│   │   │       Returns:
+│   │   │         return [{'role': 'system', 'content': system_prompt}] + [{'role': 'user', 'content': state['coder_instruction']}]
+
+│   │   │     def apply_prompt_template_planner(prompt_name: str, state: AgentState):
+│   │   │       """Applies prompt template for planner with proper JSON handling.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return [{'role': 'system', 'content': system_prompt}] + state['messages']
+│   │   │       Comments:
+│   │   │         Line 37: Load project requirements from JSON file
+│   │   │         Line 46: Convert dict to formatted JSON string
+
+│   ├── test_coder.md
+│   └── utility_coder.md
+│   ├── service/
+│   └── workflow_service.py
+│   │   │   Imports:
+│   │   │     import logging
+│   │   │     from src.config import TEAM_MEMBERS
+│   │   │     from src.graph import build_graph
+│   │   │     from langchain_community.adapters.openai import convert_message_to_dict
+│   │   │     import uuid
+│   │   │   Functions:
+│   │   │     def enable_debug_logging():
+│   │   │       """Enable debug level logging for more detailed execution information.
+│   │   │       """
+
+│   ├── tools/
+│   ├── bash_tool.py
+│   │   │   Imports:
+│   │   │     import logging
+│   │   │     import subprocess
+│   │   │     from typing import Annotated, Optional
+│   │   │     from langchain_core.tools import tool
+│   │   │     from decorators import log_io
+│   │   │     import os
+│   │   │     import platform
+│   │   │   Functions:
+│   │   │     def bash_tool(cmd: Annotated[Optional[str], 'The bash command to be executed. Use this *or* write_filepath/write_content.'], write_filepath: Annotated[Optional[str], "Optional: If provided, the tool will write the 'write_content' to this file path instead of executing 'cmd'."], write_content: Annotated[Optional[str], "Optional: The content to write to 'write_filepath'. Required if 'write_filepath' is used."]):
+│   │   │       """Executes a bash command or writes content to a file, handling OS differences.
+│   │   │       
+│   │   │       Use either the 'cmd' parameter to execute a shell command, OR
+│   │   │       the 'write_filepath' and 'write_content' parameters together
+│   │   │       to write specific multi-line content to a file.
+│   │   │       
+│   │   │       If write_filepath is provided, the tool prioritizes writing the file.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return error_message
+│   │   │         return success_message
+│   │   │         return error_message
+│   │   │         return error_message
+│   │   │         return output.strip() if output else 'Command executed successfully (no stdout)'
+│   │   │         return error_message
+│   │   │         return error_message
+│   │   │         return error_message
+│   │   │       Comments:
+│   │   │         Line 32: --- File Writing Logic ---
+│   │   │         Line 39: Ensure the directory exists before writing the file
+│   │   │         Line 41: Only try to create if there's a directory component in the path
+│   │   │         Line 50: Write the content to the file using Python's built-in functions
+│   │   │         Line 52: Use 'w' mode for writing (overwrites if file exists) and specify encoding
+│   │   │         Line 63: --- Command Execution Logic (only if not writing a file) ---
+│   │   │         Line 65: Changed from Bash to generic Command
+│   │   │         Line 67: Removed the specific touch handler as the write_filepath logic covers file creation now
+│   │   │         Line 68: shell=True is necessary to handle commands like piping, redirection etc.
+│   │   │         Line 72: Return stdout on success
+│   │   │         Line 74: Optionally log stderr even on success if present (e.g., warnings)
+│   │   │         Line 88: --- Error case: No operation specified ---
+
+│   ├── browser.py
+│   │   │   Imports:
+│   │   │     import asyncio
+│   │   │     import json
+│   │   │     from pydantic import BaseModel, Field
+│   │   │     from typing import Optional, ClassVar, Type
+│   │   │     from langchain.tools import BaseTool
+│   │   │     from browser_use import AgentHistoryList, Browser, BrowserConfig
+│   │   │     from browser_use import Agent
+│   │   │     from src.llms.llm import vl_llm
+│   │   │     from src.tools.decorators import create_logged_tool
+│   │   │     from src.config import CHROME_INSTANCE_PATH, CHROME_HEADLESS, CHROME_PROXY_SERVER, CHROME_PROXY_USERNAME, CHROME_PROXY_PASSWORD, BROWSER_HISTORY_DIR
+│   │   │     import uuid
+│   │   │   Functions:
+│   │   │     def _generate_browser_result(self, result_content: str, generated_gif_path: str):
+│   │   │       Returns:
+│   │   │         return {'result_content': result_content, 'generated_gif_path': generated_gif_path}
+
+│   │   │     def _run(self, instruction: str):
+│   │   │       Returns:
+│   │   │         return f'Error executing browser task: {str(e)}'
+│   │   │         return json.dumps(self._generate_browser_result(result.final_result(), generated_gif_path))
+│   │   │         return json.dumps(self._generate_browser_result(result, generated_gif_path))
+│   │   │       Comments:
+│   │   │         Line 64: Will be set per request
+
+│   ├── crawl.py
+│   │   │   Imports:
+│   │   │     import logging
+│   │   │     from typing import Annotated
+│   │   │     from langchain_core.messages import HumanMessage
+│   │   │     from langchain_core.tools import tool
+│   │   │     from decorators import log_io
+│   │   │     from src.crawler import Crawler
+│   │   │   Functions:
+│   │   │     def crawl_tool(url: Annotated[str, 'The url to crawl.']):
+│   │   │       """Use this to crawl a url and get a readable content in markdown format.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return {'role': 'user', 'content': article.to_message()}
+│   │   │         return error_msg
+
+│   ├── create_zip.py
+│   │   │   Imports:
+│   │   │     import logging
+│   │   │     import json
+│   │   │     import os
+│   │   │     import zipfile
+│   │   │     from typing import Annotated, Optional
+│   │   │     from langchain_core.tools import tool
+│   │   │     from decorators import log_io
+│   │   │   Functions:
+│   │   │     def project_zip_tool(json_path: Annotated[Optional[str], "Path to the JSON file containing project requirements. Defaults to 'project_requirements.json'"], output_dir: Annotated[Optional[str], 'Directory where the zip file should be created. Defaults to current directory'], cleanup: Annotated[Optional[bool], 'Whether to delete the zip file after creation (for web delivery). Default False']):
+│   │   │       """Creates a zip archive of a project directory specified in a JSON file.
+│   │   │       
+│   │   │       The JSON file must contain a 'project_name' field pointing to an existing directory.
+│   │   │       Creates a zip file with the same name as the project.
+│   │   │       
+│   │   │       Args:
+│   │   │           json_path: Path to JSON file (default 'project_requirements.json')
+│   │   │           output_dir: Where to save the zip (default current directory)
+│   │   │           cleanup: Remove zip after creation (for web delivery scenarios)
+│   │   │       
+│   │   │       Returns:
+│   │   │           str: Success message or error description
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return success_msg
+│   │   │         return error_msg
+│   │   │         return error_msg
+│   │   │         return error_msg
+│   │   │         return error_msg
+│   │   │         return error_msg
+│   │   │         return error_msg
+│   │   │       Comments:
+│   │   │         Line 32: Set defaults
+│   │   │         Line 39: Step 1: Read JSON file
+│   │   │         Line 52: Step 2: Get project name
+│   │   │         Line 59: Step 3: Verify project directory exists
+│   │   │         Line 66: Step 4: Create output directory if needed
+│   │   │         Line 69: Step 5: Create zip file
+│   │   │         Line 83: Step 6: Return success or clean up
+
+│   ├── decorators.py
+│   │   │   Imports:
+│   │   │     import logging
+│   │   │     import functools
+│   │   │     from typing import Any, Callable, Type, TypeVar
+│   │   │   Functions:
+│   │   │     def log_io(func: Callable):
+│   │   │       """A decorator that logs the input parameters and output of a tool function.
+│   │   │       
+│   │   │       Args:
+│   │   │           func: The tool function to be decorated
+│   │   │       
+│   │   │       Returns:
+│   │   │           The wrapped function with input/output logging
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return wrapper
+│   │   │         return result
+│   │   │       Comments:
+│   │   │         Line 23: Log input parameters
+│   │   │         Line 30: Execute the function
+│   │   │         Line 33: Log the output
+
+│   │   │     def create_logged_tool(base_tool_class: Type[T]):
+│   │   │       """Factory function to create a logged version of any tool class.
+│   │   │       
+│   │   │       Args:
+│   │   │           base_tool_class: The original tool class to be enhanced with logging
+│   │   │       
+│   │   │       Returns:
+│   │   │           A new class that inherits from both LoggedToolMixin and the base tool class
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return LoggedTool
+│   │   │       Comments:
+│   │   │         Line 76: Set a more descriptive name for the class
+
+│   │   │     def wrapper(*args, **kwargs):
+│   │   │       Returns:
+│   │   │         return result
+│   │   │       Comments:
+│   │   │         Line 23: Log input parameters
+│   │   │         Line 30: Execute the function
+│   │   │         Line 33: Log the output
+
+│   │   │     def _log_operation(self, method_name: str, *args, **kwargs):
+│   │   │       """Helper method to log tool operations.
+│   │   │       """
+
+│   │   │     def _run(self, *args, **kwargs):
+│   │   │       """Override _run method to add logging.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return result
+
+│   ├── file_management.py
+│   │   │   Imports:
+│   │   │     import logging
+│   │   │     from langchain_community.tools.file_management import WriteFileTool
+│   │   │     from decorators import create_logged_tool
+│   ├── python_repl.py
+│   │   │   Imports:
+│   │   │     import logging
+│   │   │     from typing import Annotated
+│   │   │     from langchain_core.tools import tool
+│   │   │     from langchain_experimental.utilities import PythonREPL
+│   │   │     from decorators import log_io
+│   │   │   Functions:
+│   │   │     def python_repl_tool(code: Annotated[str, 'The python code to execute to do further analysis or calculation.']):
+│   │   │       """Use this to execute python code and do data analysis or calculation. If you want to see the output of a value,
+│   │   │       you should print it out with `print(...)`. This is visible to the user.
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return result_str
+│   │   │         return error_msg
+
+│   └── search.py
+│   │   │   Imports:
+│   │   │     import logging
+│   │   │     from langchain_community.tools.tavily_search import TavilySearchResults
+│   │   │     from src.config import TAVILY_MAX_RESULTS
+│   │   │     from decorators import create_logged_tool
+│   ├── utils/
+│   ├── executor.py
+│   │   │   Imports:
+│   │   │     import json
+│   │   │     import logging
+│   │   │     from concurrent.futures import ThreadPoolExecutor
+│   │   │     import os
+│   │   │     import re
+│   │   │     import shlex
+│   │   │     import subprocess
+│   │   │     import sys
+│   │   │     from typing import Dict, List, Tuple
+│   │   │     from src.graph.types import State
+│   │   │   Functions:
+│   │   │     def extract_commands_from_readme(readme_file_path: str):
+│   │   │       """Extract and categorize executable commands from README.md
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return {'venv': [cmd for cmd in venv_commands if is_executable_command(cmd)], 'frontend': [cmd for cmd in frontend_commands if is_executable_command(cmd)], 'backend': [cmd for cmd in backend_commands if is_executable_command(cmd)], 'other': [cmd for cmd in other_commands if is_executable_command(cmd)]}
+│   │   │         return re.search('[/.=-]', cmd) or len(cmd.split()) > 1 or re.match('^(php|npm|composer|python|pip|docker|streamlit)\\b', cmd, re.IGNORECASE)
+│   │   │         return {'venv': [], 'frontend': [], 'backend': [], 'other': []}
+│   │   │         return {'venv': [], 'frontend': [], 'backend': [], 'other': []}
+│   │   │         return False
+│   │   │       Comments:
+│   │   │         Line 26: Updated pattern to handle comma-separated commands
+│   │   │         Line 35: Virtual environment indicators (highest priority)
+│   │   │         Line 38: Frontend indicators
+│   │   │         Line 41: Backend indicators
+│   │   │         Line 48: Split by commas first, then by newlines
+│   │   │         Line 52: '):
+│   │   │         Line 53: Normalize for case-insensitive comparison
+│   │   │         Line 56: Check for venv commands first (highest priority)
+│   │   │         Line 59: Check for virtual environment creation
+│   │   │         Line 62: Check for frontend commands
+│   │   │         Line 65: Special case for streamlit
+│   │   │         Line 68: Check for backend commands
+│   │   │         Line 71: Python commands that aren't venv-related
+
+│   │   │     def execute_in_new_terminal(cmd: str, working_dir: str, category: str):
+│   │   │       """Execute command in a new terminal window
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return (True, f'Command executed in new {category} terminal')
+│   │   │         return (False, str(e))
+│   │   │       Comments:
+│   │   │         Line 95: For Windows, use start cmd to open new terminal
+│   │   │         Line 104: For Unix/Mac, use xterm or similar
+
+│   │   │     def execute_commands_parallel(command_groups: Dict[str, List[str]], working_dir: str):
+│   │   │       """Execute commands in parallel with virtual env first
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return results
+│   │   │       Comments:
+│   │   │         Line 122: First execute venv commands sequentially
+│   │   │         Line 155: Now execute other commands in parallel in separate terminals
+│   │   │         Line 158: Submit frontend commands
+│   │   │         Line 165: Submit backend commands
+│   │   │         Line 172: Submit other commands
+
+│   │   │     def execute(state: State, project_requirement: str):
+│   │   │       """Execute the commands in the command groups
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return True
+│   │   │         return False
+│   │   │       Comments:
+│   │   │         Line 195: Removing any trailing slash ('/')
+│   │   │         Line 199: If no projects folder in starting, append it to readme
+│   │   │         Line 222: Execute commands
+│   │   │         Line 226: logging.debug summary
+
+│   │   │     def is_executable_command(cmd):
+│   │   │       Returns:
+│   │   │         return re.search('[/.=-]', cmd) or len(cmd.split()) > 1 or re.match('^(php|npm|composer|python|pip|docker|streamlit)\\b', cmd, re.IGNORECASE)
+│   │   │         return False
+
+│   └── json_utils.py
+│   │   │   Imports:
+│   │   │     import logging
+│   │   │     import json
+│   │   │     import json_repair
+│   │   │   Functions:
+│   │   │     def repair_json_output(content: str):
+│   │   │       """修复和规范化 JSON 输出。
+│   │   │       
+│   │   │       Args:
+│   │   │           content (str): 可能包含 JSON 的字符串内容
+│   │   │       
+│   │   │       Returns:
+│   │   │           str: 修复后的 JSON 字符串，如果不是 JSON 则返回原始内容
+│   │   │       """
+│   │   │       Returns:
+│   │   │         return content
+│   │   │         return json.dumps(repaired_content)
+│   │   │       Comments:
+│   │   │         Line 21: 如果内容被包裹在```json代码块中，提取JSON部分
+│   │   │         Line 28: 尝试修复并解析JSON
+

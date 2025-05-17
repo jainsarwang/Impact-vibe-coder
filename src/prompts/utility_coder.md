@@ -135,6 +135,8 @@ Provide files created in json with and only in json with the following format to
 6. **Error Handling**: Use consistent error handling patterns
 7. **Consistency**: Maintain consistent naming and patterns across utilities
 
+<<ADDITIONAL_RULES>>
+
 ## Special Considerations
 
 -   For date/time utilities, handle timezone issues properly
