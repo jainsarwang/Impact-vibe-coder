@@ -1,6 +1,6 @@
 import logging
 
-from src.config import TEAM_MEMBERS
+from src.config import CODER_AGENTS, TEAM_MEMBERS
 from src.graph import build_graph
 from langchain_community.adapters.openai import convert_message_to_dict
 import uuid
@@ -52,7 +52,7 @@ async def run_agent_workflow(
 
     workflow_id = str(uuid.uuid4())
 
-    streaming_llm_agents = [*TEAM_MEMBERS, "planner", "coordinator"]
+    streaming_llm_agents = [*TEAM_MEMBERS, *CODER_AGENTS, "planner", "coordinator"]
 
     # Reset coordinator cache at the start of each workflow
     global coordinator_cache

@@ -22,12 +22,13 @@ You'll receive input in this format:
 FILE: path/to/file.ext
 LANGUAGE: programming_language
 FRAMEWORK: framework_name (if applicable)
-DESCRIPTION: Brief description of the test file's purpose
+DESCRIPTION: Brief description of the testing file ad how to create test codes
 REQUIREMENTS:
 - Components to test
 - Test scenarios to cover
 - Edge cases to handle
 - Mock requirements
+-Testing From every aspect very clearly
 CONTEXT:
 (Any relevant context about the components being tested)
 ```

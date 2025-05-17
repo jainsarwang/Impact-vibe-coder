@@ -1,0 +1,66 @@
+flowchart TD
+
+    subgraph INPUT_LAYER["Input Layer"]
+        USER("User Input") --> API["API Layer"]
+    end
+
+    subgraph PROCESSING_LAYER["Processing Layer"]
+        API --> COORD["Coordinator Node"]
+        COORD["Coordinator Node"] --> USER("User Input")
+        
+        COORD --> PLANNER["Planner Node"]
+        PLANNER --> SUPERVISOR["Supervisor Node"]
+
+        subgraph WORKER_NODES["Worker Nodes"]
+            SUPERVISOR --> RESEARCHER["Research Node"] 
+            SUPERVISOR --> BROWSER["Browser Node"]
+            
+            SUPERVISOR --> CODE_PLANNER["Code Planner Node"]
+            SUPERVISOR --> DIRECTORY_GEN["Directory Generator Node"]
+            SUPERVISOR --> CODER_MASTER["Coder Master Node"]
+            CODER_MASTER["Coder Master Node"] --> SUPERVISOR
+            SUPERVISOR --> REPORTER["Reporter Node"]
+
+            %% Connections from worker nodes back to supervisor
+            RESEARCHER & BROWSER & CODE_PLANNER & DIRECTORY_GEN & REPORTER --> SUPERVISOR
+        end
+    end
+
+    subgraph CODER_MASTER["Coder Master Node"]
+        CODER_MASTER --> CODERS["Specialized Coders"]
+
+        subgraph CODERS
+            MODEL_CODER("Model Coder")
+            CONTROLLER_CODER("Controller Coder")
+            ROUTE_CODER("Route Coder")
+            SERVICE_CODER("Service Coder")
+            UTILITY_CODER("Utility Coder")
+            CONFIG_CODER("Config Coder")
+            TEST_CODER("Test Coder")
+            FRONTEND_CODER("Frontend Coder")
+            DB_CODER("DB Coder")
+        end
+
+        %% All coders return to coder master
+        MODEL_CODER & CONTROLLER_CODER & ROUTE_CODER & SERVICE_CODER & UTILITY_CODER & CONFIG_CODER & TEST_CODER & FRONTEND_CODER & DB_CODER --> CODER_MASTER
+    end
+
+    subgraph SHARED_SERVICES["Shared Services"]
+        LLM["LLM Manager"]
+        TOOLS["Project Tools etc."]
+        PROMPTS["Prompt Templates"]
+    end
+
+    %% Single connection showing that all nodes use shared services
+    WORKER_NODES -.-> SHARED_SERVICES
+    SUPERVISOR -.-> SHARED_SERVICES
+    PLANNER -.-> SHARED_SERVICES
+    CODERS -.-> SHARED_SERVICES
+
+    %% Styling
+    classDef apiLayer fill:#f9f,stroke:#333,stroke-width:2px
+    classDef supervisor fill:#fbb,stroke:#333,stroke-width:2px
+    classDef coderMaster fill:#bfb,stroke:#333,stroke-width:2px
+    classDef coder fill:#dfd,stroke:#333,stroke-width:1px
+    classDef support fill:#ddd,stroke:#333,stroke-width:1px
+

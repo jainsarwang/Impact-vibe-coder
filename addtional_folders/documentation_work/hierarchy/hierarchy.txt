@@ -1,0 +1,61 @@
+Folder Hierarchy for: D:\A APRIL\LANGMANUS FRAMEWORK VIBE CODER\Impact-vibe-coder\src
+==================================================
+
+│   ├── workflow.py
+│   ├── agents/
+│   └── agents.py
+│   ├── api/
+│   └── app.py
+│   ├── config/
+│   │   ├── agents.py
+│   │   ├── env.py
+│   └── tools.py
+│   ├── crawler/
+│   │   ├── article.py
+│   │   ├── crawler.py
+│   │   ├── jina_client.py
+│   └── readability_extractor.py
+│   ├── graph/
+│   │   ├── builder.py
+│   │   ├── nodes.py
+│   └── types.py
+│   ├── llms/
+│   └── llm.py
+│   ├── prompts/
+│   │   ├── backend_coder.md
+│   │   ├── browser.md
+│   │   ├── code_planner.md
+│   │   ├── coder.md
+│   │   ├── coder_master.md
+│   │   ├── config_coder.md
+│   │   ├── controller_coder.md
+│   │   ├── coordinator.md
+│   │   ├── db_coder.md
+│   │   ├── directory_generator.md
+│   │   ├── file_manager.md
+│   │   ├── frontend_coder.md
+│   │   ├── frontend_coder_old.md
+│   │   ├── model_coder.md
+│   │   ├── planner.md
+│   │   ├── reporter.md
+│   │   ├── researcher.md
+│   │   ├── route_coder.md
+│   │   ├── service_coder.md
+│   │   ├── supervisor.md
+│   │   ├── template.py
+│   │   ├── test_coder.md
+│   └── utility_coder.md
+│   ├── service/
+│   └── workflow_service.py
+│   ├── tools/
+│   │   ├── bash_tool.py
+│   │   ├── browser.py
+│   │   ├── crawl.py
+│   │   ├── create_zip.py
+│   │   ├── decorators.py
+│   │   ├── file_management.py
+│   │   ├── python_repl.py
+│   └── search.py
+│   ├── utils/
+│   │   ├── executor.py
+│   └── json_utils.py

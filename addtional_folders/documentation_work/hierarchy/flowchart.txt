@@ -1,0 +1,85 @@
+flowchart TB
+    User(User Input) --> API[API Layer]
+    API --> Workflow(Workflow)
+    
+    Workflow --> SupervisorNode[Supervisor Node]
+    
+    %% Planning Nodes
+    SupervisorNode --> ResearchNode[Research Node]
+    SupervisorNode --> PlannerNode[Planner Node]
+    SupervisorNode --> DirectoryGeneratorNode[Directory Generator Node]
+    SupervisorNode --> CodePlannerNode[Code Planner Node]
+    
+    %% Development Nodes
+    SupervisorNode --> CoderMasterNode[Coder Master Node]
+    CoderMasterNode --> ModelCoder[Model Coder]
+    CoderMasterNode --> ControllerCoder[Controller Coder]
+    CoderMasterNode --> RouteCoder[Route Coder]
+    CoderMasterNode --> ServiceCoder[Service Coder]
+    CoderMasterNode --> UtilityCoder[Utility Coder]
+    CoderMasterNode --> ConfigCoder[Config Coder]
+    CoderMasterNode --> TestCoder[Test Coder]
+    CoderMasterNode --> FrontendCoder[Frontend Coder]
+    CoderMasterNode --> DBCoder[DB Coder]
+    
+    %% Support Nodes
+    SupervisorNode --> BrowserNode[Browser Node]
+    SupervisorNode --> ReporterNode[Reporter Node]
+    SupervisorNode --> CoordinatorNode[Coordinator Node]
+    
+    %% LLM Integration
+    LLM[LLM Service] -.-> PlannerNode
+    LLM -.-> ResearchNode
+    LLM -.-> CoderMasterNode
+    LLM -.-> ModelCoder
+    LLM -.-> ControllerCoder
+    LLM -.-> RouteCoder
+    LLM -.-> ServiceCoder
+    LLM -.-> UtilityCoder
+    LLM -.-> ConfigCoder
+    LLM -.-> TestCoder
+    LLM -.-> FrontendCoder
+    LLM -.-> DBCoder
+    LLM -.-> SupervisorNode
+    
+    %% Tools System
+    Tools[Tool System] --> BashTool[Bash Tool]
+    Tools --> BrowserTool[Browser Tool]
+    Tools --> CrawlTool[Crawl Tool]
+    Tools --> PythonReplTool[Python REPL Tool]
+    Tools --> TavilyTool[Tavily Search Tool]
+    Tools --> ProjectZipTool[Project Zip Tool]
+    
+    %% Connections between major components
+    ResearchNode -- "Updates State" --> SupervisorNode
+    PlannerNode -- "Updates State" --> SupervisorNode
+    DirectoryGeneratorNode -- "Updates State" --> SupervisorNode
+    CodePlannerNode -- "Updates State" --> SupervisorNode
+    CoderMasterNode -- "Decides Next Coder" --> SupervisorNode
+    
+    %% Tool connections
+    ResearchNode -.-> TavilyTool
+    BrowserNode -.-> BrowserTool
+    ModelCoder -.-> BashTool
+    ControllerCoder -.-> BashTool
+    RouteCoder -.-> BashTool
+    ServiceCoder -.-> BashTool
+    UtilityCoder -.-> BashTool
+    ConfigCoder -.-> BashTool
+    TestCoder -.-> BashTool
+    FrontendCoder -.-> BashTool
+    DBCoder -.-> BashTool
+    
+    %% End results
+    BashTool --> GeneratedFiles[Generated Files]
+    ProjectZipTool --> FinalProject[Final Project Package]
+    
+    classDef primary fill:#f9d5e5,stroke:#333,stroke-width:1px
+    classDef secondary fill:#eeeeee,stroke:#666,stroke-width:1px
+    classDef llm fill:#d0e0ff,stroke:#333,stroke-width:1px
+    classDef tools fill:#e6ffed,stroke:#333,stroke-width:1px
+    
+    class SupervisorNode,API,Workflow primary
+    class ResearchNode,PlannerNode,DirectoryGeneratorNode,CodePlannerNode,CoderMasterNode secondary
+    class LLM llm
+    class BashTool,BrowserTool,CrawlTool,PythonReplTool,TavilyTool,ProjectZipTool tools
