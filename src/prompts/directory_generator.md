@@ -159,8 +159,38 @@ Provide the results in this JSON structure:
           "description": "Variable purpose and usage"
         }
       },
-      "imports": ["list", "of", "imports"],
-      "exports": ["list", "of", "exports"]
+      "imports": {
+        "import1": {
+          "importfilepath": "from/root/[frontend|backend]/path/to/file.ext",
+          "type": "module" | "function" | "variable",
+          "description": "Import description",
+          "functions": {
+            "functionName": {
+              "params": "Parameter descriptions with types",
+              "returns": "Return type and description",
+              "description": "Detailed function documentation"
+            }
+          },
+          "variables": {
+            "variableName": {
+              "type": "Variable type",
+              "description": "Variable purpose and usage"
+            }
+          },
+        },
+        "import2": {
+          "importfilepath": "from/root/[frontend|backend]/path/to/file.ext",
+          "type": "module" | "function" | "variable",
+          "description": "Import description",
+          "variables": {
+            "variableName": {
+              "type": "Variable type",
+              "description": "Variable purpose and usage"
+            }
+          }
+        }
+      },
+      "exports": ["list", "of", "available", "exports"]
     }
   },
   "api_endpoints": {
@@ -208,6 +238,12 @@ Provide the results in this JSON structure:
 }
 ```
 
+## Currently installed software versions for dependencies selections
+
+-   `PYTHON` - 3.11.0
+-   `NODE` - 22.14.0
+-   `NPM` - 10.9.2
+
 ## Best Practices to Follow
 
 1. **Organize Hierarchically**: Structure files from core/shared modules to specific implementations
@@ -229,5 +265,12 @@ Provide the results in this JSON structure:
 
 **Note**:
 
+-   Always include the `api_endpoint` if available.
 -   Always provide `README.md` file, with all the necessary description of the project required to build a GOOD README.
 -   `README.md` file should always be at root of project_name directory
+-   Remeber to always generate files like `package.json` and `requirements.txt` which included all the information regarding the packages, depending upon the tech stack being used.
+-   Flow of file generation
+    -   First Generate backend modules
+    -   Then Frontend Modules
+    -   Then the `requirements.txt` and `package.json`
+        `Then write`README.md`

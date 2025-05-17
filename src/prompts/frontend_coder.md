@@ -104,6 +104,7 @@ CONTEXT:
     -   Plain CSS imported into the component file.
 -   **Hooks:** Create custom Hooks for reusable logic.
 -   **TypeScript (`LANGUAGE: tsx`):** If using TypeScript, define prop types using interfaces or types. Type state and function signatures.
+-   **Development Server:** Use `vite` as the default development server if not specified otherwise.
 
 **5. Angular (`LANGUAGE: typescript | html`, `FRAMEWORK: angular`)**
 
@@ -124,6 +125,8 @@ CONTEXT:
 -   **Forms:** Use Template-Driven Forms or Reactive Forms as specified.
 -   **RxJS:** Use Observables for asynchronous operations (e.g., `HttpClient` calls).
 -   **Styling:** Component-scoped CSS/SCSS.
+
+<<ADDITIONAL_RULES>>
 
 ## ENHANCEMENTS ADDED (v2.1)
 
