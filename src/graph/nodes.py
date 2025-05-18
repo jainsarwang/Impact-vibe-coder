@@ -33,6 +33,7 @@ from src.config.agents import AGENT_LLM_MAP
 from src.prompts.template import apply_prompt_template, apply_prompt_template_planner, get_prompt_template
 from src.tools.search import tavily_tool
 from src.tools.bash_tool import bash_tool
+from src.tools.static_imports_validator import static_imports_validator
 from src.utils import executor
 from src.utils.json_utils import repair_json_output
 from .types import State, Router
@@ -1000,3 +1001,207 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
         },
         goto="supervisor",
     )
+
+def static_code_validator_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
+    """
+    Node for statically validating the generated code, starting with imports.
+    """
+    logger.info("Static Code Validator: Starting import validation.")
+
+    # Get generated files from state, these should ideally be paths relative to the "projects" dir
+    # or paths that can be made relative to the specific project_root.
+    # Example: "MyProject/app.py" or "projects/MyProject/app.py"
+    generated_files_from_state = state.get("generated_files", [])
+    directory_structure_str = state.get("directory_structure") # JSON string
+
+    if not generated_files_from_state:
+        logger.warning("Static Code Validator: No generated files found in state to validate.")
+        return Command(
+            update={
+                "messages": state["messages"] + [
+                    HumanMessage(
+                        content="Static Code Validator: No files listed in `generated_files` to validate.",
+                        name="static_validator"
+                    )
+                ]
+            },
+            goto="supervisor"
+        )
+
+    if not directory_structure_str:
+        logger.error("Static Code Validator: Directory structure not found in state. Cannot determine project root.")
+        return Command(
+            update={
+                "messages": state["messages"] + [
+                    HumanMessage(
+                        content="Static Code Validator: Critical error - directory structure missing, cannot determine project root.",
+                        name="static_validator"
+                    )
+                ]
+            },
+            goto="__end__"
+        )
+
+    project_root: Optional[str] = None
+    try:
+        directory_info = json.loads(directory_structure_str)
+        
+        with open("project_requirements.json", "r") as f:
+            project_name = json.load(f).get("project_name")
+        if not project_name:
+            logger.error("Static Code Validator: 'project_name' not found in directory structure.")
+            # Attempt to infer project_name if checklist_manager.project_prefix is set
+            if checklist_manager.project_prefix:
+                project_name = checklist_manager.project_prefix
+                logger.info(f"Static Code Validator: Using project_prefix from checklist_manager: {project_name}")
+            else:
+                 return Command(
+                    update={
+                        "messages": state["messages"] + [
+                            HumanMessage(
+                                content="Static Code Validator: Critical error - 'project_name' missing from directory_structure and checklist_manager.project_prefix not set.",
+                                name="static_validator"
+                            )
+                        ]
+                    },
+                    goto="__end__"
+                )
+
+        # Define where projects are stored. Often a "projects" subdirectory.
+        # If your `coder` nodes write files to `projects/project_name/file.py`,
+        # then project_root should be `projects/project_name`.
+        # If they write directly to `project_name/file.py` (in the workspace root),
+        # then project_root is just `project_name`.
+        # Let's assume a "projects" base directory for generated projects.
+        base_projects_dir = "projects" # Or configure this elsewhere
+        project_root = os.path.join(base_projects_dir, project_name)
+
+        if not os.path.isdir(project_root):
+            # Fallback: Maybe the project_name in directory_structure is already the full relative path (e.g., "projects/MyProject")
+            # or it's directly in the CWD.
+            if os.path.isdir(project_name) and any(f.startswith(project_name) for f in generated_files_from_state):
+                 project_root = project_name # project_name was already the root relative to CWD
+                 logger.info(f"Static Code Validator: Using '{project_name}' directly as project root.")
+            else:
+                logger.error(f"Static Code Validator: Project root directory '{project_root}' (derived from '{base_projects_dir}' + '{project_name}') does not exist.")
+                return Command(
+                    update={
+                        "messages": state["messages"] + [
+                            HumanMessage(
+                                content=f"Static Code Validator: Critical error - project root '{project_root}' not found.",
+                                name="static_validator"
+                            )
+                        ]
+                    },
+                    goto="__end__"
+                )
+        logger.info(f"Static Code Validator: Determined project root: '{os.path.abspath(project_root)}'")
+
+    except json.JSONDecodeError:
+        logger.error("Static Code Validator: Could not parse directory structure JSON.")
+        return Command(goto="__end__")
+    except Exception as e:
+        logger.error(f"Static Code Validator: Error determining project root: {e}", exc_info=True)
+        return Command(goto="__end__")
+
+    # Prepare file paths for the validator: they should be relative to project_root
+    py_files_to_validate: List[str] = []
+    project_root_abs = os.path.abspath(project_root)
+
+    for f_path_from_state in generated_files_from_state:
+        if not f_path_from_state.endswith(".py"):
+            continue
+
+        abs_f_path = os.path.abspath(f_path_from_state) # Normalize path from state
+
+        # Check if the file is within the identified project_root
+        if abs_f_path.startswith(project_root_abs):
+            relative_path = os.path.relpath(abs_f_path, project_root_abs)
+            py_files_to_validate.append(relative_path)
+        else:
+            # This case might happen if generated_files stores paths relative to CWD
+            # and project_root is also relative to CWD but a subdirectory.
+            # Example: f_path_from_state = "projects/MyProject/app.py", project_root = "projects/MyProject"
+            # In this case, relpath should work if both are normalized.
+            # A common scenario: generated_files might store "projects/MyProject/src/app.py"
+            # And project_root is "projects/MyProject"
+            # So rel_path would be "src/app.py"
+            # Let's try making f_path_from_state absolute based on CWD if it's not already
+            current_cwd = os.getcwd()
+            potential_abs_f_path = os.path.abspath(os.path.join(current_cwd, f_path_from_state))
+
+            if potential_abs_f_path.startswith(project_root_abs):
+                 relative_path = os.path.relpath(potential_abs_f_path, project_root_abs)
+                 py_files_to_validate.append(relative_path)
+            else:
+                logger.warning(
+                    f"Static Code Validator: File '{f_path_from_state}' (abs: '{abs_f_path}') "
+                    f"seems to be outside the project root '{project_root_abs}'. Skipping."
+                )
+
+    if not py_files_to_validate:
+        logger.warning("Static Code Validator: No Python files found to validate after path processing.")
+        # This might be okay if the project is not Python-based, or an error if it should be.
+        return Command(
+            update={
+                "messages": state["messages"] + [
+                    HumanMessage(
+                        content="Static Code Validator: No Python files eligible for import validation.",
+                        name="static_validator"
+                    )
+                ]
+            },
+            goto="supervisor"
+        )
+
+    # TODO: Extract expected third-party libraries, perhaps from project requirements
+    # For now, using an empty set.
+    expected_third_party_libs: Optional[Set[str]] = None
+    # if state.get("requirements_content"):
+    # try:
+    # expected_third_party_libs = set(line.strip().split("==")[0].split(">=")[0].split("<=")[0]
+    # for line in state["requirements_content"].splitlines()
+    # if line.strip() and not line.startswith("#"))
+    # except Exception:
+    # logger.warning("Could not parse third-party libs from requirements_content")
+
+    logger.info(f"Static Code Validator: Validating imports for {len(py_files_to_validate)} Python files in '{project_root}'.")
+    logger.debug(f"Files to validate (relative to project root): {py_files_to_validate}")
+
+    validation_errors = static_imports_validator(
+        project_root=project_root, # Pass the determined project_root
+        generated_py_files=py_files_to_validate,
+        third_party_libs=expected_third_party_libs
+    )
+
+    if validation_errors:
+        error_summary = (f"Static Code Validator found {len(validation_errors)} import issues "
+                         f"in project '{project_name}':\n" + "\n".join(f"- {e}" for e in validation_errors))
+        logger.warning(error_summary)
+        # Decide what to do: go back to supervisor for review, or try to auto-fix (hard), or end.
+        return Command(
+            update={
+                "messages": state["messages"] + [
+                    HumanMessage(
+                        content=error_summary,
+                        name="static_validator"
+                    )
+                ],
+                "validation_issues": validation_errors # Store for potential later use
+            },
+            goto="supervisor" # Supervisor can decide if it needs to loop back to coding/planning
+        )
+    else:
+        success_message = f"Static Code Validator: All imports verified successfully for project '{project_name}'."
+        logger.info(success_message)
+        return Command(
+            update={
+                "messages": state["messages"] + [
+                    HumanMessage(
+                        content=success_message,
+                        name="static_validator"
+                    )
+                ]
+            },
+            goto="supervisor" # Proceed to next step via supervisor
+        )

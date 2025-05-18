@@ -25,7 +25,7 @@ Always respond with a valid JSON object containing only the 'next' key and a sin
 
 -   **`coder_master`**: Takes the directory structure JSON from `directory_generator` and orchestrates the implementation of each file. coder_master analyzes the structure, determines which specialized coder agent is needed for each file, and returns the complete codebase organized by file paths.
 
--   **`validator`**:Validates the generated code.
+-   **`static_code_validator_node`**:Validates the generated code.
 
 -   **`browser`**: Directly interacts with web pages, performing complex operations and interactions. You can also leverage `browser` to perform in-domain search, like Facebook, Instagram, Github, etc.
 

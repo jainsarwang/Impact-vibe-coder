@@ -35,7 +35,7 @@ TEAM_MEMBERS = [
     "directory_generator",
     "code_planner",
     "coder_master",
-    "validator"
+    "static_code_validator_node"
 ]
 
 __all__ = [
