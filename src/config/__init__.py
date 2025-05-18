@@ -34,7 +34,8 @@ TEAM_MEMBERS = [
     "reporter",
     "directory_generator",
     "code_planner",
-    "coder_master"
+    "coder_master",
+    "validator"
 ]
 
 __all__ = [
