@@ -25,7 +25,8 @@ from src.agents import  (
     config_coder_agent,
     test_coder_agent,
     frontend_coder_agent,db_coder_agent,
-    browser_agent
+    browser_agent,
+    import_export_agent,
 )
 from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS, CODER_AGENTS
@@ -104,7 +105,7 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
-def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
+def directory_generator_node(state: State) -> Command[Literal["import-export"]]:
     """Node for the directory generator agent that generator directory structure."""
     logger.info("Directory Generator agent starting task")
     result = directory_generator_agent.invoke(state)
@@ -139,8 +140,6 @@ Directory  ->  Image Generation  -> Dependencies Graph  ->  Coder Master  -> (
 
 """
 
-
-
 def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     """Code Planner node that generate the full plan for coder master."""
     logger.info("Code Planner generating full plan")
@@ -149,7 +148,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     if not directory_structure:
         logging.warning("No Directory Object in State, Going back to supervisor")
         return Command(goto='supervisor')
-
+    
     # Prepare all variables for the prompt
     prompt_vars = {
         "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
@@ -512,6 +511,42 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
         },
         goto="coder_master",
     )
+    
+def import_export_node(state: State) -> Command[Literal["supervisor"]]:
+    """Node for the import-export agent that verifies import and export statements of directory structure and verifies the path of import and export statements."""
+    logger.info("import-export agent starting task")
+    result = import_export_agent.invoke(state)
+    logger.info("import-export agent completed task")
+    response_content = result["messages"][-1].content
+    response_content = repair_json_output(response_content)
+    extract_and_save_json(response_content, "directory_structure.json")
+
+    # Initialize checklist from directory structure
+    checklist_manager.initialize_from_directory(response_content)
+
+    logger.debug(f"Import-Export agent response: {response_content}")
+    
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="import-export",
+                )
+            ],
+            "directory_structure": response_content
+        },
+        goto="supervisor",
+    )
+
+# """
+
+# Directory  ->  Image Generation  -> Dependencies Graph  ->  Coder Master  -> (
+#     Coder  -> Analyse code and all fucntion corresponds to Graph
+# )  ->  Move to next File generation by Coder
+
+# """
+
 
 def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Model Coder agent that generator directory structure."""
@@ -548,7 +583,6 @@ def frontend_coder_node(state: State) -> Command[Literal["coder_master"]]:
 def db_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the DB Coder agent that generator directory structure."""
     return coder(state, 'db_coder', db_coder_agent)
-
 
 # def code_node(state: State) -> Command[Literal["supervisor"]]:
 #     """Node for the coder agent that executes Python code."""
