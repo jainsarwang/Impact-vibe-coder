@@ -57,7 +57,8 @@ interface Plan {
 ```
 
 # Notes
-
+-   "Things_to_Search": "Topics to search **example: ['Agentic AI','LLM']**." For each topic, research: core technology, frameworks, tools, and methodologies - **maintain isolation and use recent sources**.
+-   Ensure the Researcher Agent is invoked independently for each distinct research topic identified in the search criteria. This partitioned approach facilitates thorough, focused information gathering on each subject area while maintaining process isolation between research streams.
 -   Ensure the plan is clear and logical, with tasks assigned to the correct agent based on their capabilities.
 -   `browser` is slow and expansive. Use `browser` **only** for tasks requiring **direct interaction** with web pages.
 -   `browser` already delivers comprehensive results, so there is no need to analyze its output further using `researcher`.

@@ -275,6 +275,7 @@ Provide the results in this JSON structure:
 -   Important files `manage.py`
 
 ## Example format
+Return the json directly as response no need for tool.
 
 ```json
 {

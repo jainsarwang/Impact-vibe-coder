@@ -33,7 +33,7 @@ Always respond with a valid JSON object containing only the 'next' key and a sin
 
 When building an application:
 
-1. First, call `directory_generator` to create the complete directory structure JSON
+1. Invoke Researcher Agent discretely for each identified topic, ensuring independent execution and context isolation per research stream. Follow the plan and execute the researcher.md file for comprehensive analysis.
 2. After `directory_generator` call `code_planner`
 3. Next, pass the entire directory structure to `coder_master`
 4. `coder_master` will handle the implementation of all files in the structure
