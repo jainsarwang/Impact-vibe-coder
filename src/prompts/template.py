@@ -28,7 +28,12 @@ def apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
     system_prompt = PromptTemplate(
         input_variables=["CURRENT_TIME"],
         template=get_prompt_template(prompt_name),
-    ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
+    ).format(
+        CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        ADDITIONAL_RULES = get_prompt_template('common_coder'),
+        **state
+    )
+    
     return [{"role": "system", "content": system_prompt}] + [{"role": "user", "content": state["coder_instruction"]}]
 
 def apply_prompt_template_planner(prompt_name: str, state: AgentState) -> list:

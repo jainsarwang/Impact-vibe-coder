@@ -1,168 +1,182 @@
 {
   "project_info": {
-    "name": "ReactTodoApp",
-    "description": "A modern and responsive to-do application built with React, Vite, and Tailwind CSS."
+    "name": "TravelPlannerPro",
+    "description": "A web application that allows users to plan trips based on their budget and destination, scraping hotel prices, comparing them, and recommending hotels near tourist locations."
   },
   "files": [
     {
-      "filename": "App.jsx",
-      "full_path": "projects/ReactTodoApp/src/App.jsx",
+      "filename": "main.py",
+      "full_path": "projects/TravelPlannerPro/backend/main.py",
       "imports": [
-        "react",
-        "react",
-        "react"
+        "fastapi",
+        "TravelPlannerPro/backend/routes.py"
       ],
       "exports": [
-        "App"
+        "app"
       ],
       "functions": [
-        "App",
-        "addTask",
-        "deleteTask",
-        "toggleComplete",
-        "editTask"
+        "main"
       ],
       "variables": [
-        "tasks"
+        "app"
       ],
-      "purpose": "Main application component that manages the to-do list state and renders the other components."
+      "purpose": "Backend application entry point"
     },
     {
-      "filename": "Task.jsx",
-      "full_path": "projects/ReactTodoApp/src/components/Task.jsx",
+      "filename": "routes.py",
+      "full_path": "projects/TravelPlannerPro/backend/routes.py",
       "imports": [
-        "react",
-        "react"
+        "fastapi",
+        "TravelPlannerPro/backend/models.py",
+        "TravelPlannerPro/backend/database.py"
       ],
       "exports": [
-        "Task"
+        "router"
       ],
       "functions": [
-        "Task"
-      ],
-      "variables": [
-        "isEditing",
-        "title"
-      ],
-      "purpose": "Component for rendering a single to-do task."
-    },
-    {
-      "filename": "TaskList.jsx",
-      "full_path": "projects/ReactTodoApp/src/components/TaskList.jsx",
-      "imports": [
-        "react",
-        "Task.jsx"
-      ],
-      "exports": [
-        "TaskList"
-      ],
-      "functions": [
-        "TaskList"
+        "search_hotels",
+        "get_hotel_details"
       ],
       "variables": [],
-      "purpose": "Component for rendering the list of to-do tasks."
+      "purpose": "API routes for the backend"
     },
     {
-      "filename": "AddTaskForm.jsx",
-      "full_path": "projects/ReactTodoApp/src/components/AddTaskForm.jsx",
+      "filename": "models.py",
+      "full_path": "projects/TravelPlannerPro/backend/models.py",
       "imports": [
-        "react",
-        "react"
+        "sqlalchemy"
       ],
       "exports": [
-        "AddTaskForm"
+        "Hotel"
       ],
-      "functions": [
-        "AddTaskForm"
-      ],
-      "variables": [
-        "title"
-      ],
-      "purpose": "Component for adding new to-do tasks."
-    },
-    {
-      "filename": "EditTaskForm.jsx",
-      "full_path": "projects/ReactTodoApp/src/components/EditTaskForm.jsx",
-      "imports": [
-        "react",
-        "react"
-      ],
-      "exports": [
-        "EditTaskForm"
-      ],
-      "functions": [
-        "EditTaskForm"
-      ],
-      "variables": [
-        "title"
-      ],
-      "purpose": "Component for editing an existing to-do task."
-    },
-    {
-      "filename": "localStorage.js",
-      "full_path": "projects/ReactTodoApp/src/utils/localStorage.js",
-      "imports": [],
-      "exports": [
-        "getTasksFromLocalStorage",
-        "saveTasksToLocalStorage"
-      ],
-      "functions": [
-        "getTasksFromLocalStorage",
-        "saveTasksToLocalStorage"
-      ],
-      "variables": [],
-      "purpose": "Utility functions for interacting with local storage."
-    },
-    {
-      "filename": "index.css",
-      "full_path": "projects/ReactTodoApp/src/index.css",
-      "imports": [],
-      "exports": [],
       "functions": [],
+      "variables": [
+        "Hotel"
+      ],
+      "purpose": "Data models for the backend"
+    },
+    {
+      "filename": "database.py",
+      "full_path": "projects/TravelPlannerPro/backend/database.py",
+      "imports": [
+        "sqlalchemy"
+      ],
+      "exports": [
+        "get_db"
+      ],
+      "functions": [
+        "get_db"
+      ],
+      "variables": [
+        "engine",
+        "SessionLocal"
+      ],
+      "purpose": "Database connection and setup"
+    },
+    {
+      "filename": "utils.py",
+      "full_path": "projects/TravelPlannerPro/backend/utils.py",
+      "imports": [
+        "requests",
+        "bs4"
+      ],
+      "exports": [
+        "scrape_hotel_data",
+        "compare_prices"
+      ],
+      "functions": [
+        "scrape_hotel_data",
+        "compare_prices"
+      ],
       "variables": [],
-      "purpose": "Global CSS file for Tailwind CSS directives."
+      "purpose": "Utility functions for data scraping and price comparison"
     },
     {
       "filename": "main.jsx",
-      "full_path": "projects/ReactTodoApp/src/main.jsx",
+      "full_path": "projects/TravelPlannerPro/frontend/src/main.jsx",
       "imports": [
         "react",
-        "client",
-        "App.jsx",
-        "index.css"
+        "react-dom/client",
+        "TravelPlannerPro/frontend/src/App.jsx",
+        "TravelPlannerPro/frontend/index.css"
       ],
       "exports": [],
       "functions": [],
       "variables": [],
-      "purpose": "Entry point for the React application."
-    }
-  ],
-  "dependencies": [
-    {
-      "source_file": "Task.jsx",
-      "target_file": "TaskList.jsx",
-      "import_statement": "Task.jsx",
-      "in_cycle": false
+      "purpose": "Frontend application entry point"
     },
     {
-      "source_file": "App.jsx",
-      "target_file": "main.jsx",
-      "import_statement": "App.jsx",
-      "in_cycle": false
+      "filename": "App.jsx",
+      "full_path": "projects/TravelPlannerPro/frontend/src/App.jsx",
+      "imports": [
+        "react",
+        "TravelPlannerPro/frontend/src/components/SearchBar.jsx",
+        "TravelPlannerPro/frontend/src/components/HotelList.jsx"
+      ],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "Main App component"
     },
     {
-      "source_file": "index.css",
-      "target_file": "main.jsx",
-      "import_statement": "index.css",
-      "in_cycle": false
+      "filename": "SearchBar.jsx",
+      "full_path": "projects/TravelPlannerPro/frontend/src/components/SearchBar.jsx",
+      "imports": [
+        "react"
+      ],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "Search bar component"
+    },
+    {
+      "filename": "HotelList.jsx",
+      "full_path": "projects/TravelPlannerPro/frontend/src/components/HotelList.jsx",
+      "imports": [
+        "react",
+        "TravelPlannerPro/frontend/src/components/HotelDetails.jsx"
+      ],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "Hotel list component"
+    },
+    {
+      "filename": "HotelDetails.jsx",
+      "full_path": "projects/TravelPlannerPro/frontend/src/components/HotelDetails.jsx",
+      "imports": [
+        "react"
+      ],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "Hotel details component"
+    },
+    {
+      "filename": "UserAccount.jsx",
+      "full_path": "projects/TravelPlannerPro/frontend/src/components/UserAccount.jsx",
+      "imports": [
+        "react"
+      ],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "User account component"
     }
   ],
-  "cycles": [],
+  "dependencies": [],
+  "export_map": {
+    "app": "main.py",
+    "router": "routes.py",
+    "Hotel": "models.py",
+    "get_db": "database.py",
+    "scrape_hotel_data": "utils.py",
+    "compare_prices": "utils.py"
+  },
   "stats": {
-    "total_files": 8,
-    "files_with_exports": 6,
-    "files_with_imports": 6,
-    "total_dependencies": 3,
-    "total_cycles": 0
+    "total_files": 11,
+    "files_with_exports": 5,
+    "files_with_imports": 11,
+    "total_dependencies": 0
   }
 }

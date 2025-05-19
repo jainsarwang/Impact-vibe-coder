@@ -73,6 +73,87 @@ interface Step {
     file: string;
     next_coder_instruction: string;
     note?: string;
+    functions: {
+        `functionName`: {
+            params: string;
+            returns: string;
+            description: string;
+        };
+    };
+    variables: {
+        `variableName`: {
+            type: string;
+            description: string;
+        }
+    };
+    imports: {
+        `import1`: {
+            importfilepath: string;
+            type: "module" | "function" | "variable";
+            description: string,
+            functions: {
+                `functionName`: {
+                    params: string;
+                    returns: string;
+                    description: string;
+                }
+            },
+            variables: {
+                `variableName`: {
+                    type: string;
+                    description: string;
+                }
+            },
+        }
+    };
+    exports: string[],
+    api_endpoints: {
+        `METHOD /path`: {
+            controller: string;
+            function: string;
+            request: {
+                params: {
+                    `params1`: `paramsType`;
+                },
+                query: {
+                    `query1`: `queryType`;
+                },
+                additionalInfo: {
+                    `header`: `valueFormat`;
+                    ...
+                }
+                body: {
+                    ...
+                }
+            },
+            response: {
+                success: `Response of process`,
+                errors: `Possible Errors and its format`
+            },
+            description: string
+        }
+    },
+    data_models: {
+        `ModelName`: {
+            fields: {
+                `fieldName`: {
+                    type: string,
+                    required: true | false,
+                    description: string
+                }
+            },
+            relationships: [
+                {
+                    model: string;
+                    type: "one-to-many" | "many-to-one" | "many-to-many";
+                    field: string
+                }
+            ]
+        }
+    },
+    dependencies: {
+        `dependency-name`: string;
+    }
 }
 ```
 
@@ -99,53 +180,78 @@ interface Step {
         },
         "variables": {
             "variableName": {
-            "type": "Variable type",
-            "description": "Variable purpose and usage"
+                "type": "Variable type",
+                "description": "Variable purpose and usage"
             }
         },
-        "imports": ["list", "of", "imports"],
+        "imports": {
+            "import1": {
+                "importfilepath": "[frontend|backend]/path/to/file.ext",
+                "type": "module" | "function" | "variable",
+                "description": "Import description",
+                "functions": {
+                    "functionName": {
+                        "params": "Parameter descriptions with types",
+                        "returns": "Return type and description",
+                        "description": "Detailed function documentation"
+                    }
+                },
+                "variables": {
+                    "variableName": {
+                        "type": "Variable type",
+                        "description": "Variable purpose and usage"
+                    }
+                },
+            },
+            "import2": {
+                "importfilepath": "[frontend|backend]/path/to/file.ext",
+                "type": "module" | "function" | "variable",
+                "description": "Import description",
+                "variables": {
+                    "variableName": {
+                    "type": "Variable type",
+                    "description": "Variable purpose and usage"
+                    }
+                }
+            }
+        },
         "exports": ["list", "of", "exports"],
         "api_endpoints": {
             "METHOD /path": {
-            "controller": "path\\to\\controller.file",
-            "function": "handlerFunction",
-            "request": {
-                "params": {},
-                "query": {},
-                "body": {}
-            },
-            "response": {
-                "success": {},
-                "errors": []
-            },
-            "description": "Endpoint purpose"
+                "controller": "path\\to\\controller.file",
+                "function": "handlerFunction",
+                "request": {
+                    "params": {},
+                    "query": {},
+                    "body": {}
+                },
+                "response": {
+                    "success": {},
+                    "errors": []
+                },
+                "description": "Endpoint purpose"
             }
         },
         "data_models": {
             "ModelName": {
-            "fields": {
-                "fieldName": {
-                "type": "Field type",
-                "required": true/false,
-                "description": "Field purpose"
-                }
-            },
-            "relationships": [
-                {
-                "model": "RelatedModel",
-                "type": "one-to-many/many-to-one/etc.",
-                "field": "relationField"
-                }
-            ]
+                "fields": {
+                    "fieldName": {
+                        "type": "Field type",
+                        "required": true/false,
+                        "description": "Field purpose"
+                    }
+                },
+                "relationships": [
+                    {
+                        "model": "RelatedModel",
+                        "type": "one-to-many/many-to-one/etc.",
+                        "field": "relationField"
+                    }
+                ]
             }
         },
         "dependencies": {
-            "production": {
             "dependency-name": "^version"
-            },
-            "development": {
-            "dev-dependency": "^version"
-            }
         }
     }
 ]
@@ -155,13 +261,25 @@ interface Step {
 
 ## Frontend
 
--   While building the frontend always pass the relevant `api_endpoints` to the member.
+-   In the frontend module always pass the `api_endpoints` to the member.
+-   Use `vite` as the default development server for the react.js application if not specified otherwise.
 
 ## README.md
 
 -   Remeber to always provide `README.md` file
 -   Always include the commands to setup te project Correctly
 -   Always include the `api_endpoints`, if exists.
+
+## Requirements.txt
+
+-   Always include the `requirements.txt` or `package.json` file, whenever necessary
+-   Always include the `dependencies` along with the version information in the `requirements.txt` and `package.json` file.
+
+## .env
+
+-   Generate .env file for the project to store the secure/secrets, like API KEYS, PORT, etc.
+-   For the port number avoid using 3000 and 8080.
+-   Keep the `.env` file separate for backend and frontend module.
 
 # Notes
 
@@ -171,3 +289,9 @@ interface Step {
 -   Include all the files that are listed in the `directory_structure` in the plan.
 -   Always share the `api_endpoints` if available for to the `frontend_member`.
 -   Always include `README.md` File
+-   Share the Imports to each file
+-   Flow of code generation
+    -   First Generate backend modules
+    -   Then Frontend Modules
+    -   Then the `requirements.txt` and `package.json`
+        `Then write`README.md`
