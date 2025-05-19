@@ -1,0 +1,182 @@
+{
+  "project_info": {
+    "name": "TravelPlannerPro",
+    "description": "A web application that allows users to plan trips based on their budget and destination, scraping hotel prices, comparing them, and recommending hotels near tourist locations."
+  },
+  "files": [
+    {
+      "filename": "main.py",
+      "full_path": "projects/TravelPlannerPro/backend/main.py",
+      "imports": [
+        "fastapi",
+        "TravelPlannerPro/backend/routes.py"
+      ],
+      "exports": [
+        "app"
+      ],
+      "functions": [
+        "main"
+      ],
+      "variables": [
+        "app"
+      ],
+      "purpose": "Backend application entry point"
+    },
+    {
+      "filename": "routes.py",
+      "full_path": "projects/TravelPlannerPro/backend/routes.py",
+      "imports": [
+        "fastapi",
+        "TravelPlannerPro/backend/models.py",
+        "TravelPlannerPro/backend/database.py"
+      ],
+      "exports": [
+        "router"
+      ],
+      "functions": [
+        "search_hotels",
+        "get_hotel_details"
+      ],
+      "variables": [],
+      "purpose": "API routes for the backend"
+    },
+    {
+      "filename": "models.py",
+      "full_path": "projects/TravelPlannerPro/backend/models.py",
+      "imports": [
+        "sqlalchemy"
+      ],
+      "exports": [
+        "Hotel"
+      ],
+      "functions": [],
+      "variables": [
+        "Hotel"
+      ],
+      "purpose": "Data models for the backend"
+    },
+    {
+      "filename": "database.py",
+      "full_path": "projects/TravelPlannerPro/backend/database.py",
+      "imports": [
+        "sqlalchemy"
+      ],
+      "exports": [
+        "get_db"
+      ],
+      "functions": [
+        "get_db"
+      ],
+      "variables": [
+        "engine",
+        "SessionLocal"
+      ],
+      "purpose": "Database connection and setup"
+    },
+    {
+      "filename": "utils.py",
+      "full_path": "projects/TravelPlannerPro/backend/utils.py",
+      "imports": [
+        "requests",
+        "bs4"
+      ],
+      "exports": [
+        "scrape_hotel_data",
+        "compare_prices"
+      ],
+      "functions": [
+        "scrape_hotel_data",
+        "compare_prices"
+      ],
+      "variables": [],
+      "purpose": "Utility functions for data scraping and price comparison"
+    },
+    {
+      "filename": "main.jsx",
+      "full_path": "projects/TravelPlannerPro/frontend/src/main.jsx",
+      "imports": [
+        "react",
+        "react-dom/client",
+        "TravelPlannerPro/frontend/src/App.jsx",
+        "TravelPlannerPro/frontend/index.css"
+      ],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "Frontend application entry point"
+    },
+    {
+      "filename": "App.jsx",
+      "full_path": "projects/TravelPlannerPro/frontend/src/App.jsx",
+      "imports": [
+        "react",
+        "TravelPlannerPro/frontend/src/components/SearchBar.jsx",
+        "TravelPlannerPro/frontend/src/components/HotelList.jsx"
+      ],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "Main App component"
+    },
+    {
+      "filename": "SearchBar.jsx",
+      "full_path": "projects/TravelPlannerPro/frontend/src/components/SearchBar.jsx",
+      "imports": [
+        "react"
+      ],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "Search bar component"
+    },
+    {
+      "filename": "HotelList.jsx",
+      "full_path": "projects/TravelPlannerPro/frontend/src/components/HotelList.jsx",
+      "imports": [
+        "react",
+        "TravelPlannerPro/frontend/src/components/HotelDetails.jsx"
+      ],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "Hotel list component"
+    },
+    {
+      "filename": "HotelDetails.jsx",
+      "full_path": "projects/TravelPlannerPro/frontend/src/components/HotelDetails.jsx",
+      "imports": [
+        "react"
+      ],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "Hotel details component"
+    },
+    {
+      "filename": "UserAccount.jsx",
+      "full_path": "projects/TravelPlannerPro/frontend/src/components/UserAccount.jsx",
+      "imports": [
+        "react"
+      ],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "User account component"
+    }
+  ],
+  "dependencies": [],
+  "export_map": {
+    "app": "main.py",
+    "router": "routes.py",
+    "Hotel": "models.py",
+    "get_db": "database.py",
+    "scrape_hotel_data": "utils.py",
+    "compare_prices": "utils.py"
+  },
+  "stats": {
+    "total_files": 11,
+    "files_with_exports": 5,
+    "files_with_imports": 11,
+    "total_dependencies": 0
+  }
+}
