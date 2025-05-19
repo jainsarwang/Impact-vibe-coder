@@ -62,6 +62,7 @@ Before completing any response, you MUST verify that:
 All file paths follow the required structure
 All imports and exports are properly implemented
 The complete project structure is coherent and functional
+For the `importfilepath` use absolute path from the `[project_name]/backend` or `[project_name]/frontend` or [project_name]/ (if frontend and backend not present) folder only
 
 **FAILURE TO FOLLOW THESE REQUIREMENTS WILL RESULT IN NON-FUNCTIONAL CODE.**
 
@@ -228,12 +229,7 @@ Provide the results in this JSON structure:
     }
   },
   "dependencies": {
-    "production": {
-      "dependency-name": "^version"
-    },
-    "development": {
-      "dev-dependency": "^version"
-    }
+    "dependency-name": "^version"
   }
 }
 ```
@@ -258,6 +254,158 @@ Provide the results in this JSON structure:
 10. Create backend logic files before the frontend files.
 11. **Verification of Import and Export Statements**: Always see that whatever import export statement being generated should be accurate and correct according to the project.
 12. **Project Structure Adhereance**: Adhere to the project structure being generated and follow that only with full proficiency
+
+## Image attachments
+
+-   Use svg to create a new image by yourself
+-   or use web images to and add it to project
+
+## Language Specific Requirements
+
+-   use the Official project organization according to project and framework
+
+### For React.js
+
+-   Use vite and follow its official project organization
+-   Important files `package.json`, `index.html`, `src/main.jsx`, `src/App.jsx`
+
+### For Django
+
+-   `[project_name]/[project_name]/setting.py` directory is must
+-   Important files `manage.py`
+
+## Example format
+
+```json
+{
+    "project_overview": {
+        "name": "Project Name",
+        "description": "Brief project description",
+        "stack": ["language", "framework", "database"]
+    },
+    "directory_structure": {
+        "projects/project-name/": {
+            "purpose": "Project root directory",
+            "files": ["README.md", "package.json", "requirements.txt"]
+        },
+        "projects/project-name/backend/": {
+            "purpose": "Backend module",
+            "files": ["app.py", "models.py", "routes.py"]
+        },
+        "projects/project-name/frontend/": {
+            "purpose": "Frontend module",
+            "files": ["index.html", "main.jsx", "App.jsx"]
+        }
+    },
+    "file_documentation": {
+        "projects/project-name/backend/app.py": {
+            "purpose": "Backend application entry point",
+            "functions": {
+                "main": {
+                    "params": "",
+                    "returns": "",
+                    "description": "Main function to start the backend application"
+                }
+            },
+            "variables": {
+                "app": {
+                    "type": "Flask application instance",
+                    "description": "Flask application instance"
+                }
+            },
+            "imports": {
+                "flask": {
+                    "importfilepath": "flask",
+                    "type": "module",
+                    "description": "Flask web framework",
+                    "functions": {
+                        "Flask": {
+                            "params": "",
+                            "returns": "",
+                            "description": "Flask application constructor"
+                        }
+                    }
+                }
+            },
+            "exports": ["app"]
+        },
+        "projects/project-name/frontend/main.jsx": {
+            "purpose": "Frontend application entry point",
+            "functions": {
+                "main": {
+                    "params": "",
+                    "returns": "",
+                    "description": "Main function to start the frontend application"
+                }
+            },
+            "variables": {
+                "app": {
+                    "type": "React application instance",
+                    "description": "React application instance"
+                }
+            },
+            "imports": {
+                "react": {
+                    "importfilepath": "react",
+                    "type": "module",
+                    "description": "React JavaScript library",
+                    "functions": {
+                        "React": {
+                            "params": "",
+                            "returns": "",
+                            "description": "React application constructor"
+                        }
+                    }
+                }
+            },
+            "exports": ["app"]
+        }
+    },
+    "api_endpoints": {
+        "GET /api/data": {
+            "controller": "projects/project-name/backend/routes.py",
+            "function": "get_data",
+            "request": {
+                "params": {},
+                "query": {},
+                "body": {}
+            },
+            "response": {
+                "success": {},
+                "errors": []
+            },
+            "description": "Get data endpoint"
+        }
+    },
+    "data_models": {
+        "DataModel": {
+            "fields": {
+                "id": {
+                    "type": "integer",
+                    "required": true,
+                    "description": "Unique identifier"
+                },
+                "name": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Data name"
+                }
+            },
+            "relationships": [
+                {
+                    "model": "RelatedModel",
+                    "type": "one-to-many",
+                    "field": "related_field"
+                }
+            ]
+        }
+    },
+    "dependencies": {
+        "flask": "^2.0.2",
+        "react": "^18.2.0"
+    }
+}
+```
 
 ## Example Trigger
 
