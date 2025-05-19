@@ -1,0 +1,168 @@
+{
+  "project_info": {
+    "name": "ReactTodoApp",
+    "description": "A modern and responsive to-do application built with React, Vite, and Tailwind CSS."
+  },
+  "files": [
+    {
+      "filename": "App.jsx",
+      "full_path": "projects/ReactTodoApp/src/App.jsx",
+      "imports": [
+        "react",
+        "react",
+        "react"
+      ],
+      "exports": [
+        "App"
+      ],
+      "functions": [
+        "App",
+        "addTask",
+        "deleteTask",
+        "toggleComplete",
+        "editTask"
+      ],
+      "variables": [
+        "tasks"
+      ],
+      "purpose": "Main application component that manages the to-do list state and renders the other components."
+    },
+    {
+      "filename": "Task.jsx",
+      "full_path": "projects/ReactTodoApp/src/components/Task.jsx",
+      "imports": [
+        "react",
+        "react"
+      ],
+      "exports": [
+        "Task"
+      ],
+      "functions": [
+        "Task"
+      ],
+      "variables": [
+        "isEditing",
+        "title"
+      ],
+      "purpose": "Component for rendering a single to-do task."
+    },
+    {
+      "filename": "TaskList.jsx",
+      "full_path": "projects/ReactTodoApp/src/components/TaskList.jsx",
+      "imports": [
+        "react",
+        "Task.jsx"
+      ],
+      "exports": [
+        "TaskList"
+      ],
+      "functions": [
+        "TaskList"
+      ],
+      "variables": [],
+      "purpose": "Component for rendering the list of to-do tasks."
+    },
+    {
+      "filename": "AddTaskForm.jsx",
+      "full_path": "projects/ReactTodoApp/src/components/AddTaskForm.jsx",
+      "imports": [
+        "react",
+        "react"
+      ],
+      "exports": [
+        "AddTaskForm"
+      ],
+      "functions": [
+        "AddTaskForm"
+      ],
+      "variables": [
+        "title"
+      ],
+      "purpose": "Component for adding new to-do tasks."
+    },
+    {
+      "filename": "EditTaskForm.jsx",
+      "full_path": "projects/ReactTodoApp/src/components/EditTaskForm.jsx",
+      "imports": [
+        "react",
+        "react"
+      ],
+      "exports": [
+        "EditTaskForm"
+      ],
+      "functions": [
+        "EditTaskForm"
+      ],
+      "variables": [
+        "title"
+      ],
+      "purpose": "Component for editing an existing to-do task."
+    },
+    {
+      "filename": "localStorage.js",
+      "full_path": "projects/ReactTodoApp/src/utils/localStorage.js",
+      "imports": [],
+      "exports": [
+        "getTasksFromLocalStorage",
+        "saveTasksToLocalStorage"
+      ],
+      "functions": [
+        "getTasksFromLocalStorage",
+        "saveTasksToLocalStorage"
+      ],
+      "variables": [],
+      "purpose": "Utility functions for interacting with local storage."
+    },
+    {
+      "filename": "index.css",
+      "full_path": "projects/ReactTodoApp/src/index.css",
+      "imports": [],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "Global CSS file for Tailwind CSS directives."
+    },
+    {
+      "filename": "main.jsx",
+      "full_path": "projects/ReactTodoApp/src/main.jsx",
+      "imports": [
+        "react",
+        "client",
+        "App.jsx",
+        "index.css"
+      ],
+      "exports": [],
+      "functions": [],
+      "variables": [],
+      "purpose": "Entry point for the React application."
+    }
+  ],
+  "dependencies": [
+    {
+      "source_file": "Task.jsx",
+      "target_file": "TaskList.jsx",
+      "import_statement": "Task.jsx",
+      "in_cycle": false
+    },
+    {
+      "source_file": "App.jsx",
+      "target_file": "main.jsx",
+      "import_statement": "App.jsx",
+      "in_cycle": false
+    },
+    {
+      "source_file": "index.css",
+      "target_file": "main.jsx",
+      "import_statement": "index.css",
+      "in_cycle": false
+    }
+  ],
+  "cycles": [],
+  "stats": {
+    "total_files": 8,
+    "files_with_exports": 6,
+    "files_with_imports": 6,
+    "total_dependencies": 3,
+    "total_cycles": 0
+  }
+}
