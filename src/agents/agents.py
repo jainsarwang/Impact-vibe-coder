@@ -1,6 +1,7 @@
 from langgraph.prebuilt import create_react_agent
 from langchain_openai import ChatOpenAI
 
+
 from src.prompts import apply_prompt_template, apply_prompt_template_planner, apply_prompt_template_for_coder
 from src.tools import (
     bash_tool,
@@ -8,7 +9,8 @@ from src.tools import (
     crawl_tool,
     python_repl_tool,
     tavily_tool,
-    project_zip_tool
+    project_zip_tool,
+    version_resolver_tool
 )
 
 from src.llms.llm import get_llm_by_type
@@ -114,3 +116,9 @@ react_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
     tools=[bash_tool],
     prompt=lambda state: apply_prompt_template_for_coder("react_coder", app_state),
 ))
+
+version_resolver_agent = create_react_agent(
+    get_llm_by_type(AGENT_LLM_MAP["version_resolver"]),
+    tools=[bash_tool, python_repl_tool, version_resolver_tool], 
+    prompt=lambda state: apply_prompt_template_for_version_resolver(state),
+)
