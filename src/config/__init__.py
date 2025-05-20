@@ -38,6 +38,18 @@ TEAM_MEMBERS = [
     "static_code_validator_node"
 ]
 
+CODER_AGENTS = [
+    "model_coder",
+    "controller_coder",
+    "route_coder",
+    "service_coder",
+    "utility_coder",
+    "test_coder",
+    "config_coder",
+    "frontend_coder",
+    "db_coder",
+]
+
 __all__ = [
     # Reasoning LLM
     "REASONING_MODEL",

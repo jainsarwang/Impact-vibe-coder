@@ -6,6 +6,7 @@ import re
 import shlex
 import subprocess
 import sys
+import traceback
 from typing import Dict, List, Tuple
 
 from src.graph.types import State
@@ -14,19 +15,22 @@ from src.graph.types import State
 def extract_commands_from_readme(readme_file_path: str) -> Dict[str, List[str]]:
     """Extract and categorize executable commands from README.md"""
     try:
+        logging.debug(f"Step 5:{readme_file_path}")
         with open(readme_file_path, 'r', encoding='utf-8') as file:
             content = file.read()
     except FileNotFoundError:
         logging.debug(f"Error: File not found at {readme_file_path}")
+        logging.debug("Step 6")
         return {'venv': [], 'frontend': [], 'backend': [], 'other': []}
     except Exception as e:
         logging.debug(f"Error reading file: {e}")
+        logging.debug("Step 7")
         return {'venv': [], 'frontend': [], 'backend': [], 'other': []}
 
     # Updated pattern to handle comma-separated commands
     pattern = r'```(?:bash|sh)?(.*?)```|^\$\s*(.+)$|`([^`]+)`'
     matches = re.findall(pattern, content, re.DOTALL | re.MULTILINE)
-
+    logging.debug("Step 8")
     venv_commands = []
     frontend_commands = []
     backend_commands = []
@@ -41,13 +45,17 @@ def extract_commands_from_readme(readme_file_path: str) -> Dict[str, List[str]]:
     # Backend indicators
     backend_keywords = ['backend', 'pip', 'django', 'flask', 'fastapi',
                     'uvicorn', 'gunicorn', 'node server', 'express', 'migrate']
-
+    logging.debug("Matches", matches)
     for match in matches:
         cmd = match[0] or match[1] or match[2]
+        logging.debug("Step 8.1", cmd)
         if cmd.strip():
+            logging.debug("Step 8.2", cmd.strip())
+
             # Split by commas first, then by newlines
             for part in cmd.split(','):
                 for line in part.split(''):
+                    logging.debug("Step 8.3")
                     line = line.strip()
                     if line and not line.startswith('#'):
                         # Normalize for case-insensitive comparison
@@ -73,10 +81,13 @@ def extract_commands_from_readme(readme_file_path: str) -> Dict[str, List[str]]:
                             backend_commands.append(line)
                         else:
                             other_commands.append(line)
+    logging.debug("Step 9")
 
     def is_executable_command(cmd):
+        logging.debug("Step 10", cmd)
         if re.search(r'git\s+(clone|pull|fetch|remote\s+add)', cmd, re.IGNORECASE):
             return False
+        logging.debug("Step 11")
         return (re.search(r'[/.=-]', cmd) or
                 len(cmd.split()) > 1 or
                 re.match(r'^(php|npm|composer|python|pip|docker|streamlit)\b', cmd, re.IGNORECASE))
@@ -182,10 +193,16 @@ def execute(state: State, project_requirement: str):
     """ Execute the commands in the command groups"""
 
     try:
+        logging.debug("Executor started execution")
         requirement = json.loads(project_requirement)
+        directory_structure = json.loads(state['directory_structure'])
 
+        logging.debug(requirement)
+        logging.debug("Step 1")
         ROOT_DIR = f"projects/{requirement['project_name']}"
-        for file in state['directory_structure']['file_documentation'].keys():
+        logging.debug("Step 2")
+
+        for file in directory_structure['file_documentation'].keys():
             if 'readme' in file.lower():
                 README_PATH = file
 
@@ -195,11 +212,13 @@ def execute(state: State, project_requirement: str):
         # Removing any trailing slash ('/')
         if README_PATH.startswith('/'):
             README_PATH = README_PATH[1:]
+        logging.debug("Step 3")
 
         # If no projects folder in starting, append it to readme
         if not README_PATH.startswith('projects'):
             README_PATH = f"projects/{README_PATH}"
             
+        logging.debug("step 4")
         command_groups = extract_commands_from_readme(README_PATH)
 
         logging.debug("Extracted Commands:")
@@ -232,5 +251,7 @@ def execute(state: State, project_requirement: str):
                 logging.debug(f"   Reason: {output}")
 
         return True
-    except:
+    except Exception as e:
+        logging.error(e)
+        logging.error(traceback.print_exc(e))
         return False

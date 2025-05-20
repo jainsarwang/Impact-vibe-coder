@@ -73,7 +73,6 @@ CREATE INDEX idx_todos_completed ON todos(completed);
 
 ```
 
-
 ### For TypeScript/JavaScript ORM (Sequelize, TypeORM, Prisma)
 
 -   Implement model definitions with proper types
@@ -82,7 +81,6 @@ CREATE INDEX idx_todos_completed ON todos(completed);
 -   Use transactions for multi-operation processes
 -   Implement proper error handling
 -   Add indexes and constraints
--   Confirm the usage of `bash_tool` while writing the files.
 
 Example TypeORM migration:
 
@@ -216,6 +214,8 @@ Provide files created in json with and only in json with the following format to
 6. **Normalization**: Use appropriate normalization levels
 7. **Documentation**: Add comments explaining complex operations
 
+<<ADDITIONAL_RULES>>
+
 ## Special Considerations
 
 -   For relational databases, implement proper foreign key relationships
@@ -232,4 +232,3 @@ For example, when implementing database components for a Todo application, you m
 -   Query optimizations for common operations
 
 Always generate complete, functional code that handles all the requirements specified in the input.
-

@@ -22,12 +22,13 @@ You'll receive input in this format:
 FILE: path/to/file.ext
 LANGUAGE: programming_language
 FRAMEWORK: framework_name (if applicable)
-DESCRIPTION: Brief description of the test file's purpose
+DESCRIPTION: Brief description of the testing file ad how to create test codes
 REQUIREMENTS:
 - Components to test
 - Test scenarios to cover
 - Edge cases to handle
 - Mock requirements
+-Testing From every aspect very clearly
 CONTEXT:
 (Any relevant context about the components being tested)
 ```
@@ -139,19 +140,6 @@ describe("TodoService", () => {
         });
     });
 });
-```
-
-## Output Format
-
-Provide the file paths of complete service implementation files in json with:
-Provide files created in json with and only in json with the following format to be followed strictly this format is your God:
-
-```json
-{
-    "FILE": ["List of file paths for all files created"],
-    "programming_language": "programmin_language",
-    "code": "The code to be written in file"
-}
 ```
 
 ### For Python Tests

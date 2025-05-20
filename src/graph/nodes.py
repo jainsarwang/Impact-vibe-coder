@@ -28,7 +28,7 @@ from src.agents import  (
     browser_agent
 )
 from src.llms.llm import get_llm_by_type
-from src.config import TEAM_MEMBERS
+from src.config import TEAM_MEMBERS, CODER_AGENTS
 from src.config.agents import AGENT_LLM_MAP
 from src.prompts.template import apply_prompt_template, apply_prompt_template_planner, get_prompt_template
 from src.tools.search import tavily_tool
@@ -37,6 +37,7 @@ from src.tools.static_imports_validator import static_imports_validator
 from src.utils import executor
 from src.utils.json_utils import repair_json_output
 from .types import State, Router
+from ..utils import ChecklistManager
 import re
 import json
 
@@ -80,9 +81,10 @@ def extract_and_save_json(response_text: str, output_file: str = 'project_requir
     except Exception as e:
         raise ValueError(f"Could not extract valid JSON: {str(e)}")
 
-
+logger = logging.getLogger(__name__)
 
 RESPONSE_FORMAT = "Response from {}:\n\n<response>\n{}\n</response>\n\n*Please execute the next step.*"
+checklist_manager = ChecklistManager.ChecklistManager()
 
 def research_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the researcher agent that performs research tasks."""
@@ -100,7 +102,8 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
                     content=response_content,
                     name="researcher",
                 )
-            ]
+            ],
+            "researched_content" : response_content
         },
         goto="supervisor",
     )
@@ -398,10 +401,10 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
     extract_and_save_json(response_content, "directory_structure.json")
-    
+
     # Initialize checklist from directory structure
     checklist_manager.initialize_from_directory(response_content)
-    
+
     logger.debug(f"Directory Generator agent response: {response_content}")
 
     return Command(
@@ -416,6 +419,14 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
         },
         goto="supervisor",
     )
+
+"""
+
+Directory  ->  Image Generation  -> Dependencies Graph  ->  Coder Master  -> (
+    Coder  -> Analyse code and all fucntion corresponds to Graph
+)  ->  Move to next File generation by Coder
+
+"""
 
 def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     """Code Planner node that generate the full plan for coder master."""
@@ -452,19 +463,12 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     ]
 
     llm = get_llm_by_type("basic")
-    if state.get("deep_thinking_mode"):
-        llm = get_llm_by_type("reasoning")
-    if state.get("search_before_planning"):
-        searched_content = tavily_tool.invoke({"query": state["messages"][-1].content})
-        messages = deepcopy(messages)
-        messages[-1].content += f"\n\n# Relative Search Results\n\n{json.dumps([{'title': elem['title'], 'content': elem['content']} for elem in searched_content], ensure_ascii=False)}"
-        
     response = llm.invoke(messages)
     full_response = response.content
     logger.debug(f"Current state messages: {state['messages']}")
     logger.info(f"Code Planner response: {full_response}")
 
-    extract_and_save_json(full_response, "code_planner.json")
+    # extract_and_save_json(full_response, "code_planner.json")
 
     if full_response.startswith("```json"):
         full_response = full_response.removeprefix("```json")
@@ -477,9 +481,10 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     try:
         repaired_response = json_repair.loads(full_response)
         full_response = json.dumps(repaired_response)
+
         with open("code_planner.json", "w", encoding="utf-8") as f:
             json.dump(repaired_response, f, indent=2, ensure_ascii=False)
-        
+
         # Update checklist from the plan
         checklist_manager.update_from_plan(repaired_response)
     except json.JSONDecodeError:
@@ -525,10 +530,10 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         code_plan = json.loads(code_plan_str)
         # Ensure code_plan is a list, handle potential wrapper dict
         if not isinstance(code_plan, list):
-             code_plan = code_plan.get("plan", [])
-             if not isinstance(code_plan, list):
-                  logger.error("Code plan loaded but is not a list and has no 'plan' key list.")
-                  raise ValueError("Invalid code plan format")
+            code_plan = code_plan.get("plan", [])
+            if not isinstance(code_plan, list):
+                logger.error("Code plan loaded but is not a list and has no 'plan' key list.")
+                raise ValueError("Invalid code plan format")
 
     except (json.JSONDecodeError, ValueError) as e:
         logger.error(f"Failed to parse or process code_plan JSON string: {e}")
@@ -578,20 +583,20 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         for item in code_plan:
             item_file_path = item.get("file")
             if item_file_path and checklist_manager._normalize_path(item_file_path) == normalized_file_path_to_process:
-                 # Pass the entire plan item for this file as instruction
-                 instruction_content = json.dumps(item, indent=2)
-                 logger.info(f"instruction_content: {instruction_content}")
-                 found_plan_item = item
-                 break
+                # Pass the entire plan item for this file as instruction
+                instruction_content = json.dumps(item, indent=2)
+                logger.info(f"instruction_content: {instruction_content}")
+                found_plan_item = item
+                break
 
         if not found_plan_item:
-             logger.warning(f"Could not find specific plan item for file '{file_path_to_process}' in the code_plan. Using a generic instruction.")
-             # Create a basic instruction if not found in the plan details
-             instruction_content = json.dumps({
-                 "file": file_path_to_process,
-                 "coder": assigned_coder_name,
-                 "description": f"Generate the content for the file '{file_path_to_process}' based on the overall project requirements provided previously."
-             }, indent=2)
+            logger.warning(f"Could not find specific plan item for file '{file_path_to_process}' in the code_plan. Using a generic instruction.")
+            # Create a basic instruction if not found in the plan details
+            instruction_content = json.dumps({
+                "file": file_path_to_process,
+                "coder": assigned_coder_name,
+                "description": f"Generate the content for the file '{file_path_to_process}' based on the overall project requirements provided previously."
+            }, indent=2)
 
 
         # Prepare the update and goto command
@@ -601,8 +606,8 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
 
         # Ensure the assigned agent name is in the list of possible transitions
         if goto_agent not in CODER_AGENTS:
-             logger.error(f"Attempted to delegate to non-coder agent: {goto_agent}. Error in checklist or plan.")
-             return Command(goto='supervisor', update={
+            logger.error(f"Attempted to delegate to non-coder agent: {goto_agent}. Error in checklist or plan.")
+            return Command(goto='supervisor', update={
                 "messages": state["messages"] + [
                     HumanMessage(
                         content=f"Internal error: Checklist assigned non-coder agent '{goto_agent}' for file '{file_path_to_process}'.",
@@ -638,8 +643,8 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         unplanned_created = checklist_manager.get_unplanned_files()
         completion_message = "Coding phase completed. All planned files have been processed."
         if unplanned_created:
-             completion_message += f"\nNote: {len(unplanned_created)} files were created but were not in the original plan/checklist. Please review these files manually."
-             logger.warning(f"Unplanned files created: {unplanned_created}")
+            completion_message += f"\nNote: {len(unplanned_created)} files were created but were not in the original plan/checklist. Please review these files manually."
+            logger.warning(f"Unplanned files created: {unplanned_created}")
 
         logger.info("Returning to supervisor.")
 
@@ -726,7 +731,8 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
                 path = item.get("path")
                 content = item.get("content", parsed_response.get("code", ""))
             
-            if path:
+            if path: # Ensure path was found
+                # Ensure content is a string (it might be None if not found anywhere)
                 processed_file_specs.append({"path": path, "content": content if content is not None else ""})
             else:
                 logger.warning(f"'{prompt_name}' provided an item in 'FILE' list without a path: {item}")
@@ -751,7 +757,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
         try:
             # Normalize the file path
             file_path = os.path.normpath(file_path)
-            
+
             dir_path = os.path.dirname(file_path)
             if dir_path:
                 os.makedirs(dir_path, exist_ok=True)
@@ -759,10 +765,10 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
             
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(file_content)
-            
+
             newly_generated_this_run.append(file_path)
             logger.info(f"Successfully wrote file by '{prompt_name}': {file_path}")
-            
+
             # Update checklist to mark file as created
             checklist_manager.mark_file_created(file_path)
             logger.debug(f"Checklist updated for file: {file_path}")
@@ -784,7 +790,6 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
         },
         goto="coder_master",
     )
-
 
 def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Model Coder agent that generator directory structure."""
@@ -885,7 +890,9 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         with open("project_requirements.json") as f:
             project_requirement = f.read()
         
+        logging.debug("**Executor Started")
         executor.execute(state, project_requirement)
+        logging.debug("**Executor Ended")
         
         goto = "__end__"
         logger.info("Workflow completed")
