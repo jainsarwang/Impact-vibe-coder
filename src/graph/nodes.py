@@ -99,7 +99,8 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
                     content=response_content,
                     name="researcher",
                 )
-            ]
+            ],
+            "researched_content" : response_content
         },
         goto="supervisor",
     )
