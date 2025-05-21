@@ -36,4 +36,8 @@ directory_structure.json
 project_structure.json
 app.log
 code_planner.json
+.dependency_graph.png
 checklist.json
+project_structure.html
+project_analysis.json
+project_structure.png

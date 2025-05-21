@@ -43,3 +43,8 @@
 ```
 
 ### Example Output for the import
+
+```
+from path.to.file1 import import1
+from path.to.file2 import import2
+```

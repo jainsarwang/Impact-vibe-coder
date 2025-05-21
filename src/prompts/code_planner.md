@@ -73,6 +73,87 @@ interface Step {
     file: string;
     next_coder_instruction: string;
     note?: string;
+    functions: {
+        `functionName`: {
+            params: string;
+            returns: string;
+            description: string;
+        };
+    };
+    variables: {
+        `variableName`: {
+            type: string;
+            description: string;
+        }
+    };
+    imports: {
+        `import1`: {
+            importfilepath: string;
+            type: "module" | "function" | "variable";
+            description: string,
+            functions: {
+                `functionName`: {
+                    params: string;
+                    returns: string;
+                    description: string;
+                }
+            },
+            variables: {
+                `variableName`: {
+                    type: string;
+                    description: string;
+                }
+            },
+        }
+    };
+    exports: string[],
+    api_endpoints: {
+        `METHOD /path`: {
+            controller: string;
+            function: string;
+            request: {
+                params: {
+                    `params1`: `paramsType`;
+                },
+                query: {
+                    `query1`: `queryType`;
+                },
+                additionalInfo: {
+                    `header`: `valueFormat`;
+                    ...
+                }
+                body: {
+                    ...
+                }
+            },
+            response: {
+                success: `Response of process`,
+                errors: `Possible Errors and its format`
+            },
+            description: string
+        }
+    },
+    data_models: {
+        `ModelName`: {
+            fields: {
+                `fieldName`: {
+                    type: string,
+                    required: true | false,
+                    description: string
+                }
+            },
+            relationships: [
+                {
+                    model: string;
+                    type: "one-to-many" | "many-to-one" | "many-to-many";
+                    field: string
+                }
+            ]
+        }
+    },
+    dependencies: {
+        `dependency-name`: string;
+    }
 }
 ```
 
@@ -105,25 +186,25 @@ interface Step {
         },
         "imports": {
             "import1": {
-            "importfilepath": "[frontend|backend]/path/to/file.ext",
-            "type": "module" | "function" | "variable",
-            "description": "Import description",
-            "functions": {
-                "functionName": {
-                "params": "Parameter descriptions with types",
-                "returns": "Return type and description",
-                "description": "Detailed function documentation"
-                }
-            },
-            "variables": {
-                "variableName": {
-                "type": "Variable type",
-                "description": "Variable purpose and usage"
-                }
-            },
+                "importfilepath": "[frontend|backend]/path/to/file.ext",
+                "type": "module" | "function" | "variable",
+                "description": "Import description",
+                "functions": {
+                    "functionName": {
+                        "params": "Parameter descriptions with types",
+                        "returns": "Return type and description",
+                        "description": "Detailed function documentation"
+                    }
+                },
+                "variables": {
+                    "variableName": {
+                        "type": "Variable type",
+                        "description": "Variable purpose and usage"
+                    }
+                },
             },
             "import2": {
-                "importfilepath": "from/root/[frontend|backend]/path/to/file.ext",
+                "importfilepath": "[frontend|backend]/path/to/file.ext",
                 "type": "module" | "function" | "variable",
                 "description": "Import description",
                 "variables": {
@@ -170,12 +251,7 @@ interface Step {
             }
         },
         "dependencies": {
-            "production": {
-                "dependency-name": "^version"
-            },
-            "development": {
-                "dev-dependency": "^version"
-            }
+            "dependency-name": "^version"
         }
     }
 ]

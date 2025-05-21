@@ -53,6 +53,7 @@ async def run_agent_workflow(
     workflow_id = str(uuid.uuid4())
 
     streaming_llm_agents = [*TEAM_MEMBERS, *CODER_AGENTS, "planner", "coordinator"]
+    # del streaming_llm_agents[streaming_llm_agents.index("coder_master")]
 
     # Reset coordinator cache at the start of each workflow
     global coordinator_cache

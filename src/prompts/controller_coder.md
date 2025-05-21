@@ -55,7 +55,7 @@ Generate code compatible with the following installed software versions:
 
 Example Express controller:
 
-````typescript
+```typescript
 export class UserController {
     async createUser(req: Request, res: Response): Promise<void> {
         try {
@@ -65,6 +65,7 @@ export class UserController {
         }
     }
 }
+```
 
 ### For Python Controllers
 
@@ -100,7 +101,7 @@ Provide files created in json with and only in json with the following format to
     "programming_language": "programmin_language",
     "code": "The code to be written in file"
 }
-````
+```
 
 ## Best Practices to Follow
 
