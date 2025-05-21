@@ -63,7 +63,7 @@ All file paths follow the required structure
 All imports and exports are properly implemented
 The complete project structure is coherent and functional
 For the `importfilepath` use absolute path from the `[project_name]/backend` or `[project_name]/frontend` or [project_name]/ (if frontend and backend not present) folder only
- 
+If an html file uses css or js files as supporting files then add these files in the import section with complete path, similarly do this for other files too.
 **FAILURE TO FOLLOW THESE REQUIREMENTS WILL RESULT IN NON-FUNCTIONAL CODE.**
  
 ---
