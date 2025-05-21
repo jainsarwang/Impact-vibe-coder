@@ -125,7 +125,6 @@ class ChecklistManager:
     def __init__(self, checklist_file: str = "checklist.json", project_prefix: str = None):
         self.checklist_file = checklist_file
         self.checklist: Dict[str, Dict] = {}
-        self._normalize_paths = True
         # Store the project prefix to handle paths consistently
         self.project_prefix = project_prefix
     

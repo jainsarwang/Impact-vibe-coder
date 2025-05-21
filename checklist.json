@@ -1,57 +1,147 @@
 {
-  "SimpleCRUDApp/public/index.html": {
+  "PostmanClone/README.md": {
+    "plan_created": false,
+    "file_created": false,
+    "coder": null
+  },
+  "PostmanClone/package.json": {
     "plan_created": true,
-    "file_created": true,
+    "file_created": false,
+    "coder": "config_coder"
+  },
+  "PostmanClone/electron.vite.config.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "config_coder"
+  },
+  "PostmanClone/vite.config.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "config_coder"
+  },
+  "PostmanClone/electron/main.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "electron_coder"
+  },
+  "PostmanClone/electron/preload.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "electron_coder"
+  },
+  "PostmanClone/src/App.jsx": {
+    "plan_created": true,
+    "file_created": false,
     "coder": "frontend_coder"
   },
-  "SimpleCRUDApp/public/style.css": {
+  "PostmanClone/src/index.jsx": {
     "plan_created": true,
-    "file_created": true,
+    "file_created": false,
     "coder": "frontend_coder"
   },
-  "SimpleCRUDApp/server/server.js": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "config_coder"
+  "PostmanClone/src/components": {
+    "plan_created": false,
+    "file_created": false,
+    "coder": null
   },
-  "SimpleCRUDApp/server/data.json": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "service_coder"
+  "PostmanClone/src/styles": {
+    "plan_created": false,
+    "file_created": false,
+    "coder": null
   },
-  "SimpleCRUDApp/.gitignore": {
-    "plan_created": true,
-    "file_created": true,
-    "coder": "config_coder"
+  "PostmanClone/src/utils": {
+    "plan_created": false,
+    "file_created": false,
+    "coder": null
   },
-  "SimpleCRUDApp/README.md": {
+  "PostmanClone/src/components/RequestForm.jsx": {
     "plan_created": true,
-    "file_created": true,
-    "coder": "config_coder"
+    "file_created": false,
+    "coder": "frontend_coder"
   },
-  "SimpleCRUDApp/package.json": {
+  "PostmanClone/src/components/ResponseDisplay.jsx": {
     "plan_created": true,
-    "file_created": true,
-    "coder": "config_coder"
+    "file_created": false,
+    "coder": "frontend_coder"
   },
-  "SimpleCRUDApp/.env": {
+  "PostmanClone/src/components/CollectionManager.jsx": {
     "plan_created": true,
-    "file_created": true,
-    "coder": "config_coder"
+    "file_created": false,
+    "coder": "frontend_coder"
   },
-  "SimpleCRUDApp/server/utils.js": {
+  "PostmanClone/src/components/EnvironmentManager.jsx": {
     "plan_created": true,
-    "file_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "PostmanClone/src/components/AuthManager.jsx": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "PostmanClone/src/components/TestRunner.jsx": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "PostmanClone/src/components/DocumentationGenerator.jsx": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "PostmanClone/src/components/ImportExport.jsx": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "PostmanClone/src/styles/App.css": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "PostmanClone/src/styles/components.css": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "frontend_coder"
+  },
+  "PostmanClone/src/utils/api.js": {
+    "plan_created": true,
+    "file_created": false,
     "coder": "utility_coder"
   },
-  "SimpleCRUDApp/server/controllers/dataController.js": {
+  "PostmanClone/src/utils/data.js": {
     "plan_created": true,
-    "file_created": true,
-    "coder": "controller_coder"
+    "file_created": false,
+    "coder": "utility_coder"
   },
-  "SimpleCRUDApp/server/routes/dataRoutes.js": {
+  "PostmanClone/src/utils/auth.js": {
     "plan_created": true,
-    "file_created": true,
-    "coder": "route_coder"
+    "file_created": false,
+    "coder": "utility_coder"
+  },
+  "PostmanClone/src/utils/test.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "utility_coder"
+  },
+  "PostmanClone/src/utils/docs.js": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "utility_coder"
+  },
+  "PostmanClone/public/index.html": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "config_coder"
+  },
+  "PostmanClone/public/icon.png": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "config_coder"
+  },
+  "PostmanClone/database/database.db": {
+    "plan_created": true,
+    "file_created": false,
+    "coder": "db_coder"
   }
 }
