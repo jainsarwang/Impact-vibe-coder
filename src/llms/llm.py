@@ -10,7 +10,8 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 # Updated model names based on Groq's current offerings
 REASONING_MODEL_GROQ = "meta-llama/llama-4-maverick-17b-128e-instruct"  # Good for reasoning tasks
 BASIC_MODEL_GROQ = "llama-3.3-70b-versatile"  # Good general purpose model
-VL_MODEL_GROQ = "llama-3.2-11b-vision-preview"  # Most capable model available
+VL_MODEL_GROQ = "meta-llama/llama-4-maverick-17b-128e-instruct"  # Most capable model available
+DIRECTORY = "llama-3.3-70b-versatile"
 
 # Gemini Configuration
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
@@ -59,7 +60,7 @@ def get_llm_by_type(llm_type: LLMType) -> ChatOpenAI | genai.Client:
             raise ValueError("GROQ_API_KEY environment variable not set for basic LLM.")
     elif llm_type == "vision":
         if GROQ_API_KEY:
-            llm = create_groq_llm(VL_MODEL_GROQ)
+            llm = create_gemini_llm(model="gemini-2.0-flash")
         else:
             raise ValueError("GROQ_API_KEY environment variable not set for vision LLM.")
     else:
