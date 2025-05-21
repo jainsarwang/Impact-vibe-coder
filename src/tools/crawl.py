@@ -17,6 +17,7 @@ def crawl_tool(
 ) -> HumanMessage:
     """Use this to crawl a url and get a readable content in markdown format."""
     try:
+        logger.info("Crawling URL: %s", url)
         crawler = Crawler()
         article = crawler.crawl(url)
         return {"role": "user", "content": article.to_message()}
