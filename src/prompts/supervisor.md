@@ -38,6 +38,7 @@ When building an application:
 1. Invoke `reseracher` Agent discretely for each identified topic, ensuring independent execution and context isolation per research stream. Follow the plan as is even if the `researcher` agent is called multiple times.
 2. Reserch for each of the topic as identified by the planner.
    - Call the `directory_generator` after each of the researched topic is completed.
+   - Build on the response of the previous reseracher in detail. Make sure the reseracher response is consistent and the provided apis are called.
 3. After `directory_generator` call `code_planner`
 4. Next, pass the entire directory structure to `coder_master`
 5. `coder_master` will handle the implementation of all files in the structure

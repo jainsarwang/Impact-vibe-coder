@@ -342,7 +342,7 @@ Provide the results in this JSON structure:
             },
             "imports": {
                 "import1": {
-                    "importfilepath": "from/root/[frontend|backend]/path/to/file.ext",
+                    "importfilepath": "[frontend|backend]/path/to/file.ext",
                     "type": "module",
                     "description": "Import description",
                     "functions": {
@@ -360,7 +360,7 @@ Provide the results in this JSON structure:
                     }
                 },
                 "import2": {
-                    "importfilepath": "from/root/[frontend|backend]/path/to/file.ext",
+                    "importfilepath": "[frontend|backend]/path/to/file.ext",
                     "type": "function",
                     "description": "Import description",
                     "variables": {
@@ -605,4 +605,4 @@ Provide the results in this JSON structure:
     -   Frontend modules
     -   requirements.txt and package.json
     -   README.md
-- Strongly follow this file generation order to generate the json.
+-   Strongly follow this file generation order to generate the json.
