@@ -39,7 +39,7 @@ def apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
         ] + [
             {
                 "role": "user", 
-                "content": state["coder_instruction"] + "And this is the required research content to generate the files." +state["researched_content"]
+                "content": state["coder_instruction"] + "And this is the required research content to generate the files." +state.get("researched_content"," ")
             }
         ]
 
