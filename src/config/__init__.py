@@ -35,7 +35,8 @@ TEAM_MEMBERS = [
     "directory_generator",
     "code_planner",
     "coder_master",
-    "static_code_validator_node"
+    "static_code_validator_node",
+    "diagram"
 ]
 
 CODER_AGENTS = [

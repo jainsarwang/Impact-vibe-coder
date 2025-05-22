@@ -31,6 +31,8 @@ Always respond with a valid JSON object containing only the 'next' key and a sin
 
 -   **`reporter`**: Writes a professional report based on the result of each step.
 
+-   **`diagram`** : Creates a sequence diagram based on the directory generated. Need to called mandatorily each time after the `directory_generator` and before the `code_planner`
+
 ## Workflow for Code Generation
 
 When building an application:
@@ -39,7 +41,7 @@ When building an application:
 2. Reserch for each of the topic as identified by the planner.
    - Call the `directory_generator` after each of the researched topic is completed.
    - Build on the response of the previous reseracher in detail. Make sure the reseracher response is consistent and the provided apis are called.
-3. After `directory_generator` call `code_planner`
+3. After `directory_generator` call `diagram` and then the `code_planner`.
 4. Next, pass the entire directory structure to `coder_master`
 5. `coder_master` will handle the implementation of all files in the structure
 6. After `coder_master` completes the code generation, you can call `reporter` to summarize the project

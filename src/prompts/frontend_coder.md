@@ -159,10 +159,6 @@ Provide files created in json (dictionary only) with and only in json with the f
 }
 ```
 
-## Important
-
-**_You have the Technology-Specific Guidelines. GENERATE FRONTEND AND ITS RELATED CODE ONLY. Your code should be of Supreme Quality_**
-
 ---
 
 ## CURRENT_TIME: <<CURRENT_TIME>>

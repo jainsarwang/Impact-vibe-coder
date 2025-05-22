@@ -1,147 +1,57 @@
 {
-  "PostmanClone/README.md": {
+  "ReactToDoList/README.md": {
     "plan_created": false,
     "file_created": false,
     "coder": null
   },
-  "PostmanClone/package.json": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "config_coder"
-  },
-  "PostmanClone/electron.vite.config.js": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "config_coder"
-  },
-  "PostmanClone/vite.config.js": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "config_coder"
-  },
-  "PostmanClone/electron/main.js": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "electron_coder"
-  },
-  "PostmanClone/electron/preload.js": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "electron_coder"
-  },
-  "PostmanClone/src/App.jsx": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "PostmanClone/src/index.jsx": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "PostmanClone/src/components": {
+  "ReactToDoList/package.json": {
     "plan_created": false,
     "file_created": false,
     "coder": null
   },
-  "PostmanClone/src/styles": {
+  "ReactToDoList/index.html": {
     "plan_created": false,
     "file_created": false,
     "coder": null
   },
-  "PostmanClone/src/utils": {
+  "ReactToDoList/.gitignore": {
     "plan_created": false,
     "file_created": false,
     "coder": null
   },
-  "PostmanClone/src/components/RequestForm.jsx": {
-    "plan_created": true,
+  "ReactToDoList/vite.config.js": {
+    "plan_created": false,
     "file_created": false,
-    "coder": "frontend_coder"
+    "coder": null
   },
-  "PostmanClone/src/components/ResponseDisplay.jsx": {
-    "plan_created": true,
+  "ReactToDoList/src/main.jsx": {
+    "plan_created": false,
     "file_created": false,
-    "coder": "frontend_coder"
+    "coder": null
   },
-  "PostmanClone/src/components/CollectionManager.jsx": {
-    "plan_created": true,
+  "ReactToDoList/src/App.jsx": {
+    "plan_created": false,
     "file_created": false,
-    "coder": "frontend_coder"
+    "coder": null
   },
-  "PostmanClone/src/components/EnvironmentManager.jsx": {
-    "plan_created": true,
+  "ReactToDoList/src/App.css": {
+    "plan_created": false,
     "file_created": false,
-    "coder": "frontend_coder"
+    "coder": null
   },
-  "PostmanClone/src/components/AuthManager.jsx": {
-    "plan_created": true,
+  "ReactToDoList/src/components/Task.jsx": {
+    "plan_created": false,
     "file_created": false,
-    "coder": "frontend_coder"
+    "coder": null
   },
-  "PostmanClone/src/components/TestRunner.jsx": {
-    "plan_created": true,
+  "ReactToDoList/src/components/TaskList.jsx": {
+    "plan_created": false,
     "file_created": false,
-    "coder": "frontend_coder"
+    "coder": null
   },
-  "PostmanClone/src/components/DocumentationGenerator.jsx": {
-    "plan_created": true,
+  "ReactToDoList/src/components/TaskForm.jsx": {
+    "plan_created": false,
     "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "PostmanClone/src/components/ImportExport.jsx": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "PostmanClone/src/styles/App.css": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "PostmanClone/src/styles/components.css": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "frontend_coder"
-  },
-  "PostmanClone/src/utils/api.js": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "utility_coder"
-  },
-  "PostmanClone/src/utils/data.js": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "utility_coder"
-  },
-  "PostmanClone/src/utils/auth.js": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "utility_coder"
-  },
-  "PostmanClone/src/utils/test.js": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "utility_coder"
-  },
-  "PostmanClone/src/utils/docs.js": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "utility_coder"
-  },
-  "PostmanClone/public/index.html": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "config_coder"
-  },
-  "PostmanClone/public/icon.png": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "config_coder"
-  },
-  "PostmanClone/database/database.db": {
-    "plan_created": true,
-    "file_created": false,
-    "coder": "db_coder"
+    "coder": null
   }
 }

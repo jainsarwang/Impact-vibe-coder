@@ -25,7 +25,8 @@ from src.agents import  (
     config_coder_agent,
     test_coder_agent,
     frontend_coder_agent,db_coder_agent,
-    browser_agent
+    browser_agent,
+    diagram_agent
 )
 from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS, CODER_AGENTS
@@ -1212,3 +1213,47 @@ def static_code_validator_node(state: State) -> Command[Literal["supervisor", "_
             },
             goto="supervisor" # Proceed to next step via supervisor
         )
+    
+
+def diagram_node(state: State) -> Command[Literal["supervisor"]]:
+    """Node for the diagram agent that generates diagrams."""
+    logger.info("Diagram agent starting task")
+    logger.info("Diagram agent completed task")
+    template = get_prompt_template('diagram_generator')
+    directory_structure = state.get('directory_structure')
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        "directory_structure": directory_structure,
+        **state  # Include other state variables
+    }
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME","directory_structure"],
+        template=template,
+    ).format(**prompt_vars)
+
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": "Generate the Plan"
+        }
+    ]
+
+    llm = get_llm_by_type("basic")
+    response = llm.invoke(messages)
+    response_content = repair_json_output(response_content)
+    logger.debug(f"Diagram agent response: {response_content}")
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="diagram",
+                )
+            ]
+        },
+        goto="supervisor",
+    )
