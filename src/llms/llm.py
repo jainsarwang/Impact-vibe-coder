@@ -11,7 +11,6 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 REASONING_MODEL_GROQ = "meta-llama/llama-4-maverick-17b-128e-instruct"  # Good for reasoning tasks
 BASIC_MODEL_GROQ = "llama-3.3-70b-versatile"  # Good general purpose model
 VL_MODEL_GROQ = "meta-llama/llama-4-maverick-17b-128e-instruct"  # Most capable model available
-DIRECTORY = "llama-3.3-70b-versatile"
 
 # Gemini Configuration
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
