@@ -5,7 +5,7 @@ from .search import tavily_tool
 from .bash_tool import bash_tool
 from .browser import browser_tool
 from .create_zip import project_zip_tool
-from .version_resolver import version_resolver_tool 
+from .read_file import read_file_tool
 
 __all__ = [
     "bash_tool",
@@ -15,5 +15,5 @@ __all__ = [
     "write_file_tool",
     "browser_tool",
     "project_zip_tool",
-    "version_resolver_tool"
+    "read_file_tool"
 ]

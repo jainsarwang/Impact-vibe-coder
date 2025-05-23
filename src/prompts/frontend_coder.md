@@ -46,10 +46,6 @@ CONTEXT:
 
 ---
 
-## Important
-
-**_Only do the things you were built for - creating frontend files for the code as specified in the Frontend Development Guidelines. Do not perform any other tasks outside this scope. Generate your code correctly. You are the Frontend Generater maestro so generate only Frontend code only. Your code should be of Super Prime Quality and Accurate as well as Correct, also If you are provided with APIs then integrate it correctly as per the requirement_**
-
 **Technology-Specific Guidelines:**
 
 **1. HTML (`LANGUAGE: html`)**
@@ -169,15 +165,17 @@ CONTEXT:
 ```typescript
 =======
 
-````typescript
->>>>>>> 80bee037e5e437a583a0f75d67b70feb87bc3c0f
+```typescript
 interface AIOpts {
-  autoPurge: boolean;      // Remove unused CSS/JS
-  svgOptimization: boolean;// Convert icons to optimized SVG sprites
-  imgLazyLoad: boolean;    // Automatic loading="lazy" for images
-  a11yAudit: boolean;      // Automated accessibility checks
+    autoPurge: boolean; // Remove unused CSS/JS
+    svgOptimization: boolean; // Convert icons to optimized SVG sprites
+    imgLazyLoad: boolean; // Automatic loading="lazy" for images
+    a11yAudit: boolean; // Automated accessibility checks
 }
+```
+
 ---
+
 ## Output Format:
 
 Provide frontend implementaiton file paths with in json:
@@ -189,7 +187,7 @@ Provide files created in json (dictionary only) with and only in json with the f
     "programming_language": "programmin_language",
     "code": "The code to be written in file"
 }
-````
+```
 
 ## Important
 

@@ -3,6 +3,7 @@
 -   It must follow the standard import as used in the respective languages
 -   Strictly follow the imports statement and the import dictionary
 -   Use the correct vesion dependencies as provide, and use the function from that dependencies only
+-   Write the complete code dont just create placeholders for functions.
 
 ### Example Input for the import
 
@@ -43,3 +44,8 @@
 ```
 
 ### Example Output for the import
+
+```
+from path.to.file1 import import1
+from path.to.file2 import import2
+```

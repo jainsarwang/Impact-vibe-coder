@@ -39,7 +39,15 @@ def apply_prompt_template_for_coder(prompt_name: str, state: State) -> List[dict
         ADDITIONAL_RULES=get_prompt_template('common_coder'),
         **state
     )
-    return [{"role": "system", "content": system_prompt}] + [{"role": "user", "content": state["coder_instruction"]}]
+    
+    return [
+            {"role": "system", "content": system_prompt}
+        ] + [
+            {
+                "role": "user", 
+                "content": state["coder_instruction"] + "And this is the required research content to generate the files." +state["researched_content"]
+            }
+        ]
 
 
 def apply_prompt_template_for_version_resolver(state: State) -> List[dict]:
