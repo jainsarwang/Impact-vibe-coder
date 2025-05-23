@@ -5,7 +5,11 @@ import os
 import json_repair
 import logging
 from copy import deepcopy
+# from .llm_utils import get_llm_by_type
 from typing import Dict, List, Literal
+# from .prompt_utils import get_prompt_template
+
+
 from langchain_core.messages import HumanMessage, BaseMessage
 
 import json_repair
@@ -25,7 +29,8 @@ from src.agents import  (
     config_coder_agent,
     test_coder_agent,
     frontend_coder_agent,db_coder_agent,
-    browser_agent
+    browser_agent,
+    version_agent,
 )
 from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS, CODER_AGENTS
@@ -140,17 +145,237 @@ Directory  ->  Image Generation  -> Dependencies Graph  ->  Coder Master  -> (
 
 """
 
+# def version_resolver_node(state: State) -> Command[Literal["supervisor","__end__"]]:
+#     "Node for version revoler agent that verfies versions and correct it by latest stable versions"
+#     logger.info("Version Resolver Agent starting task")
+    
+#     # if directory not foun in state, return to supervisor
+#     directory_structure = state.get('directory_structure')
+#     directory_structure = json.loads(directory_structure)
+#     if not directory_structure:
+#         logging.warning("No Directory Object in State, Going back to supervisor")
+#         return Command(goto='supervisor')
+    
+#     if isinstance(directory_structure, str):
+#         directory_structure = json.loads(directory_structure) 
+    
+#     prompt_vars = {
+#     "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+#     "directory_structure": directory_structure,
+#     **state  # Include other state variables
+#     }
+    
+#     dependencies_values = directory_structure.get("dependencies")
+#     try:
+#         if isinstance(dependencies_values, str):
+#             dependencies_values = json.loads(dependencies_values)
+#     except json.JSONDecodeError:
+#         return"JSON cannot be parsed"
 
+#     template = get_prompt_template('version_resolver')
+#     system_prompt = PromptTemplate(
+#     input_variables=["CURRENT_TIME"],
+#     template=template,
+#     ).format(**prompt_vars)
+    
+#     messages = [
+#     {
+#         "role": "system",
+#         "content": system_prompt
+#     },
+#     {
+#         "role": "user",
+#         "content": List(dependencies_values)
+#     }
+# ]
+#     llm = get_llm_by_type("basic")
+#     response = llm.invoke(messages)
+#     full_response = response.content
 
+#     logger.debug(f"Current state messages: {state['messages']}")
+#     logger.info(f"Version Resolver response: {full_response}")
+
+#     try:
+#         if isinstance(full_response, (dict, list)):
+#             full_response = json.loads(full_response)
+#             directory_structure['dependencies'] = full_response
+#         elif isinstance(full_response, str):
+#             full_response = json.loads(full_response)
+#             directory_structure['dependencies'] = json.loads(full_response)
+#         else:
+#             directory_structure['dependencies'] = json.loads(json.dumps(full_response))
+#     except (json.JSONDecodeError, TypeError, ValueError):
+#         return"JSON cannot be parsed"
+    
+#     logger.info("Version Resolver work done")
+#     print(full_response)
+#     return Command(
+#         update={
+#             "messages": [
+#                 HumanMessage(
+#                     content=full_response,
+#                     name="version_resolver",
+#                 )
+#             ],
+#             "directory_structure": directory_structure
+#         },
+#         goto="supervisor",
+#     )  
+# def version_resolver_node(state: State) -> Command[Literal["supervisor","__end__"]]:
+#     logger.info("Version Resolver Agent starting task")
+    
+#     try:
+#         # Get and validate directory structure
+#         directory_structure = state.get('directory_structure')
+#         if not directory_structure:
+#             logger.warning("No directory structure in state")
+#             return Command(goto='supervisor')
+        
+#         if isinstance(directory_structure, str):
+#             try:
+#                 directory_structure = json.loads(directory_structure)
+#             except json.JSONDecodeError as e:
+#                 logger.error(f"Invalid JSON in directory structure: {str(e)}")
+#                 return Command(goto='supervisor')
+        
+#         # Get dependencies
+#         dependencies = directory_structure.get('dependencies', {})
+#         if not dependencies:
+#             logger.warning("No dependencies found")
+#             return Command(goto='supervisor')
+        
+#         # Prepare prompt
+#         template = get_prompt_template('version_resolver')
+#         prompt_vars = {
+#             "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+#             "directory_structure": json.dumps(directory_structure, indent=2),
+#             **state
+#         }
+        
+#         system_prompt = PromptTemplate(
+#             input_variables=["CURRENT_TIME"],
+#             template=template,
+#         ).format(**prompt_vars)
+        
+#         messages = [
+#             {"role": "system", "content": system_prompt},
+#             {"role": "user", "content": json.dumps(dependencies, indent=2)}
+#         ]
+        
+#         # Get LLM response
+#         llm = get_llm_by_type("basic")
+#         response = llm.invoke(messages)
+#         logger.info(f"Version Resolver response: {response.content}")
+        
+#         # Process response - ensure we return string content, not dict
+#         response_content = response.content.strip()
+#         try:
+#             # If response is JSON string, parse and re-stringify to ensure validity
+#             parsed = json.loads(response_content)
+#             response_content = json.dumps(parsed, indent=2)
+#         except json.JSONDecodeError:
+#             # If not JSON, use as-is but ensure it's a string
+#             response_content = str(response_content)
+        
+#         logger.info("Version Resolver work completed successfully")
+#         return Command(
+#             update={
+#                 "messages": [HumanMessage(
+#                     content=response_content,  # Ensure string output
+#                     name="version_resolver"
+#                 )],
+#                 "directory_structure": directory_structure
+#             },
+#             goto="supervisor"
+#         )
+        
+#     except Exception as e:
+#         logger.error(f"Version resolver error: {str(e)}", exc_info=True)
+#         return Command(goto='supervisor')
+
+# def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
+#     """Code Planner node that generate the full plan for coder master."""
+#     logger.info("Code Planner generating full plan")
+
+#     directory_structure = state.get('directory_structure')
+#     if not directory_structure:
+#         logging.warning("No Directory Object in State, Going back to supervisor")
+#         return Command(goto='supervisor')
+
+#     # Prepare all variables for the prompt
+#     prompt_vars = {
+#         "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+#         "CODER_AGENTS": ", ".join(CODER_AGENTS),  # Convert list to string
+#         "directory_structure": directory_structure,
+#         **state  # Include other state variables
+#     }
+    
+#     template = get_prompt_template('code_planner')
+#     system_prompt = PromptTemplate(
+#         input_variables=["CURRENT_TIME", "CODER_AGENTS","directory_structure"],
+#         template=template,
+#     ).format(**prompt_vars)
+
+#     messages = [
+#         {
+#             "role": "system",
+#             "content": system_prompt
+#         },
+#         {
+#             "role": "user",
+#             "content": directory_structure
+#         }
+#     ]
+    
+#     # messages = apply_prompt_template_planner("code_planner", state)
+#     # whether to enable deep thinking mode
+#     llm = get_llm_by_type("basic")
+#     response = llm.invoke(messages)
+#     full_response = response.content
+#     # extract_and_save_json(full_response)
+#     logger.debug(f"Current state messages: {state['messages']}")
+#     logger.info(f"Code Planner response: {full_response}")
+
+#     # extract_and_save_json(full_response, "code_planner.json")
+
+#     if full_response.startswith("```json"):
+#         full_response = full_response.removeprefix("```json")
+
+#     if full_response.endswith("```"):
+#         full_response = full_response.removesuffix("```")
+
+#     goto = "supervisor"
+
+#     try:
+#         repaired_response = json_repair.loads(full_response)
+#         full_response = json.dumps(repaired_response)
+
+#         with open("code_planner.json", "w", encoding="utf-8") as f:
+#             json.dump(repaired_response, f, indent=2, ensure_ascii=False)
+
+#         # Update checklist from the plan
+#         checklist_manager.update_from_plan(repaired_response)
+#     except json.JSONDecodeError:
+#         logger.warning("Code Planner response is not a valid JSON")
+#         goto = "__end__"
+
+#     return Command(
+#         update={
+#             "messages": [HumanMessage(content=full_response, name="code_planner")],
+#             "code_plan": full_response,
+#         },
+#         goto=goto,
+#     )
+    
 def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     """Code Planner node that generate the full plan for coder master."""
     logger.info("Code Planner generating full plan")
-
+ 
     directory_structure = state.get('directory_structure')
     if not directory_structure:
         logging.warning("No Directory Object in State, Going back to supervisor")
         return Command(goto='supervisor')
-
+   
     # Prepare all variables for the prompt
     prompt_vars = {
         "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
@@ -158,13 +383,13 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
         "directory_structure": directory_structure,
         **state  # Include other state variables
     }
-    
+   
     template = get_prompt_template('code_planner')
     system_prompt = PromptTemplate(
         input_variables=["CURRENT_TIME", "CODER_AGENTS","directory_structure"],
         template=template,
     ).format(**prompt_vars)
-
+ 
     messages = [
         {
             "role": "system",
@@ -175,8 +400,8 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
             "content": directory_structure
         }
     ]
-    
-    # messages = apply_prompt_template_planner("code_planner", state)
+   
+    messages = apply_prompt_template_planner("code_planner", state)
     # whether to enable deep thinking mode
     llm = get_llm_by_type("basic")
     response = llm.invoke(messages)
@@ -184,30 +409,30 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     # extract_and_save_json(full_response)
     logger.debug(f"Current state messages: {state['messages']}")
     logger.info(f"Code Planner response: {full_response}")
-
+ 
     # extract_and_save_json(full_response, "code_planner.json")
-
+ 
     if full_response.startswith("```json"):
         full_response = full_response.removeprefix("```json")
-
+ 
     if full_response.endswith("```"):
         full_response = full_response.removesuffix("```")
-
+ 
     goto = "supervisor"
-
+ 
     try:
         repaired_response = json_repair.loads(full_response)
         full_response = json.dumps(repaired_response)
-
+ 
         with open("code_planner.json", "w", encoding="utf-8") as f:
             json.dump(repaired_response, f, indent=2, ensure_ascii=False)
-
+ 
         # Update checklist from the plan
         checklist_manager.update_from_plan(repaired_response)
     except json.JSONDecodeError:
         logger.warning("Code Planner response is not a valid JSON")
         goto = "__end__"
-
+ 
     return Command(
         update={
             "messages": [HumanMessage(content=full_response, name="code_planner")],
@@ -216,6 +441,105 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
         goto=goto,
     )
 
+
+def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
+    """Node for version resolver agent that verifies versions and corrects them to latest stable versions."""
+    logger.info("Version Resolver Agent starting task")
+ 
+    # Safely get directory_structure from state
+    directory_structure = state.get('directory_structure')
+    if not directory_structure:
+        logger.warning("No Directory Object in State, Going back to supervisor")
+        return Command(goto='supervisor')
+ 
+    # Parse directory_structure if it's a string
+    if isinstance(directory_structure, str):
+        try:
+            directory_structure = json.loads(directory_structure)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse directory_structure: {e}")
+            return Command(goto='supervisor')
+ 
+    # Initialize dependencies_values safely
+    dependencies_values = {}
+    try:
+        dependencies_values = directory_structure.get("dependencies", {})
+        if isinstance(dependencies_values, str):
+            dependencies_values = json.loads(dependencies_values)
+    except (json.JSONDecodeError, AttributeError) as e:
+        logger.error(f"Failed to parse dependencies: {e}")
+        return Command(goto='supervisor')
+ 
+    # Prepare prompt variables
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        **state
+    }
+ 
+    # Get and format the prompt template
+    template = get_prompt_template('version_resolver')
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME"],
+        template=template,
+    ).format(**prompt_vars)
+ 
+    # Prepare messages for LLM
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": json.dumps(dependencies_values)  # Better than List() for JSON data
+        }
+    ]
+ 
+    # Get LLM response
+    llm = get_llm_by_type("basic")
+    try:
+        response = llm.invoke(messages)
+        full_response = response.content
+        json_response = repair_json_output(full_response)
+    except Exception as e:
+        logger.error(f"LLM invocation failed: {e}")
+        return Command(goto='supervisor')
+ 
+    logger.debug(f"Current state messages: {state.get('messages', [])}")
+    logger.info(f"Version Resolver response: {json_response}")
+ 
+    # Process the response
+    try:
+        if isinstance(json_response, str):
+            parsed_response = json.loads(json_response)
+        else:
+            parsed_response = json_response  # Assuming it's already a dict/list
+ 
+        # Validate the response structure
+        if not isinstance(parsed_response, (dict, list)):
+            raise ValueError("Response must be a dictionary or list")
+ 
+        directory_structure['dependencies'] = parsed_response
+    except (json.JSONDecodeError, ValueError, TypeError) as e:
+        logger.error(f"Failed to process LLM response: {e}")
+        return Command(goto='supervisor')
+ 
+    logger.info("Version Resolver work done")
+    logger.debug(f"Updated dependencies: {directory_structure['dependencies']}")
+    logger.info(directory_structure)
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=str(parsed_response),
+                    name="version_resolver",
+                )
+            ],
+            "directory_structure": str(directory_structure)
+        },
+        goto="supervisor",
+    )
+    
 def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "supervisor", "__end__"]]:
     """
     Coder Master node that decides which agent should act next based on the checklist.

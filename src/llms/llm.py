@@ -62,6 +62,9 @@ def get_llm_by_type(llm_type: LLMType) -> ChatOpenAI | genai.Client:
             llm = create_groq_llm(VL_MODEL_GROQ)
         else:
             raise ValueError("GROQ_API_KEY environment variable not set for vision LLM.")
+    elif llm_type == "version_llm":
+        if GOOGLE_API_KEY:
+            llm = create_groq_llm(BASIC_MODEL_GROQ)
     else:
         raise ValueError(f"Unknown LLM type: {llm_type}")
 
@@ -71,12 +74,13 @@ def get_llm_by_type(llm_type: LLMType) -> ChatOpenAI | genai.Client:
 # Initialize LLMs for different purposes - now these will be cached
 reasoning_llm = None
 basic_llm = None
-vl_llm = None
-
+version_llm =None
 try:
     reasoning_llm = get_llm_by_type("reasoning")
     basic_llm = get_llm_by_type("basic")
     vl_llm = get_llm_by_type("vision")
+    version_llm = get_llm_by_type("version_llm")
+    
 except ValueError as e:
     print(f"Error initializing LLMs: {e}")
     print("Please check:")
