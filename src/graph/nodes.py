@@ -106,7 +106,7 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
-def directory_generator_node(state: State) -> Command[Literal["import-export"]]:
+def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the directory generator agent that generator directory structure."""
     logger.info("Directory Generator agent starting task")
     result = directory_generator_agent.invoke(state)
@@ -529,7 +529,7 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
 
     template = get_prompt_template('import-export')
     system_prompt = PromptTemplate(
-        input_variables=["CURRENT_TIME","directory_structure"],
+        input_variables=["CURRENT_TIME"],
         template=template,
     ).format(**prompt_vars)
 
@@ -549,33 +549,29 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
     full_response = response.content
 
     logger.debug(f"Current state messages: {state['messages']}")
-    logger.info(f"Code Planner response: {full_response}")
+    logger.info(f"Import Export Response: {full_response}")
 
-    if full_response.startswith("json"):
-        full_response = full_response.removeprefix("json")
+    if full_response.startswith("```json"):
+        full_response = full_response.removeprefix("```json")
 
-    if full_response.endswith(""):
-        full_response = full_response.removesuffix("")
+    if full_response.endswith("```"):
+        full_response = full_response.removesuffix("```")
 
-    try:
-        repaired_response = json_repair.loads(full_response)
-        full_response = json.dumps(repaired_response)
-
-        with open("directory_structure.json", "w", encoding="utf-8") as f:
-            json.dump(repaired_response, f, indent=2, ensure_ascii=False)
-    except json.JSONDecodeError:
-        logger.warning("Import Export response is not a valid JSON")
-        goto = "end"
-
+    #     with open("directory_structure.json", "w", encoding="utf-8") as f:
+    #         json.dump(repaired_response, f, indent=2, ensure_ascii=False)
+    # except json.JSONDecodeError:
+    #     logger.warning("Import Export response is not a valid JSON")
+    #     goto = "end"
+    print(full_response)
     return Command(
         update={
             "messages": [
                 HumanMessage(
-                    content=full_response,
+                    content=str(full_response),
                     name="import-export",
                 )
             ],
-            "directory_structure": repaired_response
+            "directory_structure": str(full_response)
         },
         goto="supervisor",
     )

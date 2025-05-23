@@ -239,7 +239,7 @@ def visualize_graph(G: nx.DiGraph, output_path: str = None) -> None:
     
     # Calculate node sizes based on number of functions and variables
     node_sizes = [2000 + (G.nodes[node]['functions'] * 200) + (G.nodes[node]['variables'] * 100) 
-                 for node in G.nodes()]
+                for node in G.nodes()]
     
     # Draw nodes with different colors based on their role and cycle status
     node_colors = []
@@ -261,11 +261,11 @@ def visualize_graph(G: nx.DiGraph, output_path: str = None) -> None:
     
     # Draw nodes
     nx.draw_networkx_nodes(G, pos,
-                          node_color=node_colors,
-                          node_size=node_sizes,
-                          alpha=0.8,
-                          edgecolors='black',
-                          linewidths=2)
+                        node_color=node_colors,
+                        node_size=node_sizes,
+                        alpha=0.8,
+                        edgecolors='black',
+                        linewidths=2)
     
     # Separate edges by type
     direct_imports = []
@@ -279,35 +279,35 @@ def visualize_graph(G: nx.DiGraph, output_path: str = None) -> None:
     
     # Draw direct import edges (solid lines)
     nx.draw_networkx_edges(G, pos,
-                          edgelist=[(s, t) for s, t, _ in direct_imports],
-                          edge_color='#2E86C1',  # Blue for direct imports
-                          arrows=True,
-                          arrowsize=20,
-                          width=2,
-                          alpha=0.8,
-                          connectionstyle='arc3,rad=0.1')
+                        edgelist=[(s, t) for s, t, _ in direct_imports],
+                        edge_color='#2E86C1',  # Blue for direct imports
+                        arrows=True,
+                        arrowsize=20,
+                        width=2,
+                        alpha=0.8,
+                        connectionstyle='arc3,rad=0.1')
     
     # Draw cycle edges (thick red lines)
     nx.draw_networkx_edges(G, pos,
-                          edgelist=[(s, t) for s, t, _ in cycle_edges],
-                          edge_color='#FF0000',  # Red for cycles
-                          arrows=True,
-                          arrowsize=20,
-                          width=3,
-                          alpha=0.8,
-                          style='dotted',
-                          connectionstyle='arc3,rad=0.3')
+                        edgelist=[(s, t) for s, t, _ in cycle_edges],
+                        edge_color='#FF0000',  # Red for cycles
+                        arrows=True,
+                        arrowsize=20,
+                        width=3,
+                        alpha=0.8,
+                        style='dotted',
+                        connectionstyle='arc3,rad=0.3')
     
     # Draw node labels with background
     labels = {node: f"{node}\n({G.nodes[node]['functions']} funcs, {G.nodes[node]['variables']} vars)"
-             for node in G.nodes()}
+            for node in G.nodes()}
     nx.draw_networkx_labels(G, pos,
-                           labels=labels,
-                           font_size=8,
-                           font_family='sans-serif',
-                           bbox=dict(facecolor='white',
-                                   edgecolor='none',
-                                   alpha=0.7))
+                        labels=labels,
+                        font_size=8,
+                        font_family='sans-serif',
+                        bbox=dict(facecolor='white',
+                                edgecolor='none',
+                                alpha=0.7))
     
     # Add edge labels
     edge_labels = {}
@@ -326,20 +326,20 @@ def visualize_graph(G: nx.DiGraph, output_path: str = None) -> None:
     
     # Add title and legend
     plt.title("File Dependencies Graph\n" +
-             "Pink: Screens/Pages/Views, Green: List/Table Components, Blue: Item/Row Components\n" +
-             "Purple: Utilities, Yellow: Data Models, Lavender: Others, Red: Circular Dependencies",
-             fontsize=14, pad=20)
+            "Pink: Screens/Pages/Views, Green: List/Table Components, Blue: Item/Row Components\n" +
+            "Purple: Utilities, Yellow: Data Models, Lavender: Others, Red: Circular Dependencies",
+            fontsize=14, pad=20)
     
     # Add a legend for node sizes and edge types
     legend_elements = [
         plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='#E6E6FA',
-                  markersize=15, label='Small Component'),
+                markersize=15, label='Small Component'),
         plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='#E6E6FA',
-                  markersize=25, label='Large Component'),
+                markersize=25, label='Large Component'),
         plt.Line2D([0], [0], color='#2E86C1', label='Direct Import',
-                  linewidth=2),
+                linewidth=2),
         plt.Line2D([0], [0], color='#FF0000', label='Circular Dependency',
-                  linewidth=3, linestyle=':')
+                linewidth=3, linestyle=':')
     ]
     plt.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.1, 1))
     
