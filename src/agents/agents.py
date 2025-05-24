@@ -109,3 +109,9 @@ browser_agent = create_react_agent(
     tools=[browser_tool],
     prompt=lambda state: apply_prompt_template("browser", state),
 )
+
+version_agent =  create_react_agent(
+    get_llm_by_type(AGENT_LLM_MAP["version_resolver"]),
+    tools=[bash_tool], 
+    prompt=lambda state: apply_prompt_template("version_resolver", state),
+)
