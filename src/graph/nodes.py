@@ -90,7 +90,6 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Research agent completed task")
     response_content = result["messages"][-1].content
 
-    response_content = repair_json_output(response_content)
     logger.debug(f"Research agent response: {response_content}")
     return Command(
         update={
@@ -172,7 +171,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
         },
         {
             "role": "user",
-            "content": directory_structure
+            "content": "Create a Code plan"
         }
     ]
     
