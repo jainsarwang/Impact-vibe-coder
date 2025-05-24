@@ -275,7 +275,7 @@ interface Step {
 ### For example
 
 ```json
-{
+[
     {
         "coder": "model_coder",
         "file": "\\src\\models\\user.js",
@@ -384,7 +384,7 @@ interface Step {
             "dependency-name": "^version"
         }
     }
-}
+]
 ```
 
 ## Important Points to remeber for specific module

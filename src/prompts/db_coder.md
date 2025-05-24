@@ -191,7 +191,7 @@ export class CreateTodosTable1620000000000 implements MigrationInterface {
 -   Implement idempotent seed scripts
 -   Add comments explaining the purpose of seed data
 
-## Output format (only this and nothing else)
+## Output Format
 
 Provide the file paths of complete database implementation in json with their code:
 Provide files created in json with and only in json with the following format to be followed strictly this format is your God:

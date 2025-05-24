@@ -35,7 +35,7 @@ CONTEXT:
 (Any relevant context about the project structure or architecture)
 ```
 
-## Output format (only this and nothing else):
+## Output format:
 
 Provide implementaiton file paths with their code in json:
 Provide files created in json with and only in json with the following format to be followed strictly this format is your God:

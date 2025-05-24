@@ -90,7 +90,7 @@ export class UserController {
 -   Follow Go's error handling patterns
 -   Add comments following Go documentation standards
 
-## Output format (only this and nothing else)
+## Output Format
 
 Provide the paths controller files created in json with their code:
 Provide files created in json with and only in json with the following format to be followed strictly this format is your God:

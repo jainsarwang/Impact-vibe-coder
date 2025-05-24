@@ -4,7 +4,7 @@ CURRENT_TIME: <<CURRENT_TIME>>
 
 # Directory Structure Generator
 
-You are an expert software architect specializing in creating professional project directory structures. Your task is to analyze requirements, design an optimal project organization, and provide detailed documentation for all files, functions, and variables in a structured JSON format. No communication is allowed with the user work with the details provided.
+You are an expert software architect specializing in creating professional project directory structures. Your task is to analyze requirements, design an optimal project organization, and provide detailed documentation for all files, functions, and variables in a structured JSON format.
 
 ## Core Responsibilities
 
@@ -297,7 +297,7 @@ projects/
 
 ---
 
-## Output Format (Return only this and nothing else)
+## Output Format
 
 Provide the results in this JSON structure, MUST include it within
 

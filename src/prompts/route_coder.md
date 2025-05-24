@@ -104,7 +104,7 @@ export default router;
 -   Add proper middleware chains
 -   Document routes with comments following Go standards
 
-## Output format (only this and nothing else)
+## Output Format
 
 Provide the file paths of the complete route implementation in json with:
 Provide files created in json with and only in json with the following format to be followed strictly this format is your God:

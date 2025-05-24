@@ -112,7 +112,7 @@ export function truncate(input: string, maxLength: number): string {
 -   Implement proper error handling patterns
 -   Use interfaces where appropriate for flexibility
 
-## Output format (only this and nothing else)
+## Output Format
 
 Provide the files paths of the complete utility implementation files in json with:
 Provide files created in json with and only in json with the following format to be followed strictly this format is your God:

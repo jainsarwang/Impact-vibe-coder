@@ -4,8 +4,7 @@
 -   If imports are available for a file always and mandatorily use the `read_file_tool` to read the imports file and then write the code.
 -   Strictly follow the imports statement and the import dictionary
 -   Use the correct vesion dependencies as provide, and use the function from that dependencies only
--   Keep Going until the job is completely solved before ending your turn.
--   Write the complete code and dont just write placeholders give complete implementation.
+-   Write the complete code dont just create placeholders for functions.
 
 ## Import Export
 
