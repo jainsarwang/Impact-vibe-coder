@@ -25,7 +25,7 @@ research_agent = create_react_agent(
 
 directory_generator_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP['directory_generator']),
-    tools=[browser_tool],
+    tools=[bash_tool],
     prompt=lambda state: apply_prompt_template("directory_generator", state),
 )
 
