@@ -434,6 +434,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     logger.info("Code Planner generating full plan")
 
     directory_structure = state.get('directory_structure')
+    sequence_diagram = state.get('sequence_diagram',"")
     if not directory_structure:
         logging.warning("No Directory Object in State, Going back to supervisor")
         return Command(goto='supervisor')
@@ -443,6 +444,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
         "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
         "CODER_AGENTS": ", ".join(CODER_AGENTS),  # Convert list to string
         "directory_structure": directory_structure,
+        # "sequence_diagram": sequence_diagram,
         **state  # Include other state variables
     }
 
@@ -459,7 +461,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
         },
         {
             "role": "user",
-            "content": directory_structure
+            "content": "Sequence diagram" + sequence_diagram
         }
     ]
 
@@ -490,7 +492,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
         checklist_manager.update_from_plan(repaired_response)
     except json.JSONDecodeError:
         logger.warning("Code Planner response is not a valid JSON")
-        goto = "__end__"
+        # goto = "__end__"
 
     return Command(
         update={
@@ -538,7 +540,8 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
 
     except (json.JSONDecodeError, ValueError) as e:
         logger.error(f"Failed to parse or process code_plan JSON string: {e}")
-        return Command(goto='__end__', update={
+        # return Command(goto='__end__', update={
+        return Command(goto='supervisor', update={
             "messages": state["messages"] + [
                 HumanMessage(content=f"Error parsing code plan: {e}", name="coder_master")
             ]
@@ -937,7 +940,7 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
             json.dump(repaired_response, f, indent=2, ensure_ascii=False)
     except json.JSONDecodeError:
         logger.warning("Planner response is not a valid JSON")
-        goto = "__end__"
+        # goto = "__end__"
 
     return Command(
         update={
@@ -1244,16 +1247,16 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
 
     llm = get_llm_by_type("basic")
     response = llm.invoke(messages)
-    response_content = repair_json_output(response_content)
-    logger.debug(f"Diagram agent response: {response_content}")
+    logger.debug(f"Diagram agent response: {response}")
     return Command(
         update={
             "messages": [
                 HumanMessage(
-                    content=response_content,
+                    content=response.content,  # Corrected: Passing the content string
                     name="diagram",
                 )
-            ]
+            ],
+            "sequence_diagram": response.content, 
         },
         goto="supervisor",
     )

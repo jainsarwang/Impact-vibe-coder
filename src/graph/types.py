@@ -30,4 +30,5 @@ class State(MessagesState):
     directory_structure: str
     generated_files: list[str]
     coder_instruction: Any
+    sequence_diagram: str
     code_plan: str
