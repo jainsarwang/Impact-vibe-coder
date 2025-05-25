@@ -16,6 +16,7 @@ from .nodes import (
     test_coder_node,
     frontend_coder_node,
     db_coder_node,
+    diagram_node,
     # frontend_code_node,
     # code_node,
     # backend_code_node,
@@ -52,4 +53,5 @@ def build_graph():
     builder.add_node("browser", browser_node)
     builder.add_node("reporter", reporter_node)
     builder.add_node("import-export", import_export_node)
+    builder.add_node("diagram",diagram_node)
     return builder.compile()

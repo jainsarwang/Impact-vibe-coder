@@ -41,6 +41,8 @@ Always respond with a valid JSON object containing only the 'next' key and a sin
 
 -   **`browser`**: Directly interacts with web pages, performing complex operations and interactions. You can also leverage `browser` to perform in-domain search, like Facebook, Instagram, Github, etc.
 
+-   **`diagram`**: Creates a component diagram for the directory generated call this agent once before the `directory_generator` and once right after.
+
 -   **`reporter`**: Writes a professional report based on the result of each step.
 
 
@@ -50,9 +52,10 @@ When building an application:
 
 1. Invoke `researcher` Agent discretely for each identified topic, ensuring independent execution and context isolation per research stream. Follow the plan as is even if the `researcher` agent is called multiple times.
 2. Reserch for each of the topic as identified by the planner.
+   - After the research call `diagram`
    - Call the `directory_generator` after each of the researched topic is completed.
    - Build on the response of the previous reseracher in detail. Make sure the reseracher response is consistent and the provided apis are called.
-3. After `directory_generator` call `import-export`
+3. After `directory_generator` call `diagram` and then call `import-export`
 4. After `import-export` call `version_resolver`  
 5. After `version_resolver` call `code-planner`.
 6. Next, pass the entire directory structure to `coder_master`

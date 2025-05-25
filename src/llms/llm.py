@@ -49,7 +49,7 @@ def get_llm_by_type(llm_type: LLMType) -> ChatOpenAI | genai.Client:
 
     if llm_type == "basic":
         if GOOGLE_API_KEY:
-            llm = create_gemini_llm(model="gemini-2.0-flash")
+            llm = create_gemini_llm(model="gemini-2.5-flash-preview-04-17")
             # Or "gemini-pro-vision" if needed
     elif llm_type == "reasoning":
         if GROQ_API_KEY:

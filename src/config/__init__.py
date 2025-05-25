@@ -36,7 +36,8 @@ TEAM_MEMBERS = [
     "import-export",
     "code_planner",
     "coder_master",
-    "version_resolver"
+    "version_resolver",
+    "diagram"
 ]
 
 CODER_AGENTS = [

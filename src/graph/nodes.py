@@ -666,7 +666,6 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
     except json.JSONDecodeError:
         logger.warning("Import Export response is not a valid JSON")
 
-    print(full_response)
     return Command(
         update={
             "messages": [
@@ -936,6 +935,8 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
         goto=goto,
     )
 
+logger = logging.getLogger(__name__) # Ensure logger is configured
+
 def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     """Coordinator node that communicates with customers, showing only non-JSON context."""
     logger.info("Coordinator talking.")
@@ -947,8 +948,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     response_content_raw = response.content
     
     # Process JSON for internal use
-    response_content = repair_json_output(response_content_raw)
-    logger.debug(f"Coordinator full response: {response_content}")
+    logger.debug(f"Coordinator full response: {response_content_raw}")
     
     # Extract non-JSON context to show user
     user_display_content = extract_user_content(response_content_raw)
@@ -959,7 +959,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     # Handle planner handoff
     goto = "__end__"
     if "handoff_to_planner()" in response_content_raw:
-        extract_and_save_json(response_content)
+        extract_and_save_json(response_content_raw)
         goto = "planner"
     
     return Command(goto=goto)
@@ -995,6 +995,50 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
                     name="reporter",
                 )
             ]
+        },
+        goto="supervisor",
+    )
+
+
+def diagram_node(state: State) -> Command[Literal["supervisor"]]:
+    """Node for the diagram agent that generates diagrams."""
+    logger.info("Diagram agent starting task")
+    template = get_prompt_template('diagram_generator')
+    directory_structure = state.get('directory_structure',"")
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        "directory_structure": directory_structure,
+        **state  # Include other state variables
+    }
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME","directory_structure"],
+        template=template,
+    ).format(**prompt_vars)
+
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": state["messages"][-1].content if state["messages"] else ""
+        }
+    ]
+
+    llm = get_llm_by_type("basic")
+    response = llm.invoke(messages)
+    logger.debug(f"Diagram agent response: {response}")
+    logger.info("Diagram agent completed task")
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response.content,  # Corrected: Passing the content string
+                    name="diagram",
+                )
+            ],
+            "sequence_diagram": response.content, 
         },
         goto="supervisor",
     )

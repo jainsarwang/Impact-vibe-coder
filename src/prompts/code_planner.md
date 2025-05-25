@@ -424,6 +424,8 @@ interface Step {
 ## Notes
 
 -   Ensure the plan is clear and logical, with tasks assigned to the correct agent based on their capabilities.
+-   Make sure that the `imports` that you write for a destination file actually exist at the source plan
+    example: If you are importing auth_routes from controller in main.py file ensure auth_routes exist in the controller file.
 -   Always Use the same language as the user.
 -   You are FORBIDDEN to write any kind of code.
 -   Include all the files that are listed in the `directory_structure` in the plan.
