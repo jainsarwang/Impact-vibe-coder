@@ -35,7 +35,8 @@ TEAM_MEMBERS = [
     "directory_generator",
     "import-export",
     "code_planner",
-    "coder_master",
+    "coder_master",,
+    "version_resolver"
 ]
 
 CODER_AGENTS = [

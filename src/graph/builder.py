@@ -23,7 +23,8 @@ from .nodes import (
     browser_node,
     reporter_node,
     planner_node,
-    import_export_node
+    import_export_node,
+    version_resolver_node,
 )
 
 
@@ -47,9 +48,7 @@ def build_graph():
     builder.add_node("test_coder", test_coder_node)
     builder.add_node("frontend_coder", frontend_coder_node)
     builder.add_node("db_coder", db_coder_node)
-    # builder.add_node("coder", code_node)
-    # builder.add_node("frontend_coder", frontend_code_node)
-    # builder.add_node("backend_coder", backend_code_node)
+    builder.add_node("version_resolver", version_resolver_node)
     builder.add_node("browser", browser_node)
     builder.add_node("reporter", reporter_node)
     builder.add_node("import-export", import_export_node)
