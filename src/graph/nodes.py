@@ -30,7 +30,7 @@ from src.agents import  (
     test_coder_agent,
     frontend_coder_agent,db_coder_agent,
     browser_agent,
-    import_export_agent,,
+    import_export_agent,
     version_agent,
 )
 from src.llms.llm import get_llm_by_type
