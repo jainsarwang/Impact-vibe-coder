@@ -522,59 +522,61 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
         return Command(goto='supervisor')
 
     prompt_vars = {
-    "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
-    "directory_structure": directory_structure,
-    **state  # Include other state variables
-}    
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        "directory_structure": directory_structure,
+        **state  # Include other state variables
+    }
 
-    template = get_prompt_template('import-export')
     system_prompt = PromptTemplate(
         input_variables=["CURRENT_TIME"],
-        template=template,
+        template=get_prompt_template('import-export'),
     ).format(**prompt_vars)
 
     messages = [
-    {
-        "role": "system",
-        "content": system_prompt
-    },
-    {
-        "role": "user",
-        "content": directory_structure
-    }
-]
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": directory_structure
+        }
+    ]
 
-    llm = get_llm_by_type("basic")
-    response = llm.invoke(messages)
-    full_response = response.content
+    goto= 'supervisor'
 
-    logger.debug(f"Current state messages: {state['messages']}")
-    logger.info(f"Import Export Response: {full_response}")
+    try:
+        llm = get_llm_by_type("basic")
+        response = llm.invoke(messages)
+        full_response = response.content
 
-    if full_response.startswith("```json"):
-        full_response = full_response.removeprefix("```json")
+        logger.debug(f"Current state messages: {state['messages']}")
+        logger.info(f"Import Export Response: {full_response}")
+        if full_response.startswith("```json"):
+            full_response = full_response.removeprefix("```json")
 
-    if full_response.endswith("```"):
-        full_response = full_response.removesuffix("```")
+        if full_response.endswith("```"):
+            full_response = full_response.removesuffix("```")
 
     #     with open("directory_structure.json", "w", encoding="utf-8") as f:
     #         json.dump(repaired_response, f, indent=2, ensure_ascii=False)
-    # except json.JSONDecodeError:
-    #     logger.warning("Import Export response is not a valid JSON")
-    #     goto = "end"
+
+    except json.JSONDecodeError:
+        logger.warning("Import Export response is not a valid JSON")
+
     print(full_response)
     return Command(
         update={
             "messages": [
                 HumanMessage(
-                    content=str(full_response),
+                    content=(full_response),
                     name="import-export",
                 )
             ],
-            "directory_structure": str(full_response)
+            "directory_structure": (full_response)
         },
-        goto="supervisor",
-    )
+        goto=goto,
+    )   
 
 # def import_export_node(state: State) -> Command[Literal["supervisor"]]:
 #     """

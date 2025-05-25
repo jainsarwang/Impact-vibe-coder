@@ -40,12 +40,12 @@ Your mission is to meticulously analyze, validate and correct  import/export dep
 - Go: Use Go modules (go.mod) or GOPATH.
 - Java: Maven/Gradle handles root-relative paths.
 
-***Conclusion***
+**Conclusion**
 - Same folder → ./file
 - Parent folder → ../file
 - Root folder → Use aliases or configs (no raw absolute paths).
 
-***Avoid***
+**Avoid**
 - Hardcoded absolute paths (/User/project/file).
 - Mixing relative/absolute imports inconsistently.
 
@@ -458,26 +458,6 @@ Your mission is to meticulously analyze, validate and correct  import/export dep
           "description": "Verifies the JWT token in the request header and authorizes the user."
         }
       },
-      "variables": {},
-      "imports": {
-        "jwt": {
-          "importfilepath": "jsonwebtoken",
-          "type": "module",
-          "description": "JSON Web Token library for authentication.",
-          "variables": {},
-          "functions": {}
-        },
-        "User": {
-          "importfilepath": "../models/User.js",
-          "type": "module",
-          "description": "User model.",
-          "variables": {},
-          "functions": {}
-        }
-      },
-      "exports": [
-        "protect"
-      ]
     },
     "projects\\WhatsUp\\frontend\\src\\components\\ChatList.js": {
       "purpose": "Displays a list of chats.",
@@ -501,23 +481,6 @@ Your mission is to meticulously analyze, validate and correct  import/export dep
       },
       "exports": [
         "ChatList"
-      ]
-    },
-    "projects\\WhatsUp\\frontend\\src\\components\\Message.js": {
-      "purpose": "Displays a single message.",
-      "functions": {},
-      "variables": {},
-      "imports": {
-        "React": {
-          "importfilepath": "react",
-          "type": "module",
-          "description": "React library.",
-          "variables": {},
-          "functions": {}
-        }
-      },
-      "exports": [
-        "Message"
       ]
     },
     "projects\\WhatsUp\\frontend\\src\\components\\InputBar.js": {
@@ -590,23 +553,6 @@ Your mission is to meticulously analyze, validate and correct  import/export dep
       },
       "exports": [
         "ChatScreen"
-      ]
-    },
-    "projects\\WhatsUp\\frontend\\src\\screens\\ContactsScreen.js": {
-      "purpose": "Contacts screen for displaying and managing contacts.",
-      "functions": {},
-      "variables": {},
-      "imports": {
-        "React": {
-          "importfilepath": "react",
-          "type": "module",
-          "description": "React library.",
-          "variables": {},
-          "functions": {}
-        }
-      },
-      "exports": [
-        "ContactsScreen"
       ]
     },
     "projects\\WhatsUp\\frontend\\src\\screens\\SettingsScreen.js": {
@@ -726,239 +672,12 @@ Your mission is to meticulously analyze, validate and correct  import/export dep
       },
       "exports": []
     },
-    "projects\\WhatsUp\\.gitignore": {
-      "purpose": "Specifies intentionally untracked files that Git should ignore.",
-      "functions": {},
-      "variables": {},
-      "imports": {},
-      "exports": []
-    },
-    "projects\\WhatsUp\\README.md": {
-      "purpose": "Provides a high-level overview of the project, including setup instructions, usage guidelines, and contribution information.",
-      "functions": {},
-      "variables": {},
-      "imports": {},
-      "exports": []
-    }
   },
   "api_endpoints": {
-    "POST /api/users/register": {
-      "controller": "projects\\WhatsUp\\backend\\controllers\\userController.js",
-      "function": "registerUser",
-      "request": {
-        "params": {},
-        "query": {},
-        "body": {
-          "username": "string",
-          "phoneNumber": "string",
-          "password": "string"
-        }
-      },
-      "response": {
-        "success": {
-          "token": "string",
-          "user": "object"
-        },
-        "errors": [
-          "ValidationError",
-          "InternalServerError"
-        ]
-      },
-      "description": "Registers a new user."
-    },
-    "POST /api/users/login": {
-      "controller": "projects\\WhatsUp\\backend\\controllers\\userController.js",
-      "function": "loginUser",
-      "request": {
-        "params": {},
-        "query": {},
-        "body": {
-          "phoneNumber": "string",
-          "password": "string"
-        }
-      },
-      "response": {
-        "success": {
-          "token": "string",
-          "user": "object"
-        },
-        "errors": [
-          "Unauthorized",
-          "InternalServerError"
-        ]
-      },
-      "description": "Logs in an existing user."
-    },
-    "POST /api/messages": {
-      "controller": "projects\\WhatsUp\\backend\\controllers\\messageController.js",
-      "function": "sendMessage",
-      "request": {
-        "params": {},
-        "query": {},
-        "body": {
-          "chatId": "string",
-          "content": "string"
-        }
-      },
-      "response": {
-        "success": {
-          "message": "object"
-        },
-        "errors": [
-          "ValidationError",
-          "InternalServerError"
-        ]
-      },
-      "description": "Sends a new message."
-    },
-    "GET /api/messages/:chatId": {
-      "controller": "projects\\WhatsUp\\backend\\controllers\\messageController.js",
-      "function": "getMessages",
-      "request": {
-        "params": {
-          "chatId": "string"
-        },
-        "query": {},
-        "body": {}
-      },
-      "response": {
-        "success": {
-          "messages": "array"
-        },
-        "errors": [
-          "InternalServerError"
-        ]
-      },
-      "description": "Retrieves messages for a specific chat."
-    },
-    "POST /api/chats": {
-      "controller": "projects\\WhatsUp\\backend\\controllers\\chatController.js",
-      "function": "createChat",
-      "request": {
-        "params": {},
-        "query": {},
-        "body": {
-          "users": "array"
-        }
-      },
-      "response": {
-        "success": {
-          "chat": "object"
-        },
-        "errors": [
-          "ValidationError",
-          "InternalServerError"
-        ]
-      },
-      "description": "Creates a new chat."
-    },
-    "GET /api/chats": {
-      "controller": "projects\\WhatsUp\\backend\\controllers\\chatController.js",
-      "function": "getChats",
-      "request": {
-        "params": {},
-        "query": {},
-        "body": {}
-      },
-      "response": {
-        "success": {
-          "chats": "array"
-        },
-        "errors": [
-          "InternalServerError"
-        ]
-      },
-      "description": "Retrieves chats for a specific user."
-    }
+    ...
   },
   "data_models": {
-    "User": {
-      "fields": {
-        "username": {
-          "type": "String",
-          "required": true,
-          "description": "Username of the user."
-        },
-        "phoneNumber": {
-          "type": "String",
-          "required": true,
-          "description": "Phone number of the user."
-        },
-        "password": {
-          "type": "String",
-          "required": true,
-          "description": "Password of the user."
-        },
-        "profilePicture": {
-          "type": "String",
-          "required": false,
-          "description": "URL of the user's profile picture."
-        }
-      },
-      "relationships": []
-    },
-    "Message": {
-      "fields": {
-        "sender": {
-          "type": "ObjectId",
-          "required": true,
-          "description": "ID of the user who sent the message."
-        },
-        "content": {
-          "type": "String",
-          "required": true,
-          "description": "Content of the message."
-        },
-        "timestamp": {
-          "type": "Date",
-          "required": true,
-          "description": "Timestamp of when the message was sent."
-        },
-        "chat": {
-          "type": "ObjectId",
-          "required": true,
-          "description": "ID of the chat the message belongs to."
-        }
-      },
-      "relationships": [
-        {
-          "model": "User",
-          "type": "many-to-one",
-          "field": "sender"
-        },
-        {
-          "model": "Chat",
-          "type": "many-to-one",
-          "field": "chat"
-        }
-      ]
-    },
-    "Chat": {
-      "fields": {
-        "users": {
-          "type": "Array",
-          "required": true,
-          "description": "Array of user IDs in the chat."
-        },
-        "chatName": {
-          "type": "String",
-          "required": false,
-          "description": "Name of the chat (for group chats)."
-        },
-        "isGroupChat": {
-          "type": "Boolean",
-          "required": true,
-          "description": "Flag indicating if the chat is a group chat."
-        }
-      },
-      "relationships": [
-        {
-          "model": "User",
-          "type": "many-to-many",
-          "field": "users"
-        }
-      ]
-    }
+    ...
   },
   "dependencies": {
     "production": {
