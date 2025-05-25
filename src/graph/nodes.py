@@ -666,7 +666,6 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
     except json.JSONDecodeError:
         logger.warning("Import Export response is not a valid JSON")
 
-    print(full_response)
     return Command(
         update={
             "messages": [
