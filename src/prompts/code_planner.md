@@ -432,6 +432,7 @@ interface Step {
 -   Always share the `api_endpoints` if available for to the `frontend_coder`.
 -   Always include `README.md` File
 -   Share the Imports as listed for each file
+-   Ensure for every file in the `directory_structure`, code plan is created. 
 -   Flow of code generation
     1. Backend modules
         1. configs (constants, database, services)
