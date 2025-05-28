@@ -67,6 +67,7 @@ async def create_sample_data():
         }
     ]
     await db.organizations.insert_many(organizations_data)
+    await db.organizations.create_index("organization_name", unique=True)
     
     # 2. Create Roles
     print("Creating roles...")

@@ -776,6 +776,29 @@ async def admin_create_another_admin(
         logger.error(f"Error in admin_create_another_admin: {e}", exc_info=True)
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to create admin.")
 
+
+
+
+@app.post("/organizations/status")
+async def update_organization_status(
+    organization_name: str,
+    status: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Update the status of an organization (e.g., active, inactive).
+    Requires admin or superadmin role.
+    """
+    
+    organization = db.organizations.find_one({"organization_name": organization_name})
+    
+    if update_result.modified_count == 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to update organization status")
+
+    return {"message": "Organization status updated successfully", "organization_id": organization_id, "new_status": status}
+
+
+
 @app.get("/organizations/{organization_name}/tokens") # Path parameter for organization_name
 async def get_tokens_assigned(
     organization_name: str,
