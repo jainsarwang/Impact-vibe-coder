@@ -781,6 +781,7 @@ async def admin_create_another_admin(
 async def update_organization_status(
     organization_name: str,
     status: str,
+    current_user: User = Depends(get_current_active_user)
     # current_user: User = Depends(get_current_active_user)
 ):
     """
