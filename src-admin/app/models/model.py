@@ -142,9 +142,13 @@ users_schema = {
                 'bsonType': 'bool',
                 'description': 'Whether the account is active'
             },
+            'is_primary_admin':{
+                'bsonType':'bool',
+                'description':'Is the admin allowed to create other admin'
+            },
             'last_login': {
                 'bsonType': 'date',
-                'description': 'Timestamp of last login'
+                'description': 'Timestamp of last login',
             },
             'created_at': {
                 'bsonType': 'date',
