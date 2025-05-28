@@ -88,6 +88,7 @@ class TokenData(BaseModel):
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
+    username: str = Field(..., min_length=3, max_length=50)
     email: Optional[EmailStr] = None
     name: Optional[str] = Field(None, min_length=1, max_length=100)
 
@@ -118,6 +119,8 @@ class UserInDB(User):
         }
 
 class OrganizationCreate(BaseModel):
+    organization_name: str = Field(..., min_length=1, max_length=100)
+    total_tokens: int = Field(..., ge=0)
     organization_name: str = Field(..., min_length=1, max_length=100)
     total_tokens: int = Field(..., ge=0)
 
@@ -556,6 +559,8 @@ async def refresh_token(authorization: str = Header(...)):
             },
             expires_delta=access_token_expires
         )
+        
+        logger.info(f"Successful login for user: {user['username']} (ID: {user['user_id']})")
         return {"access_token": access_token, "token_type": "bearer"}
     except JWTError as e:
         logger.warning(f"JWT refresh decode error: {e}", exc_info=True)

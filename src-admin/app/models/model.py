@@ -12,11 +12,11 @@ organization_schema = {
                 'description': 'Name of the organization'
             },
             'total_tokens': {
-                'bsonType': 'long',
+                'bsonType': 'number',
                 'description': 'Total credit allocation for the organization'
             },
             'tokens_remaining': {
-                'bsonType': 'long',
+                'bsonType': 'number',
                 'description': 'Current available tokens'
             },
             'credit_reset_date': {
@@ -78,11 +78,11 @@ credit_allocation_schema = {
                 'description': 'Organization this allocation applies to'
             },
             'tokens_allowed': {
-                'bsonType': 'int',
+                "bsonType": ["long", "int"],
                 'description': 'Monthly credit allowance'
             },
             'tokens_used': {
-                'bsonType': 'int',
+                "bsonType": ["long", "int"],
                 'description': 'tokens consumed in current period'
             },
             'is_active': {
@@ -250,7 +250,7 @@ projects_schema = {
                 'description': 'Live project URL if deployed'
             },
             'tokens_consumed': {
-                'bsonType': 'int',
+                "bsonType": ["long", "int"],
                 'description': 'Total tokens used by this project'
             },
             'created_at': {
@@ -326,7 +326,7 @@ chats_history_schema = {
                 'description': 'Message direction'
             },
             'tokens_used': {
-                'bsonType': 'int',
+                "bsonType": ["long", "int"],
                 'description': 'tokens consumed by this message'
             },
             'created_at': {
