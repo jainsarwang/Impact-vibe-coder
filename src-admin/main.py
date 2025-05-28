@@ -777,27 +777,29 @@ async def admin_create_another_admin(
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to create admin.")
 
 
-
-
 @app.post("/organizations/status")
 async def update_organization_status(
     organization_name: str,
     status: str,
-    current_user: User = Depends(get_current_active_user)
+    # current_user: User = Depends(get_current_active_user)
 ):
     """
     Update the status of an organization (e.g., active, inactive).
     Requires admin or superadmin role.
     """
-    
-    organization = db.organizations.find_one({"organization_name": organization_name})
-    
-    if update_result.modified_count == 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to update organization status")
-
-    return {"message": "Organization status updated successfully", "organization_id": organization_id, "new_status": status}
-
-
+    organization= await organizations_collection.find_one({"organization_name": organization_name})
+    if not organization:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Organization not found")
+    is_active = organization.get("is_active", False)
+    if status == 'active' or status == 'Active' or status == 'ACTIVE' or status == True:
+        organization['is_active']  = True
+    elif status == 'inactive' or status == 'Inactive' or status == 'INACTIVE' or status == False:
+        organization['is_active']  = False
+    else: raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Deatails cannot be updated, please provide valid status")
+    return {
+        "organization_id": organization['organization_id'],
+        "is_active": organization['is_active'],
+    }
 
 @app.get("/organizations/{organization_name}/tokens") # Path parameter for organization_name
 async def get_tokens_assigned(
@@ -1018,7 +1020,7 @@ async def get_user_info(
         "user_id": user_doc.get("user_id"),
         "role_id": user_doc.get("role_id"),
         "organization_id": user_doc.get("organization_id"),
-        "tokens": user_doc.get("tokens", 0),
+        "tokens_allowed": user_doc.get("tokens_allowed", 0),
         "is_active": user_doc.get("is_active", False),
         "is_primary_admin": user_doc.get("is_primary_admin", False),
         "created_at": user_doc.get("created_at", datetime.min).isoformat(),
