@@ -366,3 +366,12 @@ permissions_flags_schema = {
         }
     }
 }
+
+mongoose.Schema(
+    {
+        name: {
+            required: true,
+            
+        }
+    }
+)
