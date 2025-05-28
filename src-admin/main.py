@@ -654,7 +654,8 @@ async def get_all_organizations(current_user: User = Depends(get_current_active_
                 "role_id": user_doc.get("role_id"),
                 "is_active": user_doc.get("is_active", True),
                 "is_primary_admin": user_doc.get("is_primary_admin", False),
-                "tokens": user_doc.get("tokens", 0)
+                "tokens": user_doc.get("tokens", 0),
+                "created_at": user_doc.get("created_at", datetime.min).isoformat(),
             }
             for user_doc in users_in_org
         ]   
@@ -1071,7 +1072,6 @@ async def add_chat_message(
     await chat_history_collection.insert_one(message_data)
     
     return ChatMessageOut(**message_data)
-
 
 # --- Run the app ---
 if __name__ == "__main__":
