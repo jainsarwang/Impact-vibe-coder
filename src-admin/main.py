@@ -33,7 +33,7 @@ if not SECRET_KEY or len(SECRET_KEY) < 32:
         logger.warning(f"SECRET_KEY is too short ({len(SECRET_KEY)} chars), generating a temporary one. DO NOT USE THIS IN PRODUCTION.")
         SECRET_KEY = secrets.token_urlsafe(32)
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "300"))
 
 # --- Password hashing ---
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

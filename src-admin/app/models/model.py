@@ -108,7 +108,7 @@ credit_allocation_schema = {
 users_schema = {
     '$jsonSchema': {
         'bsonType': 'object',
-        'required': ['user_id', 'role_id', 'organization_id', 'name', 'username', 'password', 'is_active', 'created_at', 'updated_at'],
+        'required': ['user_id', 'tokens_allowed' ,'role_id', 'organization_id', 'name', 'username', 'password', 'is_active', 'created_at', 'updated_at'],
         'properties': {
             'user_id': {
                 'bsonType': 'string',
@@ -117,6 +117,10 @@ users_schema = {
             'role_id': {
                 'bsonType': 'string',
                 'description': 'Role assigned to the user'
+            },
+            'tokens_allowed': {
+                "bsonType": ["long", "int"],
+                'description': 'Current token balance for the user'
             },
             'organization_id': {
                 'bsonType': 'string',
