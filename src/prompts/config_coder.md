@@ -70,6 +70,7 @@ Generate code compatible with the following installed software versions:
 
 Example package.json:
 
+# Example 1
 ```json
 {{
     "name": "todo-api",
@@ -100,6 +101,80 @@ Example package.json:
 }}
 ```
 
+# Example 2
+```json
+{
+  "name": "my-awesome-app",
+  "version": "1.0.0",
+  "description": "A full-stack app with React frontend and Node.js backend",
+  "private": true,  // Prevents accidental `npm publish`
+  "main": "server.js",  // Backend entry point
+  "type": "module",  // Uses ES Modules (instead of CommonJS)
+  "scripts": {
+    // Frontend (React/Vite)
+    "frontend:dev": "vite frontend/",
+    "frontend:build": "vite build frontend/",
+    "frontend:preview": "vite preview frontend/",
+    
+    // Backend (Node.js)
+    "backend:dev": "nodemon server.js",
+    "backend:start": "node server.js",
+    
+    // Testing
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch",
+    
+    // Combined scripts (concurrently)
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
+    "build": "npm run frontend:build",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    // Backend (Node.js/Express)
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "mongoose": "^8.0.3",
+    
+    // Frontend (React)
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "axios": "^1.6.7"
+  },
+  "devDependencies": {
+    // Build tools
+    "vite": "^5.0.0",
+    
+    // Backend dev
+    "nodemon": "^3.0.2",
+    
+    // Testing
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    
+    // Utilities
+    "concurrently": "^8.2.2",
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version"]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/username/my-awesome-app.git"
+  },
+  "keywords": ["react", "express", "mongodb", "fullstack"],
+  "author": "Your Name <your.email@example.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/username/my-awesome-app/issues"
+  }
+}
+```
 #### Build Tools
 
 -   Configure webpack, rollup, or other bundlers

@@ -19,7 +19,6 @@ class ChecklistManager:
         """
         if not self._normalize_paths:
             return path
-            
         # First normalize slashes
         normalized = os.path.normpath(path.replace("\\", "/")).replace("\\", "/")
         

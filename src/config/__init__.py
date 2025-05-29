@@ -33,8 +33,11 @@ TEAM_MEMBERS = [
     "browser",
     "reporter",
     "directory_generator",
+    "import-export",
     "code_planner",
-    "coder_master"
+    "coder_master",
+    "version_resolver",
+    "diagram"
 ]
 
 CODER_AGENTS = [

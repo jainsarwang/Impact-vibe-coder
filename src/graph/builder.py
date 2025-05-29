@@ -16,6 +16,7 @@ from .nodes import (
     test_coder_node,
     frontend_coder_node,
     db_coder_node,
+    diagram_node,
     # frontend_code_node,
     # code_node,
     # backend_code_node,
@@ -23,7 +24,8 @@ from .nodes import (
     browser_node,
     reporter_node,
     planner_node,
-    react_coder_node
+    import_export_node,
+    version_resolver_node,
 )
 
 
@@ -47,10 +49,9 @@ def build_graph():
     builder.add_node("test_coder", test_coder_node)
     builder.add_node("frontend_coder", frontend_coder_node)
     builder.add_node("db_coder", db_coder_node)
-    # builder.add_node("coder", code_node)
-    # builder.add_node("frontend_coder", frontend_code_node)
-    # builder.add_node("backend_coder", backend_code_node)
+    builder.add_node("version_resolver", version_resolver_node)
     builder.add_node("browser", browser_node)
     builder.add_node("reporter", reporter_node)
-    builder.add_node("react_coder", react_coder_node)
+    builder.add_node("import-export", import_export_node)
+    builder.add_node("diagram",diagram_node)
     return builder.compile()

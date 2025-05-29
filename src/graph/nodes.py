@@ -5,7 +5,11 @@ import os
 import json_repair
 import logging
 from copy import deepcopy
+# from .llm_utils import get_llm_by_type
 from typing import Dict, List, Literal
+# from .prompt_utils import get_prompt_template
+
+
 from langchain_core.messages import HumanMessage, BaseMessage
 
 import json_repair
@@ -26,7 +30,8 @@ from src.agents import  (
     test_coder_agent,
     frontend_coder_agent,db_coder_agent,
     browser_agent,
-    react_coder_agent
+    import_export_agent,
+    version_agent,
 )
 from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS
@@ -89,7 +94,6 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Research agent completed task")
     response_content = result["messages"][-1].content
 
-    response_content = repair_json_output(response_content)
     logger.debug(f"Research agent response: {response_content}")
     return Command(
         update={
@@ -135,21 +139,7 @@ Directory  ->  Image Generation  -> Dependencies Graph  ->  Coder Master  -> (
 )  ->  Move to next File generation by Coder
 
 """
-
-CODER_AGENTS = [
-    "model_coder",
-    "controller_coder",
-    "route_coder",
-    "service_coder",
-    "utility_coder",
-    "test_coder",
-    "config_coder",
-    "frontend_coder",
-    "db_coder",
-    "react_coder",
-]
-
-
+    
 def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     """Code Planner node that generate the full plan for coder master."""
     logger.info("Code Planner generating full plan")
@@ -166,7 +156,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
         "directory_structure": directory_structure,
         **state  # Include other state variables
     }
-    
+
     template = get_prompt_template('code_planner')
     system_prompt = PromptTemplate(
         input_variables=["CURRENT_TIME", "CODER_AGENTS"],
@@ -180,11 +170,10 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
         },
         {
             "role": "user",
-            "content": directory_structure
+            "content": "Create a Code plan"
         }
     ]
-    
-    # messages = apply_prompt_template_planner("code_planner", state)
+    messages = apply_prompt_template_planner("code_planner", state)
     # whether to enable deep thinking mode
     llm = get_llm_by_type("basic")
     response = llm.invoke(messages)
@@ -220,6 +209,105 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
         goto=goto,
     )
 
+
+def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
+    """Node for version resolver agent that verifies versions and corrects them to latest stable versions."""
+    logger.info("Version Resolver Agent starting task")
+
+    # Safely get directory_structure from state
+    directory_structure = state.get('directory_structure')
+    if not directory_structure:
+        logger.warning("No Directory Object in State, Going back to supervisor")
+        return Command(goto='supervisor')
+
+    # Parse directory_structure if it's a string
+    if isinstance(directory_structure, str):
+        try:
+            directory_structure = json.loads(directory_structure)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse directory_structure: {e}")
+            return Command(goto='supervisor')
+
+    # Initialize dependencies_values safely
+    dependencies_values = {}
+    try:
+        dependencies_values = directory_structure.get("dependencies", {})
+        if isinstance(dependencies_values, str):
+            dependencies_values = json.loads(dependencies_values)
+    except (json.JSONDecodeError, AttributeError) as e:
+        logger.error(f"Failed to parse dependencies: {e}")
+        return Command(goto='supervisor')
+
+    # Prepare prompt variables
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        **state
+    }
+
+    # Get and format the prompt template
+    template = get_prompt_template('version_resolver')
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME"],
+        template=template,
+    ).format(**prompt_vars)
+
+    # Prepare messages for LLM
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": json.dumps(dependencies_values)  # Better than List() for JSON data
+        }
+    ]
+
+    # Get LLM response
+    llm = get_llm_by_type("basic")
+    try:
+        response = llm.invoke(messages)
+        full_response = response.content
+        json_response = repair_json_output(full_response)
+    except Exception as e:
+        logger.error(f"LLM invocation failed: {e}")
+        return Command(goto='supervisor')
+
+    logger.debug(f"Current state messages: {state.get('messages', [])}")
+    logger.info(f"Version Resolver response: {json_response}")
+
+    # Process the response
+    try:
+        if isinstance(json_response, str):
+            parsed_response = json.loads(json_response)
+        else:
+            parsed_response = json_response  # Assuming it's already a dict/list
+
+        # Validate the response structure
+        if not isinstance(parsed_response, (dict, list)):
+            raise ValueError("Response must be a dictionary or list")
+
+        directory_structure['dependencies'] = parsed_response
+    except (json.JSONDecodeError, ValueError, TypeError) as e:
+        logger.error(f"Failed to process LLM response: {e}")
+        return Command(goto='supervisor')
+
+    logger.info("Version Resolver work done")
+    logger.debug(f"Updated dependencies: {directory_structure['dependencies']}")
+    logger.info(directory_structure)
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=str(parsed_response),
+                    name="version_resolver",
+                )
+            ],
+            "directory_structure": str(directory_structure)
+        },
+        goto="supervisor",
+    )
+    
 def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "supervisor", "__end__"]]:
     """Coder Master node that decides which agent should act next."""
     
@@ -362,8 +450,8 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
         parsed_response = json.loads(response_content_repaired)
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse JSON response from '{prompt_name}': {e}. "
-                    f"Raw response: '{response_content_raw[:500]}...', "
-                    f"Repaired: '{response_content_repaired[:500]}...'")
+                        f"Raw response: '{response_content_raw[:500]}...', "
+                        f"Repaired: '{response_content_repaired[:500]}...'")
         return Command(
             update={
                 "messages": [
@@ -466,6 +554,116 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
     )
 
 
+def import_export_node(state: State) -> Command[Literal["supervisor"]]:
+    """
+    Node for the import-export agent that verifies import and export statements of directory structure 
+    and verifies the path of import and export statements. 
+    Rewrite it in Directory if issues found
+    """
+    logger.info("import-export agent starting task")
+
+    # if directory not foun in state, return to supervisor
+    directory_structure = state.get('directory_structure')
+    if not directory_structure:
+        logging.warning("No Directory Object in State, Going back to supervisor")
+        return Command(goto='supervisor')
+
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        "directory_structure": directory_structure,
+        **state  # Include other state variables
+    }
+
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME"],
+        template=get_prompt_template('import-export'),
+    ).format(**prompt_vars)
+
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": directory_structure
+        }
+    ]
+
+    goto= 'supervisor'
+
+    try:
+        llm = get_llm_by_type("basic")
+        response = llm.invoke(messages)
+        full_response = response.content
+
+        logger.debug(f"Current state messages: {state['messages']}")
+        logger.info(f"Import Export Response: {full_response}")
+        if full_response.startswith("```json"):
+            full_response = full_response.removeprefix("```json")
+
+        if full_response.endswith("```"):
+            full_response = full_response.removesuffix("```")
+
+    #     with open("directory_structure.json", "w", encoding="utf-8") as f:
+    #         json.dump(repaired_response, f, indent=2, ensure_ascii=False)
+
+    except json.JSONDecodeError:
+        logger.warning("Import Export response is not a valid JSON")
+
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=(full_response),
+                    name="import-export",
+                )
+            ],
+            "directory_structure": (full_response)
+        },
+        goto=goto,
+    )   
+
+# def import_export_node(state: State) -> Command[Literal["supervisor"]]:
+#     """
+#     Node for the import-export agent that verifies import and export statements of directory structure 
+#     and verifies the path of import and export statements. 
+#     Rewrite it in Directory if issues found
+#     """
+#     logger.info("import-export agent starting task")
+#     result = import_export_agent.invoke(state)
+#     logger.info("import-export agent completed task")
+#     response_content = result["messages"][-1].content
+#     response_content = repair_json_output(response_content)
+#     extract_and_save_json(response_content, "import-export.json")
+
+#     # Initialize checklist from directory structure
+#     checklist_manager.initialize_from_directory(response_content)
+
+#     logger.debug(f"Import-Export agent response: {response_content}")
+    
+#     return Command(
+#         update={
+#             "messages": [
+#                 HumanMessage(
+#                     content=response_content,
+#                     name="import-export",
+#                 )
+#             ],
+#             "directory_structure": response_content
+#         },
+#         goto="supervisor",
+#     )
+
+# """
+
+# Directory  ->  Image Generation  -> Dependencies Graph  ->  Coder Master  -> (
+#     Coder  -> Analyse code and all fucntion corresponds to Graph
+# )  ->  Move to next File generation by Coder
+
+# """
+
+
 def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Model Coder agent that generator directory structure."""
     return coder(state, 'model_coder', model_coder_agent)
@@ -505,7 +703,6 @@ def frontend_coder_node(state: State) -> Command[Literal["coder_master"]]:
 def db_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the DB Coder agent that generator directory structure."""
     return coder(state, 'db_coder', db_coder_agent)
-
 
 # def code_node(state: State) -> Command[Literal["supervisor"]]:
 #     """Node for the coder agent that executes Python code."""
@@ -685,6 +882,8 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
         goto=goto,
     )
 
+logger = logging.getLogger(__name__) # Ensure logger is configured
+
 def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     """Coordinator node that communicates with customers, showing only non-JSON context."""
     logger.info("Coordinator talking.")
@@ -696,8 +895,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     response_content_raw = response.content
     
     # Process JSON for internal use
-    response_content = repair_json_output(response_content_raw)
-    logger.debug(f"Coordinator full response: {response_content}")
+    logger.debug(f"Coordinator full response: {response_content_raw}")
     
     # Extract non-JSON context to show user
     user_display_content = extract_user_content(response_content_raw)
@@ -708,7 +906,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     # Handle planner handoff
     goto = "__end__"
     if "handoff_to_planner()" in response_content_raw:
-        extract_and_save_json(response_content)
+        extract_and_save_json(response_content_raw)
         goto = "planner"
     
     return Command(goto=goto)
@@ -744,6 +942,50 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
                     name="reporter",
                 )
             ]
+        },
+        goto="supervisor",
+    )
+
+
+def diagram_node(state: State) -> Command[Literal["supervisor"]]:
+    """Node for the diagram agent that generates diagrams."""
+    logger.info("Diagram agent starting task")
+    template = get_prompt_template('diagram_generator')
+    directory_structure = state.get('directory_structure',"")
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        "directory_structure": directory_structure,
+        **state  # Include other state variables
+    }
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME","directory_structure"],
+        template=template,
+    ).format(**prompt_vars)
+
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": state["messages"][-1].content if state["messages"] else ""
+        }
+    ]
+
+    llm = get_llm_by_type("basic")
+    response = llm.invoke(messages)
+    logger.debug(f"Diagram agent response: {response}")
+    logger.info("Diagram agent completed task")
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response.content,  # Corrected: Passing the content string
+                    name="diagram",
+                )
+            ],
+            "sequence_diagram": response.content, 
         },
         goto="supervisor",
     )
