@@ -9,6 +9,7 @@ def read_file_tool(file_path):
     """
     try:
         with open(file_path, "r") as f:
+            print(file_path)
             content = f.read()
         return content
     except FileNotFoundError:
