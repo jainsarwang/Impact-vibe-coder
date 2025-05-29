@@ -49,7 +49,7 @@ users_collection: Any = None
 roles_collection: Any = None
 permissions_collection: Any = None
 role_has_permission_collection: Any = None
-credit_allocations_collection: Any = None
+token_allocations_collection: Any = None
 projects_collection: Any = None
 chats_collection: Any = None
 chat_history_collection: Any = None
@@ -334,7 +334,7 @@ async def check_username_exists(username: str, exclude_user_id: Optional[str] = 
 async def startup_db_client():
     global client, organizations_collection, users_collection, roles_collection, \
            permissions_collection, role_has_permission_collection, \
-           credit_allocations_collection, projects_collection, \
+           token_allocations_collection, projects_collection, \
            chats_collection, chat_history_collection
 
     logger.info("Connecting to MongoDB...")
@@ -353,7 +353,7 @@ async def startup_db_client():
         roles_collection = db["roles"]
         permissions_collection = db["permissions"]
         role_has_permission_collection = db["role_has_permission"]
-        credit_allocations_collection = db["credit_allocations"]
+        token_allocations_collection = db["token_allocations"]
         projects_collection = db["projects"]
         chats_collection = db["chats"]
         chat_history_collection = db["chat_history"]
@@ -780,9 +780,8 @@ async def admin_create_another_admin(
 @app.post("/organizations/status")
 async def update_organization_status(
     organization_name: str,
-    status: str,
+    status: str | bool,
     current_user: User = Depends(get_current_active_user)
-    # current_user: User = Depends(get_current_active_user)
 ):
     """
     Update the status of an organization (e.g., active, inactive).
@@ -791,16 +790,67 @@ async def update_organization_status(
     organization= await organizations_collection.find_one({"organization_name": organization_name})
     if not organization:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Organization not found")
-    is_active = organization.get("is_active", False)
-    if status == 'active' or status == 'Active' or status == 'ACTIVE' or status == True:
+    if status == 'active' or status == 'Active' or status == 'ACTIVE' or status == True or status=='true':
         organization['is_active']  = True
-    elif status == 'inactive' or status == 'Inactive' or status == 'INACTIVE' or status == False:
+        await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": True}})
+    elif status == 'inactive' or status == 'Inactive' or status == 'INACTIVE' or status == False or status=='false':
         organization['is_active']  = False
+        await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": True}})
     else: raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Deatails cannot be updated, please provide valid status")
+    organization= await organizations_collection.find_one({"organization_name": organization_name})
     return {
         "organization_id": organization['organization_id'],
         "is_active": organization['is_active'],
     }
+
+@app.post("/superadmin/organizations/token_addition")
+async def add_tokens_to_organization(
+    tokens_to_be_added: int,
+    organization_name: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    "Add tokens to an organization by name. to user and increase the total tokens limit"
+    if tokens_to_be_added <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens to be added must be a positive integer")
+    organization = await organizations_collection.find_one({"organization_name": organization_name})
+    if not organization:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tokens cannot be added, organization not found")
+    if organization.get("is_active", False) is False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens cannot be added to an inactive organization")
+
+    organization['total_tokens'] += tokens_to_be_added
+    organization['tokens_remaining'] += tokens_to_be_added
+    
+    user = await users_collection.find_one({"organization_id": organization['organization_id']})
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tokens cannot be added, user not found in organization")
+    
+    if user.get("is_active", False) is False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens cannot be added to an inactive user")
+    
+    if user.get("is_primary_admin", False) is False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens cannot be added to a user who is not a primary admin")
+    
+    user["tokens_allowed"] = user.get("tokens_allowed", 0) + tokens_to_be_added
+    await users_collection.update_one({"organization_name": organization_name}, {"$set": {"tokens_allowed": user.get("tokens_allowed", 0) + tokens_to_be_added}})
+    
+    await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"total_tokens": organization['total_tokens'], "tokens_remaining": organization['tokens_remaining']}})
+    
+    return {
+        "organization":
+            {
+                "organization": organization['organization_name'],
+                "total_tokens": organization['total_tokens'],
+                "tokens_remaining": organization['tokens_remaining']
+            },
+            "user":
+                {
+                    "username": user['username'],
+                    "is_primary_admin": user.get("is_primary_admin", False),
+                    "tokens_allowed": user.get("tokens_allowed", 0)
+                }    
+}
+    
 
 @app.get("/organizations/{organization_name}/tokens") # Path parameter for organization_name
 async def get_tokens_assigned(
