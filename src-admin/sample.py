@@ -20,7 +20,7 @@ async def create_sample_data():
     # Clear existing data (optional - remove if you want to keep existing data)
     collections = [
         "organizations", "roles", "permissions", "role_has_permission", 
-        "users", "credit_allocations", "projects", "chats", "chat_history", "permission_flags"
+        "users", "token_allocations", "projects", "chats", "chat_history", "permission_flags"
     ]
     
     print("Clearing existing data...")
@@ -43,7 +43,7 @@ async def create_sample_data():
             "organization_name": "TechCorp Solutions",
             "total_tokens": 100000,
             "tokens_remaining": 75000,
-            "credit_reset_date": now + timedelta(days=30),
+            "token_reset_date": now + timedelta(days=30),
             "created_at": now - timedelta(days=90),
             "updated_at": now
         },
@@ -52,7 +52,7 @@ async def create_sample_data():
             "organization_name": "InnovateLab Inc",
             "total_tokens": 50000,
             "tokens_remaining": 45000,
-            "credit_reset_date": now + timedelta(days=25),  # Fixed typo from credit_reset_date
+            "token_reset_date": now + timedelta(days=25),  # Fixed typo from token_reset_date
             "created_at": now - timedelta(days=60),
             "updated_at": now
         },
@@ -61,7 +61,7 @@ async def create_sample_data():
             "organization_name": "StartupHub",
             "total_tokens": 25000,
             "tokens_remaining": 20000,
-            "credit_reset_date": now + timedelta(days=20),
+            "token_reset_date": now + timedelta(days=20),
             "created_at": now - timedelta(days=30),
             "updated_at": now
         }
@@ -297,9 +297,9 @@ async def create_sample_data():
     ]
     await db.users.insert_many(users_data)
     
-    # 6. Create Credit Allocations
-    print("Creating credit allocations...")
-    credit_allocations_data = [
+    # 6. Create token Allocations
+    print("Creating token allocations...")
+    token_allocations_data = [
         # TechCorp allocations
         {
             "role_id": "role_admin",
@@ -366,7 +366,7 @@ async def create_sample_data():
             "updated_at": now
         }
     ]
-    await db.credit_allocations.insert_many(credit_allocations_data)
+    await db.token_allocations.insert_many(token_allocations_data)
     
     # 7. Create Projects
     print("Creating projects...")

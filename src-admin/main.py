@@ -991,12 +991,17 @@ async def get_project(
 
 @app.get("/users/{username}", response_model=Dict[str, Any])
 async def get_user_info(
-    username: str,
+    username: str = Optional[str],
     current_user: User = Depends(get_current_user)
 ):
     """
     Get user information by username
     """
+    if username:
+        user = await users_collection.find_one({"username": username})
+    else: 
+        user = current_user
+
     user_role_name = await get_role_name_by_id(current_user.role_id)
     is_admin_or_superadmin = (user_role_name == "admin" or user_role_name == "superadmin")
 
@@ -1007,25 +1012,23 @@ async def get_user_info(
             detail="Not authorized to access this user's information."
         )
 
-    user_doc = await users_collection.find_one({"username": username})
-    if not user_doc:
+    if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
-    
-    projects_cursor = projects_collection.find({"user_id": user_doc["user_id"]})
+    projects_cursor = projects_collection.find({"user_id": user["user_id"]})
     projects_list = await projects_cursor.to_list(length=None)
     
     return {
-        "username": user_doc.get("username"),
-        "name": user_doc.get("name"),
-        "email": user_doc.get("email", ""),
-        "user_id": user_doc.get("user_id"),
-        "role_id": user_doc.get("role_id"),
-        "organization_id": user_doc.get("organization_id"),
-        "tokens_allowed": user_doc.get("tokens_allowed", 0),
-        "is_active": user_doc.get("is_active", False),
-        "is_primary_admin": user_doc.get("is_primary_admin", False),
-        "created_at": user_doc.get("created_at", datetime.min).isoformat(),
-        "updated_at": user_doc.get("updated_at", datetime.min).isoformat(),
+        "username": user.get("username"),
+        "name": user.get("name"),
+        "email": user.get("email", ""),
+        "user_id": user.get("user_id"),
+        "role_id": user.get("role_id"),
+        "organization_id": user.get("organization_id"),
+        "tokens_allowed": user.get("tokens_allowed", 0),
+        "is_active": user.get("is_active", False),
+        "is_primary_admin": user.get("is_primary_admin", False),
+        "created_at": user.get("created_at", datetime.min).isoformat(),
+        "updated_at": user.get("updated_at", datetime.min).isoformat(),
         "projects": [
             {
                 "project_id": project_doc.get("project_id"),
