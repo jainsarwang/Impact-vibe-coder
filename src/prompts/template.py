@@ -33,7 +33,7 @@ def apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
         ADDITIONAL_RULES = get_prompt_template('common_coder'),
         **state
     )
-    
+    logging.info("component_diagram: %s", state.get("component_diagram", ""))
     return [
             {"role": "system", "content": system_prompt}
         ] + [
