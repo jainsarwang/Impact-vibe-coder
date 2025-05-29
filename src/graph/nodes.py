@@ -1038,7 +1038,7 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
                     name="diagram",
                 )
             ],
-            "sequence_diagram": response.content, 
+            "component_diagram": response.content, 
         },
         goto="supervisor",
     )
