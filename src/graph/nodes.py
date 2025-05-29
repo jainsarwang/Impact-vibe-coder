@@ -537,7 +537,9 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
 
     if isinstance(files_spec_from_llm, str):
         path = files_spec_from_llm
+        state.get("previous_file_path") = path
         content = parsed_response.get("code", "")
+        state.get("previous_file_content") = content
         processed_file_specs.append({"path": path, "content": content})
     elif isinstance(files_spec_from_llm, list):
         for item in files_spec_from_llm:
