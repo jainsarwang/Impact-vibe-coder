@@ -796,7 +796,7 @@ async def update_organization_status(
     elif status == 'inactive' or status == 'Inactive' or status == 'INACTIVE' or status == False or status=='false':
         organization['is_active']  = False
         await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": True}})
-    else: raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Deatails cannot be updated, please provide valid status")
+    else: raise HTTPException(status_code=400, detail="Deatails cannot be updated, please provide valid status")
     organization= await organizations_collection.find_one({"organization_name": organization_name})
     return {
         "organization_id": organization['organization_id'],
