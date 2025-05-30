@@ -537,9 +537,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
 
     if isinstance(files_spec_from_llm, str):
         path = files_spec_from_llm
-        state.get("previous_file_path") = path
         content = parsed_response.get("code", "")
-        state.get("previous_file_content") = content
         processed_file_specs.append({"path": path, "content": content})
     elif isinstance(files_spec_from_llm, list):
         for item in files_spec_from_llm:
@@ -950,6 +948,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     response_content_raw = response.content
     
     # Process JSON for internal use
+    response_content_repaired = repair_json_output(response_content_raw)
     logger.debug(f"Coordinator full response: {response_content_raw}")
     
     # Extract non-JSON context to show user
@@ -961,7 +960,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     # Handle planner handoff
     goto = "__end__"
     if "handoff_to_planner()" in response_content_raw:
-        extract_and_save_json(response_content_raw)
+        # extract_and_save_json(response_content_raw)
         goto = "planner"
     
     return Command(goto=goto)

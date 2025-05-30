@@ -1,11 +1,14 @@
 ## Basic Rules
 
+-   You are Writing professional level code not prototypes.
+-   Always use the context of the entire project before writing the file
 -   It must follow the standard import as used in the respective languages.
--   If imports are available for a file always and mandatorily use the `read_file_tool` to read the imports file and then write the code.
+-   If imports are available for a file always and mandatorily use the `read_file_tool` to read the imports file and then write the code.\
+-   If a file is in any way referencing to another file then use `read_file_tool` to read the code of that file
 -   Strictly follow the imports statement and the import dictionary
 -   Use the correct vesion dependencies as provide, and use the function from that dependencies only
 -   Keep Going until the job is completely solved before ending your turn.
--   Write the complete code and dont just write placeholders give complete implementation.
+-   Write the complete code and do not give placeholders.
 
 ## Import Export
 
