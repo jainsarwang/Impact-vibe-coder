@@ -45,7 +45,8 @@ async def create_sample_data():
             "tokens_remaining": 75000,
             "token_reset_date": now + timedelta(days=30),
             "created_at": now - timedelta(days=90),
-            "updated_at": now
+            "updated_at": now,
+            "is_active": True
         },
         {
             "organization_id": "org_002",
@@ -54,7 +55,8 @@ async def create_sample_data():
             "tokens_remaining": 45000,
             "token_reset_date": now + timedelta(days=25),  # Fixed typo from token_reset_date
             "created_at": now - timedelta(days=60),
-            "updated_at": now
+            "updated_at": now,
+            "is_active": True
         },
         {
             "organization_id": "org_003",
@@ -63,7 +65,8 @@ async def create_sample_data():
             "tokens_remaining": 20000,
             "token_reset_date": now + timedelta(days=20),
             "created_at": now - timedelta(days=30),
-            "updated_at": now
+            "updated_at": now,
+            "is_active": False
         }
     ]
     await db.organizations.insert_many(organizations_data)
