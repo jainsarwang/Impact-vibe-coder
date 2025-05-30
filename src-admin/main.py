@@ -789,7 +789,7 @@ async def update_organization_status(
     """
     organization= await organizations_collection.find_one({"organization_name": organization_name})
     if not organization:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Organization not found")
+        raise HTTPException(status_code=400, detail="Organization not found")
     if status == 'active' or status == 'Active' or status == 'ACTIVE' or status == True or status=='true':
         organization['is_active']  = True
         await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": True}})
