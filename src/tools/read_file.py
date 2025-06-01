@@ -3,7 +3,7 @@ from .decorators import log_io
 
 @tool
 @log_io
-def read_file_tool(file_path):
+def read_file_tool(file_path: str) -> str:
     """
     Reads a file and returns its content.
     """

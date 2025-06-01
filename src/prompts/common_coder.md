@@ -101,5 +101,5 @@ read_file_tool(file path)
 
 According to the above input use the `read_file_tool` as instructed below:
 
-1. For each importfilepath call `read_file_tool` like this, `read_file_tool("backend/src/main/java/com/bankingapp/repository/AccountRepository.java")`
+1. For each importfilepath call `read_file_tool` like this, `read_file_tool("projects/BankingApp/backend/src/main/java/com/bankingapp/repository/AccountRepository.java")`
 2. Use the output of `read_file_tool` to derive the information about the import functions and variables.

@@ -8,7 +8,7 @@ Create a clear plan to create the files available in the `directory_structure` g
 <<directory_structure>>
 also, Only Create a plan for the files in this `directory_structure`.
 
-You are given with the directory structure depending upon those create a plan which only uses the agent `model_coder`, `controller_coder`, `route_coder`, `service_coder`, `utility_coder`, `db_coder`, `config_coder`, `frontend_coder`, `test_coder` so each file is assigned only to specified agent. Only use these and no other agents.
+You are given with the directory structure depending upon those create a plan which only uses the agent `model_coder`, `controller_coder`, `route_coder`, `service_coder`, `utility_coder`, `db_coder`, `config_coder`, `frontend_coder`, `test_coder`, `figma_coder` so each file is assigned only to specified agent. Only use these and no other agents.
 
 **Use above specified agent ONLY for creating the plan**
 
@@ -149,7 +149,7 @@ You are given with the directory structure depending upon those create a plan wh
 
 ## Details
 
-You are tasked with orchestrating a team of agents (`model_coder`, `controller_coder`, `route_coder`, `service_coder`, `utility_coder`, `db_coder`, `config_coder`, `frontend_coder`, `test_coder`) to complete a given file generation flow. Begin by creating a detailed plan, identify the steps required and the agent responsible for each step. Also, focus to planning backend modules first. After that plan the flow of frontend.
+You are tasked with orchestrating a team of agents (`model_coder`, `controller_coder`, `route_coder`, `service_coder`, `utility_coder`, `db_coder`, `config_coder`, `frontend_coder`, `test_coder`, `figma_coder`) to complete a given file generation flow. Begin by creating a detailed plan, identify the steps required and the agent responsible for each step. Also, focus to planning backend modules first. After that plan the flow of frontend.
 
 As a Experienced Project Manager, you can use the directory structure as a guide and assign each of the file to the respective coder that are available.
 
@@ -164,6 +164,7 @@ As a Experienced Project Manager, you can use the directory structure as a guide
 -   **`config_coder`**: A agent which handles the work related to creation of any kind of configuration files, i.e., `package.json`, `.env`, `tsconfig.js`, etc.
 -   **`frontend_coder`**: A highly specialised agent, who have expertise in all the frontend technologies, like react.js, react native, angular.js, tailwindcss, etc.
 -   **`test_coder`**: Works on creation of test cases or any test module that is required for the testing of the application and it's various modules.
+-   **`figma_coder`**: A agent which handles the work related to creation of any image generation work, i.e., logo, icon, banner, etc.
 
 **Note**: Ensure that only the listed agents are used and NO other agents are created.
 

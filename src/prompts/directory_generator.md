@@ -524,10 +524,6 @@ such that:
 
 ---
 
-## Image attachments
-
--   Use svg to create a new image
-
 ## Language Specific Requirements
 
 -   Use the Official project organization according to project and framework used

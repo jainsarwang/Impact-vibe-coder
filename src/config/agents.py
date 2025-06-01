@@ -1,7 +1,7 @@
 from typing import Literal
 
 # Define available LLM types
-LLMType = Literal["basic", "reasoning", "vision", "version_llm"]
+LLMType = Literal["basic", "reasoning", "vision", "version_llm", "image_gen"]
 
 # Define agent-LLM mapping
 AGENT_LLM_MAP: dict[str, LLMType] = {
@@ -22,6 +22,7 @@ AGENT_LLM_MAP: dict[str, LLMType] = {
     "test_coder": "basic",
     "frontend_coder": "basic",
     "db_coder": "basic",
+    "figma_coder": "image_gen",
     "coder": "basic",
     "frontend_coder":"basic",
     "backend_coder":"basic",

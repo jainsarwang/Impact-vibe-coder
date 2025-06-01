@@ -34,10 +34,11 @@ projects/
 project_zips/
 directory_structure.json
 project_structure.json
-app.log
+import-export.json
 code_planner.json
-.dependency_graph.png
 checklist.json
+app.log
+.dependency_graph.png
 project_structure.html
 project_analysis.json
 project_structure.png

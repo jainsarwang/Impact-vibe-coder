@@ -16,6 +16,7 @@ from .nodes import (
     test_coder_node,
     frontend_coder_node,
     db_coder_node,
+    figma_coder_node,
     diagram_node,
     # frontend_code_node,
     # code_node,
@@ -49,6 +50,7 @@ def build_graph():
     builder.add_node("test_coder", test_coder_node)
     builder.add_node("frontend_coder", frontend_coder_node)
     builder.add_node("db_coder", db_coder_node)
+    builder.add_node("figma_coder", figma_coder_node)
     builder.add_node("version_resolver", version_resolver_node)
     builder.add_node("browser", browser_node)
     builder.add_node("reporter", reporter_node)
