@@ -1012,6 +1012,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     response_content_raw = response.content
     
     # Process JSON for internal use
+    response_content_repaired = repair_json_output(response_content_raw)
     logger.debug(f"Coordinator full response: {response_content_raw}")
     
     # Extract non-JSON context to show user
@@ -1023,7 +1024,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     # Handle planner handoff
     goto = "__end__"
     if "handoff_to_planner()" in response_content_raw:
-        extract_and_save_json(response_content_raw)
+        # extract_and_save_json(response_content_raw)
         goto = "planner"
     
     return Command(goto=goto)
@@ -1101,7 +1102,7 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
                     name="diagram",
                 )
             ],
-            "sequence_diagram": response.content, 
+            "component_diagram": response.content, 
         },
         goto="supervisor",
     )

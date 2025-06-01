@@ -6,9 +6,14 @@ from .decorators import log_io
 def read_file_tool(file_path: str) -> str:
     """
     Reads a file and returns its content.
+    Args:
+        file_path (str): The path to the file to read.
+    Returns:
+        str: The content of the file or an error message if the file cannot be read.
     """
     try:
         with open(file_path, "r") as f:
+            print(file_path)
             content = f.read()
         return content
     except FileNotFoundError:

@@ -30,6 +30,8 @@ dependencies = [
     "json-repair>=0.7.0",
     "plotly>=6.1.0",
     "pillow>=11.2.1",
+    "pymongo>=4.13.0",
+    "bcrypt>=4.3.0",
 ]
 
 [project.optional-dependencies]

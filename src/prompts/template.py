@@ -33,13 +33,13 @@ def apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
         ADDITIONAL_RULES = get_prompt_template('common_coder'),
         **state
     )
-    
+    logging.info("component_diagram: %s", state.get("component_diagram", ""))
     return [
             {"role": "system", "content": system_prompt}
         ] + [
             {
                 "role": "user", 
-                "content": state["coder_instruction"] + "And this is the required research content to generate the files." +state.get("researched_content"," ") +"Carefully and mandatorily follow this component diagram" +state.get("component_diagram","")
+                "content": state["coder_instruction"] + "And this is the required research content to generate the files." +state.get("researched_content"," ") +"Carefully and mandatorily follow this component diagram" +state.get("component_diagram","")+"Also find the content and path of a already existing file that you can use to generate the new file. " + state.get("previous_file_content", "") + "The path of the previous file is: " + state.get("previous_file_path", "")  
             }
         ]
 

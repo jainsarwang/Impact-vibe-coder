@@ -26,7 +26,7 @@ from .nodes import (
     reporter_node,
     planner_node,
     import_export_node,
-    version_resolver_node,
+    version_resolver_node
 )
 
 

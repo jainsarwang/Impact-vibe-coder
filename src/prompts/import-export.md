@@ -717,15 +717,18 @@ Your mission is to meticulously analyze, validate and correct  import/export dep
 - Index File Convention: Handle directory imports that resolve to index files (e.g., import './components' → ./components/index.js)
 - Path Case Sensitivity: Respect the platform's case sensitivity for file paths
 
+**NOTE: ImportError: attempted relative import with no known parent package, resolve this error if occured**
+
 ### Import Statement Analysis: Path Resolution Rules
 
-| Path Type          | Resolution Method                          | Example                          | Notes                          |
-|--------------------|--------------------------------------------|----------------------------------|--------------------------------|
-| **Relative (`./file`)**  | Resolve from current file's directory      | `./utils.js` → `/src/utils.js`   | Most common for local imports  |
-| **Relative (`../file`)** | Resolve from parent directory              | `../models.py` → `/models.py`    | For sibling/ancestor folders   |
-| **Absolute (`/file`)**   | Resolve from project root (discouraged)    | `/config.json`                   | Avoid in most cases            |
-| **Aliased (`@/file`)**   | Use `jsconfig.json`/`tsconfig.json`/webpack | `@/components/Button`            | Recommended for root imports   |
-| **Module (`package`)**   | Resolve via `node_modules`/`pip`/`GOPATH`  | `react`, `express`, `numpy`      | For third-party dependencies   |
+| Path Type                 | Resolution Method               | Example                          | Notes                          |
+|---------------------------|---------------------------------|----------------------------------|--------------------------------|
+| **Relative (`./file`)**    | Same directory                  | `from . import utils`            | Current package imports        |
+| **Relative (`../file`)**   | Parent directory                | `from ..models import User`      | Parent/sibling packages        |
+| **Absolute (`/file`)**     | Project root (discouraged)      | `sys.path.append('/project')`    | Avoid - breaks portability     |
+| **Wildcard (`*`)**         | Import all symbols              | `from .constants import *`       | Use sparingly - pollutes namespace |
+| **Module (`package`)**     | `site-packages`/PYTHONPATH      | `import numpy`                   | Third-party dependencies       |
+| **Submodule (`pkg.mod`)**  | Package submodules              | `from src.game import Board`     | Preferred project imports      |
 
 ***Key:***  
 Prefer **relative paths** for project files  
