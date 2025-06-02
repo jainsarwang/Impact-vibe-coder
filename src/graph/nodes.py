@@ -42,11 +42,13 @@ from src.tools.bash_tool import bash_tool
 from src.utils import executor
 from src.utils.json_utils import repair_json_output
 from .types import State, Router
-from ..utils import ChecklistManager
+from ..utils import ChecklistManager, token_count
 import re
 import json
 
 logger = logging.getLogger(__name__)
+
+token_count_value = 0
 
 def extract_and_save_json(response_text: str, output_file: str = 'project_requirements.json') -> bool:
     """
@@ -94,6 +96,8 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Research agent starting task")
     result = research_agent.invoke(state)
     logger.info("Research agent completed task")
+    global token_count_value
+    token_count_value += token_count.token_count(result["messages"][-1].content)
     response_content = result["messages"][-1].content
 
     logger.debug(f"Research agent response: {response_content}")
@@ -115,6 +119,8 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Directory Generator agent starting task")
     result = directory_generator_agent.invoke(state)
     logger.info("Directory Generator agent completed task")
+    global token_count_value
+    token_count_value += token_count.token_count(result["messages"][-1].content)
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
     extract_and_save_json(response_content, "directory_structure.json")
@@ -181,7 +187,10 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     messages = apply_prompt_template_planner("code_planner", state)
     # whether to enable deep thinking mode
     llm = get_llm_by_type("basic")
+    
     response = llm.invoke(messages)
+    global token_count_value
+    token_count_value += token_count.token_count(response.content)
     full_response = response.content
     # extract_and_save_json(full_response)
     logger.debug(f"Current state messages: {state['messages']}")
@@ -277,6 +286,8 @@ def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end_
     try:
         response = llm.invoke(messages)
         full_response = response.content
+        global token_count_value
+        token_count_value += token_count.token_count(response.content)          
         json_response = repair_json_output(full_response)
     except Exception as e:
         logger.error(f"LLM invocation failed: {e}")
@@ -508,6 +519,8 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
     logger.info(f"Coder agent '{prompt_name}' completed invocation.")
 
     response_content_raw = result["messages"][-1].content
+    global token_count_value
+    token_count_value += token_count.token_count(response_content_raw)
     response_content_repaired = repair_json_output(response_content_raw)
 
     try:
@@ -651,7 +664,8 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
         llm = get_llm_by_type("basic")
         response = llm.invoke(messages)
         full_response = response.content
-
+        global token_count_value
+        token_count_value += token_count.token_count(response.content)
         logger.debug(f"Current state messages: {state['messages']}")
         logger.info(f"Import Export Response: {full_response}")
         if full_response.startswith("```json"):
@@ -824,6 +838,8 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
     response_content = result["messages"][-1].content
     # 尝试修复可能的JSON输出
     response_content = repair_json_output(response_content)
+    global token_count_value
+    token_count_value += token_count.token_count(response_content)
     logger.debug(f"Browser agent response: {response_content}")
     return Command(
         update={
@@ -838,6 +854,7 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
     )
 
 def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
+    global token_count_value
     """Supervisor node that decides which agent should act next."""
     logger.info("Supervisor evaluating next action")
     messages = apply_prompt_template("supervisor", state)
@@ -857,6 +874,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
             # Handle Markdown JSON formatting if present
             if response.startswith('```json') and response.endswith('```'):
                 response = response[7:-3].strip()  # Remove ```json and ```
+                token_count_value += token_count.token_count(response)
             parsed_response = json.loads(response)
         elif hasattr(response, 'content'):
             content = response.content
@@ -876,9 +894,9 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     logger.debug(f"Supervisor parsed response: {goto=}")
 
     if goto == "FINISH":
+        print(token_count_value)
         with open("project_requirements.json") as f:
             project_requirement = f.read()
-        
         logging.debug("**Executor Started")
         executor.execute(state, project_requirement)
         logging.debug("**Executor Ended")
@@ -921,6 +939,8 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     try:
         repaired_response = json_repair.loads(full_response)
         full_response = json.dumps(repaired_response)
+        global token_count_value
+        token_count_value += token_count.token_count(full_response)
         with open("project_requirements.json", "w", encoding="utf-8") as f:
             json.dump(repaired_response, f, indent=2, ensure_ascii=False)
     except json.JSONDecodeError:
@@ -946,7 +966,8 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     
     # Keep original response
     response_content_raw = response.content
-    
+    global token_count_value
+    token_count_value += token_count.token_count(response_content_raw)
     # Process JSON for internal use
     logger.debug(f"Coordinator full response: {response_content_raw}")
     
@@ -983,6 +1004,8 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     response = get_llm_by_type(AGENT_LLM_MAP["reporter"]).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
     response_content = response.content
+    global token_count_value
+    token_count_value += token_count.token_count(response_content)
     # 尝试修复可能的JSON输出
     response_content = repair_json_output(response_content)
     logger.debug(f"reporter response: {response_content}")
@@ -1028,6 +1051,8 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
 
     llm = get_llm_by_type("basic")
     response = llm.invoke(messages)
+    global token_count_value
+    token_count_value += token_count.token_count(response.content)
     logger.debug(f"Diagram agent response: {response}")
     logger.info("Diagram agent completed task")
     return Command(
