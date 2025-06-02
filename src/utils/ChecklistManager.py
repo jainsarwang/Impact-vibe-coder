@@ -2,6 +2,16 @@ import json
 import logging
 import os
 from typing import Dict, List, Optional
+from pymongo import MongoClient
+
+# Initialize MongoDB client with error handling
+try:
+    client = MongoClient(os.environ.get("MONGO_URI", "mongodb://localhost:27017/"))
+    db = client["impact_vibe_coder"]
+    collection = db["checklist"]
+except Exception as e:
+    logging.error(f"Error connecting to MongoDB: {str(e)}")
+    raise
 
 class ChecklistManager:
     """Manages the checklist for tracking file generation progress."""
@@ -92,7 +102,8 @@ class ChecklistManager:
                             self.checklist[file_path] = {
                                 "plan_created": False,
                                 "file_created": False,
-                                "coder": None
+                                "coder": None,
+                                "description": None
                             }
                             logging.debug(f"Added directory file to checklist: {file_path}")
                     elif isinstance(value, dict):
@@ -132,7 +143,8 @@ class ChecklistManager:
                         self.checklist[file_path] = {
                             "plan_created": True,
                             "file_created": False,
-                            "coder": item.get("coder")
+                            "coder": item.get("coder"),
+                            "description": None
                         }
                         logging.debug(f"Added new planned file to checklist: {file_path}")
                     else:
@@ -162,7 +174,8 @@ class ChecklistManager:
             self.checklist[normalized_path] = {
                 "plan_created": False,  # Wasn't planned but exists
                 "file_created": True,
-                "coder": None
+                "coder": None,
+                "description": None
             }
             self._save_checklist()
             logging.warning(f"File {normalized_path} was created but wasn't in checklist. Added to checklist.")
@@ -174,7 +187,8 @@ class ChecklistManager:
                 logging.debug(f"Found next file to process: {file_path}")
                 return {
                     "file_path": file_path,
-                    "coder": status["coder"]
+                    "coder": status["coder"],
+                    "description": None
                 }
         logging.debug("No files left to process in checklist")
         return None
@@ -207,23 +221,31 @@ class ChecklistManager:
         return complete
     
     def _save_checklist(self) -> None:
-        """Save checklist to file."""
+        """Save checklist to MongoDB."""
         try:
-            with open(self.checklist_file, "w") as f:
-                json.dump(self.checklist, f, indent=2)
-            logging.debug(f"Checklist saved to {self.checklist_file}")
+            if self.checklist:  # Only save if there's data
+                collection.update_one(
+                    {"_id": "checklist"},
+                    {"$set": {"data": self.checklist}},
+                    upsert=True
+                )
+                logging.debug("Checklist saved to MongoDB")
         except Exception as e:
-            logging.error(f"Error saving checklist: {str(e)}")
+            logging.error(f"Error saving checklist to MongoDB: {str(e)}")
     
     def load_checklist(self) -> Dict:
-        """Load checklist from file."""
+        """Load checklist from MongoDB."""
         try:
-            with open(self.checklist_file) as f:
-                self.checklist = json.load(f)
-            logging.info(f"Loaded checklist with {len(self.checklist)} items from {self.checklist_file}")
+            doc = collection.find_one({"_id": "checklist"})
+            if doc and "data" in doc:
+                self.checklist = doc["data"]
+                logging.info(f"Loaded checklist with {len(self.checklist)} items from MongoDB")
+            else:
+                self.checklist = {}
+                logging.info("No existing checklist found in MongoDB, starting fresh")
             return self.checklist
-        except (FileNotFoundError, json.JSONDecodeError):
-            logging.info("No existing checklist found, starting fresh")
+        except Exception as e:
+            logging.error(f"Error loading checklist from MongoDB: {str(e)}")
             return {}
     
     def cleanup_duplicated_paths(self) -> Dict:
