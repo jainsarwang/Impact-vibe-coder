@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client["impact_vibe_coder"]
-collection = db["sessions"]
+collection = db["checklist"]
 
 def extract_and_save_json(response_text: str, output_file: str = 'project_requirements.json') -> bool:
     """
@@ -555,6 +555,11 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
     if isinstance(files_spec_from_llm, str):
         path = files_spec_from_llm
         content = parsed_response.get("code", "")
+        description = parsed_response.get("description", "")
+        # data = collection.find_one({"_id": "checklist"})
+        # actual_data = data.get(data)
+        # files = data.get(path, [])
+        # files.setdefault("description", description)
         processed_file_specs.append({"path": path, "content": content})
     elif isinstance(files_spec_from_llm, list):
         for item in files_spec_from_llm:
