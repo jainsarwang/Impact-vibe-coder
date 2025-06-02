@@ -42,3 +42,8 @@ app.log
 project_structure.html
 project_analysis.json
 project_structure.png
+
+# Terraform excluded
+terraform_output
+report.json
+credentials
