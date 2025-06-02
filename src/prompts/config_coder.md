@@ -44,7 +44,8 @@ Provide files created in json with and only in json with the following format to
 {
     "FILE": ["List of file paths for all files created"],
     "programming_language": "programmin_language",
-    "code": "The code to be written in file"
+    "code": "The code to be written in file",
+    "description": "Detailed description including functions created, import file(s) used, functionality is does, detailed working"
 }
 ```
 
