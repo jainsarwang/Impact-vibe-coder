@@ -1,5 +1,4 @@
 from langgraph.prebuilt import create_react_agent
-from langchain_openai import ChatOpenAI
 
 from src.prompts import apply_prompt_template, apply_prompt_template_planner, apply_prompt_template_for_coder
 from src.tools import (
@@ -12,7 +11,7 @@ from src.tools import (
     read_file_tool
 )
 
-from src.llms.llm import get_llm_by_type
+from src.llms.llm import generate_image_with_gemini, get_llm_by_type
 from src.config.agents import AGENT_LLM_MAP
 from ..graph.types import State
 from ..utils import get_response_schema
@@ -26,7 +25,7 @@ research_agent = create_react_agent(
 
 directory_generator_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP['directory_generator'], get_response_schema("directory_generator")),
-    tools=[browser_tool],
+    tools=[bash_tool],
     prompt=lambda state: apply_prompt_template("directory_generator", state),
 )
 
@@ -94,6 +93,9 @@ db_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
     tools=[bash_tool,python_repl_tool, read_file_tool],
     prompt=lambda state: apply_prompt_template_for_coder("db_coder", app_state),
 ))
+figma_coder_agent = lambda app_state: generate_image_with_gemini(
+    prompt=app_state['coder_instruction']
+)
 
 # coder_agent = create_react_agent(
 #     get_llm_by_type(AGENT_LLM_MAP["coder"]),

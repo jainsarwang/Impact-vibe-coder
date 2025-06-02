@@ -60,4 +60,8 @@ When building an application:
 5. After `version_resolver` call `code-planner`.
 6. Next, pass the entire directory structure to `coder_master`
 7. `coder_master` will handle the implementation of all files in the structure
-8. After `coder_master` completes the code generation, you can call `reporter` to summarize the project
+8. After `coder_master` completes the code generation, you can call `reporter` to summarize the project.
+
+# Critical
+
+- If the `researcher` at any point gives normal conversational output rather than research content or the tavily tool not working then move to the `directory_generator`.

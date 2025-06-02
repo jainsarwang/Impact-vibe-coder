@@ -5,9 +5,9 @@ import os
 import json_repair
 import logging
 from copy import deepcopy
-# from .llm_utils import get_llm_by_type
+from io import BytesIO
+from PIL import Image
 from typing import Dict, List, Literal
-# from .prompt_utils import get_prompt_template
 
 
 from langchain_core.messages import HumanMessage, BaseMessage
@@ -32,15 +32,13 @@ from src.agents import  (
     browser_agent,
     import_export_agent,
     version_agent,
+    figma_coder_agent
 )
 from src.llms.llm import get_llm_by_type
-from src.config import TEAM_MEMBERS, CODER_AGENTS
-from src.config.agents import AGENT_LLM_MAP
-from src.prompts.template import apply_prompt_template, apply_prompt_template_planner, get_prompt_template
-from src.tools.search import tavily_tool
-from src.tools.bash_tool import bash_tool
-from src.utils import executor
-from src.utils.json_utils import repair_json_output
+from src.config import TEAM_MEMBERS, CODER_AGENTS, AGENT_LLM_MAP
+from src.prompts.template import apply_prompt_template, apply_prompt_template_for_coder, apply_prompt_template_planner, get_prompt_template
+from src.tools import tavily_tool, bash_tool
+from src.utils import executor,  repair_json_output
 from .types import State, Router
 from ..utils import ChecklistManager, get_response_schema
 import re
@@ -755,6 +753,72 @@ def db_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the DB Coder agent that generator directory structure."""
     return coder(state, 'db_coder', db_coder_agent)
 
+def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the Figma Coder agent that generator directory structure."""
+
+    logger.info(f"Coder node figma_coder starting task.")
+    logger.debug(f"Instruction for 'figma_coder' from coder_master: {state.get('coder_instruction')}")
+
+    try:
+        parsed_instruction = json.loads(state.get('coder_instruction', '{}'))
+    except json.JSONDecodeError as e:
+        logger.error(f"Error parsing 'coder_instruction' for 'figma_coder': {str(e)}", exc_info=True)
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Error parsing 'coder_instruction' for 'figma_coder': {str(e)}",
+                        name='figma_coder',
+                    )
+                ]
+            },
+            goto="coder_master",
+        )
+
+    try:
+        response_parts = figma_coder_agent(state)
+    except Exception as e:
+        logger.error(f"Error invoking agent 'figma_coder': {str(e)}", exc_info=True)
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Error during agent 'figma_coder' execution: {str(e)}",
+                        name='figma_coder',
+                    )
+                ]
+            },
+            goto="coder_master",
+        )
+
+    logger.info(f"Coder agent 'figma_coder' completed invocation.")
+
+    for part in response_parts:
+        if part.inline_data is not None:
+            file_name = parsed_instruction.get("file")
+            if(not file_name):
+                logger.warning("No file name provided in instruction for 'figma_coder'. Skipping image save.")
+                continue
+
+            image = Image.open(BytesIO(part.inline_data.data))
+            image.save(file_name)
+            logger.info(f"Image saved successfully as {file_name}")
+        
+    current_generated_files = state.get('generated_files', [])
+    state['generated_files'] = current_generated_files + [parsed_instruction.get("file", "")]
+
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content="Image generated Successfully",
+                    name='figma_coder',
+                )
+            ]
+        },
+        goto="coder_master",
+    )
+
 # def code_node(state: State) -> Command[Literal["supervisor"]]:
 #     """Node for the coder agent that executes Python code."""
 #     logger.info("Code agent starting task")
@@ -948,6 +1012,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     response_content_raw = response.content
     
     # Process JSON for internal use
+    response_content_repaired = repair_json_output(response_content_raw)
     logger.debug(f"Coordinator full response: {response_content_raw}")
     
     # Extract non-JSON context to show user
@@ -959,7 +1024,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     # Handle planner handoff
     goto = "__end__"
     if "handoff_to_planner()" in response_content_raw:
-        extract_and_save_json(response_content_raw)
+        # extract_and_save_json(response_content_raw)
         goto = "planner"
     
     return Command(goto=goto)
@@ -999,7 +1064,6 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
-
 def diagram_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the diagram agent that generates diagrams."""
     logger.info("Diagram agent starting task")
@@ -1038,7 +1102,7 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
                     name="diagram",
                 )
             ],
-            "sequence_diagram": response.content, 
+            "component_diagram": response.content, 
         },
         goto="supervisor",
     )

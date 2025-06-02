@@ -37,10 +37,9 @@ export default function HomePage() {
   );
   return (
     <div className="flex w-full flex-col items-center justify-center">
-      <div className="flex min-h-screen min-w-page flex-col items-center">
-        <header className="fixed left-0 right-0 top-0 flex h-16 w-full items-center px-4">
-          <AppHeader />
-        </header>
+      <div className="flex min-h-screen w-full flex-col items-center">
+        <AppHeader />
+
         <main className="mb-48 mt-16 px-4">
           <MessageHistoryView
             className="w-page"
