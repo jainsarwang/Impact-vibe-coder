@@ -35,6 +35,52 @@ organization_schema = {
     }
 }
 
+session_schema = {
+    '$jsonSchema': {
+        'bsonType': 'object',
+        'required': ['session_id', 'files'],
+        'properties': {
+            'session_id': {
+                'bsonType': 'string',
+                'description': 'Unique identifier for the session'
+            },
+            'files': {
+                'bsonType': 'array',
+                'items': {
+                    'bsonType': 'object',
+                    'required': ['file_path', 'file_created'],
+                    'properties': {
+                        'file_path': {
+                            'bsonType': 'string',
+                            'description': 'Path to the file'
+                        },
+                        'file_created': {
+                            'bsonType': 'bool',
+                            'description': 'Whether the file was created'
+                        },
+                        'short_description': {
+                            'bsonType': 'string',
+                            'description': 'Brief description of the file'
+                        },
+                        'long_description': {
+                            'bsonType': 'string',
+                            'description': 'Detailed description of the file'
+                        }
+                    }
+                }
+            },
+            'created_at': {
+                'bsonType': 'date',
+                'description': 'Creation timestamp'
+            },
+            'updated_at': {
+                'bsonType': 'date',
+                'description': 'Last update timestamp'
+            }
+        }
+    }
+}
+
 roles_schema = {
     '$jsonSchema': {
         'bsonType': 'object',
