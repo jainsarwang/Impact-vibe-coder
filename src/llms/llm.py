@@ -31,35 +31,40 @@ def create_groq_llm(model: str, temperature: float = 0.0) -> ChatOpenAI:
         temperature=temperature,
     )
 
-def create_gemini_llm(model: str, temperature: float = 0.0) -> ChatGemini:
+def create_gemini_llm(model: str, response_schema = None, temperature: float = 0.0) -> ChatGemini:
     if not GOOGLE_API_KEY:
         raise ValueError("GOOGLE_API_KEY environment variable not set")
     
-    return ChatGemini(
-    model= model,
-    temperature=0,
-    max_tokens=None,
-    timeout=None,
-    max_retries=2,
-    # other params...
-)
+    llm = ChatGemini(
+        model=model,
+        temperature=0,
+        max_tokens=None,
+        timeout=None,
+        max_retries=2,
+    )
 
-def get_llm_by_type(llm_type: LLMType) -> ChatOpenAI | genai.Client:
+    if response_schema:
+        # Simply pass the schema to guide the response format
+        llm = llm.with_config({
+            "response_schema": response_schema
+        })
+
+    return llm
+
+def get_llm_by_type(llm_type: LLMType, schema = None) -> ChatOpenAI | genai.Client:
     """Get LLM instance by type. Returns cached instance if available."""
 
     if llm_type == "basic":
         if GOOGLE_API_KEY:
-            llm = create_gemini_llm(model="gemini-2.5-flash-preview-04-17")
-            # Or "gemini-pro-vision" if needed
+            llm = create_gemini_llm(model="gemini-2.5-flash-preview-04-17", response_schema=schema)
     elif llm_type == "reasoning":
         if GROQ_API_KEY:
-            llm = create_gemini_llm(model="gemini-2.0-flash")
-            # llm = create_groq_llm(BASIC_MODEL_GROQ)
+            llm = create_gemini_llm(model="gemini-2.0-flash", response_schema=schema)
         else:
             raise ValueError("GROQ_API_KEY environment variable not set for basic LLM.")
     elif llm_type == "vision":
         if GROQ_API_KEY:
-            llm = create_gemini_llm(model="gemini-2.0-flash")
+            llm = create_gemini_llm(model="gemini-2.0-flash", response_schema=schema)
         else:
             raise ValueError("GROQ_API_KEY environment variable not set for vision LLM.")
     elif llm_type == "version_llm":
