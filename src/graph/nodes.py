@@ -40,7 +40,7 @@ from src.prompts.template import apply_prompt_template, apply_prompt_template_fo
 from src.tools import tavily_tool, bash_tool
 from src.utils import executor,  repair_json_output
 from .types import State
-from ..utils import ChecklistManager
+from ..utils import ChecklistManager, get_response_schema
 import re
 import json
 
@@ -85,7 +85,7 @@ def extract_and_save_json(response_text: str, output_file: str = 'project_requir
         raise ValueError(f"Could not extract valid JSON: {str(e)}")
 
 RESPONSE_FORMAT = "Response from {}:\n\n<response>\n{}\n</response>\n\n*Please execute the next step.*"
-checklist_manager = ChecklistManager.ChecklistManager()
+checklist_manager = ChecklistManager()
 
 def research_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the researcher agent that performs research tasks."""
@@ -178,7 +178,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     ]
     messages = apply_prompt_template_planner("code_planner", state)
     # whether to enable deep thinking mode
-    llm = get_llm_by_type("basic")
+    llm = get_llm_by_type("basic", schema=get_response_schema("code_planner"))
     response = llm.invoke(messages)
     full_response = response.content
     # extract_and_save_json(full_response)
@@ -271,7 +271,7 @@ def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end_
     ]
 
     # Get LLM response
-    llm = get_llm_by_type("basic")
+    llm = get_llm_by_type("basic", schema=get_response_schema("version_resolver"))
     try:
         response = llm.invoke(messages)
         full_response = response.content
@@ -646,7 +646,7 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
     goto= 'supervisor'
 
     try:
-        llm = get_llm_by_type("basic")
+        llm = get_llm_by_type("basic", schema=get_response_schema("import_export"))
         response = llm.invoke(messages)
         full_response = response.content
 
@@ -911,7 +911,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         if isinstance(message, BaseMessage) and message.name in TEAM_MEMBERS:
             message.content = RESPONSE_FORMAT.format(message.name, message.content)
     response = (
-        get_llm_by_type(AGENT_LLM_MAP["supervisor"])
+        get_llm_by_type(AGENT_LLM_MAP["supervisor"], get_response_schema("supervisor"))
         # Remove .with_structured_output for streaming compatibility
         .invoke(messages)
     )
@@ -962,9 +962,9 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     logger.info("Planner generating full plan")
     messages = apply_prompt_template_planner("planner", state)
     # whether to enable deep thinking mode
-    llm = get_llm_by_type("basic")
+    llm = get_llm_by_type("basic", schema=get_response_schema("planner"))
     if state.get("deep_thinking_mode"):
-        llm = get_llm_by_type("reasoning")
+        llm = get_llm_by_type("reasoning", schema=get_response_schema("planner"))
     if state.get("search_before_planning"):
         searched_content = tavily_tool.invoke({"query": state["messages"][-1].content})
         messages = deepcopy(messages)
@@ -1005,7 +1005,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     """Coordinator node that communicates with customers, showing only non-JSON context."""
     logger.info("Coordinator talking.")
     messages = apply_prompt_template("coordinator", state)
-    response = get_llm_by_type(AGENT_LLM_MAP["coordinator"]).invoke(messages)
+    response = get_llm_by_type(AGENT_LLM_MAP["coordinator"], schema=get_response_schema('coordinator')).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
     
     # Keep original response
@@ -1045,7 +1045,7 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     """Reporter node that write a final report."""
     logger.info("Reporter write final report")
     messages = apply_prompt_template("reporter", state)
-    response = get_llm_by_type(AGENT_LLM_MAP["reporter"]).invoke(messages)
+    response = get_llm_by_type(AGENT_LLM_MAP["reporter"], schema=get_response_schema('reporter')).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
     response_content = response.content
     # 尝试修复可能的JSON输出
@@ -1090,7 +1090,7 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
         }
     ]
 
-    llm = get_llm_by_type("basic")
+    llm = get_llm_by_type("basic", schema=get_response_schema("diagram_generator"))
     response = llm.invoke(messages)
     logger.debug(f"Diagram agent response: {response}")
     logger.info("Diagram agent completed task")
