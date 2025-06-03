@@ -5,7 +5,7 @@ FastAPI application for LangManus.
 import json
 import logging
 import os
-from typing import Dict, List, Any, Optional, Union
+from typing import List,  Optional, Union
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -72,7 +72,7 @@ class ChatRequest(BaseModel):
 
 
 @app.post("/api/chat/stream")
-async def chat_endpoint(request: ChatRequest, req: Request):
+async def chat_endpoint(request: ChatRequest, session_id: str, req: Request):
     """
     Chat endpoint for LangGraph invoke.
 
@@ -83,6 +83,7 @@ async def chat_endpoint(request: ChatRequest, req: Request):
     Returns:
         The streamed response
     """
+    logger.info(f"Session id of request: {session_id}")
     try:
         # Convert Pydantic models to dictionaries and normalize content format
         messages = []
