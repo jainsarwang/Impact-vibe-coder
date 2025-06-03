@@ -18,7 +18,7 @@ from typing import AsyncGenerator, Dict, List, Any
 from src.graph import build_graph
 from src.config import TEAM_MEMBERS, BROWSER_HISTORY_DIR
 from src.service.workflow_service import run_agent_workflow
-from src.utils import session_manager
+from src.utils.session_manager import SessionManager
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -86,8 +86,8 @@ async def chat_endpoint(request: ChatRequest, session_id: str, req: Request):
     """
     global new_session_id
     if new_session_id != session_id:
-        session_manager.Session.set(session_id)  # Set the new session ID
-    new_session_id = session_id  # Update the session ID
+        SessionManager.set(session_id)# Set the new session ID
+    new_session_id = session_id
     logger.info(f"Session id of request: {session_id}")
     try:
         # Convert Pydantic models to dictionaries and normalize content format

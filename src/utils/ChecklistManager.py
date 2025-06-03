@@ -12,7 +12,7 @@ session_db = db["session"]
 class ChecklistManager:
     """Manages the checklist for tracking file generation progress."""
     def __init__(self, checklist_file: str = "checklist.json", project_prefix: str = None):
-        self.session_id = SessionManager.get()
+        self.session_id = ""
         self.checklist_file = checklist_file
         self.checklist: List[Dict] = []
         self._normalize_paths = True
@@ -63,6 +63,7 @@ class ChecklistManager:
     def initialize_from_directory(self, directory_structure: Dict) -> List[Dict]:
         """Initialize checklist from directory structure."""
         try:
+            self.session_id = SessionManager.get()
             if isinstance(directory_structure, str):
                 directory_structure = json.loads(directory_structure)
             self.checklist = []
@@ -214,7 +215,7 @@ class ChecklistManager:
             session_db.update_one(
                 {"session_id": self.session_id},
                 {"$set": {"checklist": self.checklist}},
-                upsert=True
+                upsert=False
             )
             logging.debug(f"Checklist saved to session database")
         except Exception as e:

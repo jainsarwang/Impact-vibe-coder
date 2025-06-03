@@ -521,8 +521,8 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
     logger.info(f"Coder agent '{prompt_name}' completed invocation.")
 
     response_content_raw = result["messages"][-1].content
-    token_count.set_token_count(token_count.token_count(response_content_raw))
-    logger.info("Token count after coder agent '%s': %s", prompt_name, token_count.get_token_count())
+    global token_count_value
+    token_count_value += token_count.token_count(response_content_raw)
     response_content_repaired = repair_json_output(response_content_raw)
 
     try:
@@ -539,7 +539,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
                                 f"Repaired content (start): {response_content_repaired[:200]}...",
                         name=prompt_name,
                     )
-                ],
+                ]
             },
             goto="coder_master",
         )
@@ -553,7 +553,6 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
     if isinstance(files_spec_from_llm, str):
         path = files_spec_from_llm
         content = parsed_response.get("code", "")
-        description = parsed_response.get("description", "")
         processed_file_specs.append({"path": path, "content": content})
     elif isinstance(files_spec_from_llm, list):
         for item in files_spec_from_llm:
@@ -569,7 +568,6 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
                 processed_file_specs.append({"path": path, "content": content if content is not None else ""})
             else:
                 logger.warning(f"'{prompt_name}' provided an item in 'FILE' list without a path: {item}")
-
     elif files_spec_from_llm is None:
         top_level_path = parsed_response.get("path")
         if top_level_path:
@@ -579,57 +577,6 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
             logger.warning(f"'{prompt_name}' response had no 'FILE' key and no top-level 'path'. Response: {parsed_response}")
     else:
         logger.warning(f"'{prompt_name}' returned 'FILE' with unexpected type: {type(files_spec_from_llm)}. Value: {files_spec_from_llm}")
-    #------------------------------------------
-
-
-    logger.info(f"Saving description to checklist for path: {path}")  # Added path to log
-    checklist_data = collection.find_one({"_id": "checklist"})
-    if not checklist_data:
-        logger.error("Checklist not found in database. Cannot proceed with file creation.")
-        goto = "code_planner"
-    logger.debug(f"Current checklist data: {checklist_data}")
-
-    data = checklist_data.get('data')
-    if not data:
-        logger.error("No data found in checklist. Cannot proceed with file creation.")
-        goto = "code_planner"
-
-    # Check if the path exists in the data
-    path = os.path.normpath(path.replace("\\", "/")).replace("\\", "/")
-    actual_path = path.split("/",1)[-1]  
-    
-    description = parsed_response.get("description", "")
-    for file in data:
-        if file['file_path'] == actual_path:
-            logger.info(f"Found file in checklist: {file['file_path']}")
-            file['description'] = description
-            update_result = collection.update_one(
-                {
-                    "_id": "checklist",
-                    "data.file": actual_path  # Match document with this file path in array
-                },
-                {
-                    "$set": {
-                        "data.$.description": description  # Update only description of matched element
-                    }
-                }
-            )
-            logger.info(f"Descirption written successfully to checklist {description}")
-            break  
-    logger.info(f"path:{path}, actual_path:{actual_path}")
-    if not file:
-        logger.error(f"No file found in checklist for path: {actual_path}. Available paths: {list(actual_data_with_file_paths.keys())}")
-        goto = "code_planner"
-        
-    logger.info(update_result)    # Debug log the update result
-    logger.info(f"Update result: matched={update_result.matched_count}, modified={update_result.modified_count}")
-
-    if update_result.modified_count == 1:
-        logger.info(f"Successfully saved description to checklist for {actual_path}")
-    else:
-        logger.error(f"Failed to update description for {actual_path}")
-        
-#--------------------------------------------------------------------------------
 
     for file_spec in processed_file_specs:
         file_path = file_spec.get("path")
@@ -671,7 +618,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
                     name=prompt_name,
                 )
             ],
-            "generated_files": updated_generated_files,
+            "generated_files": updated_generated_files
         },
         goto="coder_master",
     )
