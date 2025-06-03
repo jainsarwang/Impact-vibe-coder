@@ -1,8 +1,19 @@
 from pymongo import MongoClient
 from ..model.session_schema import session_schema
 from motor.motor_asyncio import AsyncIOMotorClient
-import datetime
+from datetime import datetime
 import logging
+import pytz
+ 
+# Define a timezone
+india_tz = pytz.timezone('Asia/Kolkata')
+ 
+# Get the current time in UTC
+utc_now = datetime.now(pytz.utc)
+print("Current UTC Time:", utc_now)
+ 
+# Convert UTC to a specific timezone
+india_time = utc_now.astimezone(india_tz)
 
 client = MongoClient("mongodb://localhost:27017")
 db = client["impact_vibe_coder"]
@@ -19,7 +30,7 @@ class SessionManager:
         """
         session_data = {
             "session_id": session_id,
-            "created_at": datetime.datetime.utcnow(),
+            "created_at": india_time,
             "checklist": []
         }
         logging.info(f"Setting session ID: {session_id}")
