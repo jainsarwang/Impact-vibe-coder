@@ -8,7 +8,7 @@ from pymongo import MongoClient
 try:
     client = MongoClient(os.environ.get("MONGO_URI", "mongodb://localhost:27017/"))
     db = client["impact_vibe_coder"]
-    if "checklist" in db.list_collection_names():
+    if "    " in db.list_collection_names():
         db.drop_collection("checklist")  # Clear existing checklist if it exists
     db.create_collection("checklist")
     collection = db["checklist"]
