@@ -38,7 +38,7 @@ from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS, CODER_AGENTS, AGENT_LLM_MAP
 from src.prompts.template import apply_prompt_template, apply_prompt_template_for_coder, apply_prompt_template_planner, get_prompt_template
 from src.tools import tavily_tool, bash_tool
-from src.utils import executor,  repair_json_output
+from src.utils import executor,  repair_json_output, ensure_directory_exists
 from .types import State
 from ..utils import ChecklistManager, get_response_schema
 import re
@@ -801,6 +801,7 @@ def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
                 continue
 
             image = Image.open(BytesIO(part.inline_data.data))
+            ensure_directory_exists(file_name)
             image.save(file_name)
             logger.info(f"Image saved successfully as {file_name}")
         
