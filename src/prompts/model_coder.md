@@ -89,7 +89,7 @@ export interface User {
 -   Add comments following Go documentation standards
 -   Use pointers appropriately for optional fields
 
-## Output Format
+## Output format (only this and nothing else)
 
 Provide model implementaiton file paths with in json:
 Provide files created in json with and only in json with the following format to be followed strictly this format is your God:

@@ -26,6 +26,7 @@ from .env import (
     CHROME_PROXY_PASSWORD,
 )
 from .tools import TAVILY_MAX_RESULTS, BROWSER_HISTORY_DIR
+from .agents import AGENT_LLM_MAP
 
 # Team configuration
 TEAM_MEMBERS = [
@@ -50,6 +51,7 @@ CODER_AGENTS = [
     "config_coder",
     "frontend_coder",
     "db_coder",
+    "figma_coder",
 ]
 
 __all__ = [
@@ -74,4 +76,6 @@ __all__ = [
     "CHROME_PROXY_USERNAME",
     "CHROME_PROXY_PASSWORD",
     "BROWSER_HISTORY_DIR",
+    "CODER_AGENTS",
+    "AGENT_LLM_MAP",
 ]

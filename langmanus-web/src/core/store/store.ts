@@ -13,12 +13,14 @@ import { WorkflowEngine } from "../workflow";
 export const useStore = create<{
   messages: Message[];
   responding: boolean;
+  sessionId: string;
   state: {
     messages: { role: string; content: string }[];
   };
 }>(() => ({
   messages: [],
   responding: false,
+  sessionId: "",
   state: {
     messages: [],
   },
@@ -62,7 +64,13 @@ export async function sendMessage(
   if (window.location.search.includes("mock")) {
     stream = mockChatStream(message);
   } else {
-    stream = chatStream(message, useStore.getState().messages, params, options);
+    stream = chatStream(
+      message,
+      useStore.getState().messages,
+      useStore.getState().sessionId,
+      params,
+      options,
+    );
   }
   setResponding(true);
 

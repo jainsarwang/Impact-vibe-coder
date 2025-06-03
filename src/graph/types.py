@@ -32,3 +32,5 @@ class State(MessagesState):
     coder_instruction: Any
     component_diagram: str
     code_plan: str
+    previous_file_path: str
+    previous_file_content: str

@@ -5,9 +5,9 @@ import os
 import json_repair
 import logging
 from copy import deepcopy
-# from .llm_utils import get_llm_by_type
+from io import BytesIO
+from PIL import Image
 from typing import Dict, List, Literal
-# from .prompt_utils import get_prompt_template
 from pymongo import MongoClient
 from bson import SON
 
@@ -33,17 +33,15 @@ from src.agents import  (
     browser_agent,
     import_export_agent,
     version_agent,
+    figma_coder_agent
 )
 from src.llms.llm import get_llm_by_type
-from src.config import TEAM_MEMBERS, CODER_AGENTS
-from src.config.agents import AGENT_LLM_MAP
-from src.prompts.template import apply_prompt_template, apply_prompt_template_planner, get_prompt_template
-from src.tools.search import tavily_tool
-from src.tools.bash_tool import bash_tool
-from src.utils import executor
-from src.utils.json_utils import repair_json_output
-from .types import State, Router
-from ..utils import ChecklistManager, token_count
+from src.config import TEAM_MEMBERS, CODER_AGENTS, AGENT_LLM_MAP
+from src.prompts.template import apply_prompt_template, apply_prompt_template_for_coder, apply_prompt_template_planner, get_prompt_template
+from src.tools import tavily_tool, bash_tool
+from src.utils import executor,  repair_json_output, ensure_directory_exists
+from .types import State
+from ..utils import ChecklistManager, token_count, get_response_schema
 import re
 import json
 
@@ -93,7 +91,7 @@ def extract_and_save_json(response_text: str, output_file: str = 'project_requir
         raise ValueError(f"Could not extract valid JSON: {str(e)}")
 
 RESPONSE_FORMAT = "Response from {}:\n\n<response>\n{}\n</response>\n\n*Please execute the next step.*"
-checklist_manager = ChecklistManager.ChecklistManager()
+checklist_manager = ChecklistManager()
 
 def research_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the researcher agent that performs research tasks."""
@@ -190,8 +188,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     ]
     messages = apply_prompt_template_planner("code_planner", state)
     # whether to enable deep thinking mode
-    llm = get_llm_by_type("basic")
-    
+    llm = get_llm_by_type("basic", schema=get_response_schema("code_planner"))
     response = llm.invoke(messages)
     token_count.set_token_count(token_count.token_count(response.content))
     logger.info("Token count after code planner: %s", token_count.get_token_count())
@@ -286,7 +283,7 @@ def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end_
     ]
 
     # Get LLM response
-    llm = get_llm_by_type("basic")
+    llm = get_llm_by_type("basic", schema=get_response_schema("version_resolver"))
     try:
         response = llm.invoke(messages)
         full_response = response.content
@@ -719,7 +716,7 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
     goto= 'supervisor'
 
     try:
-        llm = get_llm_by_type("basic")
+        llm = get_llm_by_type("basic", schema=get_response_schema("import_export"))
         response = llm.invoke(messages)
         full_response = response.content
         token_count.set_token_count(token_count.token_count(response.content))
@@ -827,6 +824,73 @@ def db_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the DB Coder agent that generator directory structure."""
     return coder(state, 'db_coder', db_coder_agent)
 
+def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
+    """Node for the Figma Coder agent that generator directory structure."""
+
+    logger.info(f"Coder node figma_coder starting task.")
+    logger.debug(f"Instruction for 'figma_coder' from coder_master: {state.get('coder_instruction')}")
+
+    try:
+        parsed_instruction = json.loads(state.get('coder_instruction', '{}'))
+    except json.JSONDecodeError as e:
+        logger.error(f"Error parsing 'coder_instruction' for 'figma_coder': {str(e)}", exc_info=True)
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Error parsing 'coder_instruction' for 'figma_coder': {str(e)}",
+                        name='figma_coder',
+                    )
+                ]
+            },
+            goto="coder_master",
+        )
+
+    try:
+        response_parts = figma_coder_agent(state)
+    except Exception as e:
+        logger.error(f"Error invoking agent 'figma_coder': {str(e)}", exc_info=True)
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Error during agent 'figma_coder' execution: {str(e)}",
+                        name='figma_coder',
+                    )
+                ]
+            },
+            goto="coder_master",
+        )
+
+    logger.info(f"Coder agent 'figma_coder' completed invocation.")
+
+    for part in response_parts:
+        if part.inline_data is not None:
+            file_name = parsed_instruction.get("file")
+            if(not file_name):
+                logger.warning("No file name provided in instruction for 'figma_coder'. Skipping image save.")
+                continue
+
+            image = Image.open(BytesIO(part.inline_data.data))
+            ensure_directory_exists(file_name)
+            image.save(file_name)
+            logger.info(f"Image saved successfully as {file_name}")
+        
+    current_generated_files = state.get('generated_files', [])
+    state['generated_files'] = current_generated_files + [parsed_instruction.get("file", "")]
+
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content="Image generated Successfully",
+                    name='figma_coder',
+                )
+            ]
+        },
+        goto="coder_master",
+    )
+
 # def code_node(state: State) -> Command[Literal["supervisor"]]:
 #     """Node for the coder agent that executes Python code."""
 #     logger.info("Code agent starting task")
@@ -921,7 +985,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         if isinstance(message, BaseMessage) and message.name in TEAM_MEMBERS:
             message.content = RESPONSE_FORMAT.format(message.name, message.content)
     response = (
-        get_llm_by_type(AGENT_LLM_MAP["supervisor"])
+        get_llm_by_type(AGENT_LLM_MAP["supervisor"], get_response_schema("supervisor"))
         # Remove .with_structured_output for streaming compatibility
         .invoke(messages)
     )
@@ -974,9 +1038,9 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     logger.info("Planner generating full plan")
     messages = apply_prompt_template_planner("planner", state)
     # whether to enable deep thinking mode
-    llm = get_llm_by_type("basic")
+    llm = get_llm_by_type("basic", schema=get_response_schema("planner"))
     if state.get("deep_thinking_mode"):
-        llm = get_llm_by_type("reasoning")
+        llm = get_llm_by_type("reasoning", schema=get_response_schema("planner"))
     if state.get("search_before_planning"):
         searched_content = tavily_tool.invoke({"query": state["messages"][-1].content})
         messages = deepcopy(messages)
@@ -1019,7 +1083,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     """Coordinator node that communicates with customers, showing only non-JSON context."""
     logger.info("Coordinator talking.")
     messages = apply_prompt_template("coordinator", state)
-    response = get_llm_by_type(AGENT_LLM_MAP["coordinator"]).invoke(messages)
+    response = get_llm_by_type(AGENT_LLM_MAP["coordinator"], schema=get_response_schema('coordinator')).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
     
     # Keep original response
@@ -1027,6 +1091,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     token_count.set_token_count(token_count.token_count(response_content_raw))
     logger.info("token count after coordinator: %d", token_count.get_token_count())
     # Process JSON for internal use
+    response_content_repaired = repair_json_output(response_content_raw)
     logger.debug(f"Coordinator full response: {response_content_raw}")
     
     # Extract non-JSON context to show user
@@ -1059,7 +1124,7 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     """Reporter node that write a final report."""
     logger.info("Reporter write final report")
     messages = apply_prompt_template("reporter", state)
-    response = get_llm_by_type(AGENT_LLM_MAP["reporter"]).invoke(messages)
+    response = get_llm_by_type(AGENT_LLM_MAP["reporter"], schema=get_response_schema('reporter')).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
     response_content = response.content
     token_count.set_token_count(token_count.token_count(response_content))
@@ -1078,7 +1143,6 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
         },
         goto="supervisor",
     )
-
 
 def diagram_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the diagram agent that generates diagrams."""
@@ -1106,7 +1170,7 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
         }
     ]
 
-    llm = get_llm_by_type("basic")
+    llm = get_llm_by_type("basic", schema=get_response_schema("diagram_generator"))
     response = llm.invoke(messages)
     token_count.set_token_count(token_count.token_count(response.content))
     logger.info("Token count after diagram generation: %d", token_count.get_token_count())

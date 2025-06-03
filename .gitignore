@@ -17,5 +17,12 @@ projects
 checklist.json
 code_planner.json
 directory_structure.json
+project_structure.json
+import-export.json
+code_planner.json
+checklist.json
 app.log
-project_requirements.json
+.dependency_graph.png
+project_structure.html
+project_analysis.json
+project_structure.png
