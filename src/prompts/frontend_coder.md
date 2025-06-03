@@ -146,7 +146,7 @@ interface AIOpts {
 
 ---
 
-## Output Format:
+## Output format (only this and nothing else)
 
 Provide frontend implementaiton file paths with in json:
 Provide files created in json (dictionary only) with and only in json with the following format to be followed strictly this format is your
