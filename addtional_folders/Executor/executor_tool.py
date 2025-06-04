@@ -6,11 +6,11 @@ import shlex
 from typing import List, Dict, Tuple
 from concurrent.futures import ThreadPoolExecutor
 import queue
- 
+
 # Use raw strings for Windows paths or double backslashes
 file_path = r"D:\Data Science\Impact\Impact-vibe-coder-Rishabh-Git\Exector\readme.md"
 file_path_2 = r"D:\Data Science\Impact\Impact-vibe-coder-Rishabh-Git\Exector"
- 
+
 def extract_commands_from_readme(file_path: str) -> Dict[str, List[str]]:
     """Extract and categorize executable commands from README.md"""
     try:
@@ -22,26 +22,26 @@ def extract_commands_from_readme(file_path: str) -> Dict[str, List[str]]:
     except Exception as e:
         print(f"Error reading file: {e}")
         return {'venv': [], 'frontend': [], 'backend': [], 'other': []}
- 
+    
     # Updated pattern to handle comma-separated commands
     pattern = r'```(?:bash|sh)?\n(.*?)```|^\$\s*(.+)$|`([^`\n]+)`'
     matches = re.findall(pattern, content, re.DOTALL | re.MULTILINE)
-   
+    
     venv_commands = []
     frontend_commands = []
     backend_commands = []
     other_commands = []
-   
+    
     # Virtual environment indicators (highest priority)
     venv_keywords = ['venv', 'virtualenv', 'activate', 'activate.bat', 'scripts\\activate']
-   
+    
     # Frontend indicators
     frontend_keywords = ['frontend', 'npm', 'yarn', 'streamlit', 'react', 'angular',
                         'vue', 'svelte', 'webpack', 'vite', 'next', 'nuxt']
     # Backend indicators
     backend_keywords = ['backend', 'pip', 'django', 'flask', 'fastapi',
                     'uvicorn', 'gunicorn', 'node server', 'express', 'migrate']
- 
+    
     for match in matches:
         cmd = match[0] or match[1] or match[2]
         if cmd.strip():
@@ -52,7 +52,7 @@ def extract_commands_from_readme(file_path: str) -> Dict[str, List[str]]:
                     if line and not line.startswith('#'):
                         # Normalize for case-insensitive comparison
                         lower_line = line.lower()
-                       
+                    
                         # Check for venv commands first (highest priority)
                         if any(keyword in lower_line for keyword in venv_keywords):
                             venv_commands.append(line)
@@ -73,21 +73,21 @@ def extract_commands_from_readme(file_path: str) -> Dict[str, List[str]]:
                             backend_commands.append(line)
                         else:
                             other_commands.append(line)
- 
+    
     def is_executable_command(cmd):
         if re.search(r'git\s+(clone|pull|fetch|remote\s+add)', cmd, re.IGNORECASE):
             return False
         return (re.search(r'[/.=-]', cmd) or
                 len(cmd.split()) > 1 or
                 re.match(r'^(php|npm|composer|python|pip|docker|streamlit)\b', cmd, re.IGNORECASE))
- 
+    
     return {
         'venv': [cmd for cmd in venv_commands if is_executable_command(cmd)],
         'frontend': [cmd for cmd in frontend_commands if is_executable_command(cmd)],
         'backend': [cmd for cmd in backend_commands if is_executable_command(cmd)],
         'other': [cmd for cmd in other_commands if is_executable_command(cmd)]
     }
- 
+
 def execute_in_new_terminal(cmd: str, working_dir: str, category: str) -> Tuple[bool, str]:
     """Execute command in a new terminal window"""
     try:

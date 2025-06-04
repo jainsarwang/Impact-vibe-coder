@@ -1,7 +1,7 @@
 """
 工具函数包
 """
-from . import executor
+from .executor import ReadmeExecutor
 from .json_utils import repair_json_output
 # from .llm_response import get_response_schema
 from .ChecklistManager import ChecklistManager

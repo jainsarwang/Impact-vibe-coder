@@ -27,4 +27,3 @@ You are specialized developer focused on resolving version related issues. Your 
         "expo": "^50.0.0",
     }
 ```
-

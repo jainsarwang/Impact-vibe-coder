@@ -38,9 +38,8 @@ from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS, CODER_AGENTS, AGENT_LLM_MAP
 from src.prompts.template import apply_prompt_template, apply_prompt_template_for_coder, apply_prompt_template_planner, get_prompt_template
 from src.tools import tavily_tool, bash_tool
-from src.utils import executor,  repair_json_output, ensure_directory_exists
+from src.utils import ReadmeExecutor,  repair_json_output, ensure_directory_exists, ChecklistManager, token_count, get_response_schema
 from .types import State
-from ..utils import ChecklistManager, token_count, get_response_schema
 import re
 import json
 
@@ -142,11 +141,9 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     )
 
 """
-
 Directory  ->  Image Generation  -> Dependencies Graph  ->  Coder Master  -> (
     Coder  -> Analyse code and all fucntion corresponds to Graph
 )  ->  Move to next File generation by Coder
-
 """
     
 def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
@@ -960,11 +957,22 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     if goto == "FINISH":
         print(token_count_value)
         with open("project_requirements.json") as f:
-            project_requirement = f.read()
-        logging.debug("**Executor Started")
-        executor.execute(state, project_requirement)
-        logging.debug("**Executor Ended")
-        
+            project_requirement = json.load(f)
+
+        if project_requirement:
+            project_name = project_requirement['project_name']
+
+            # check if `projects/{project_name} exits`
+            if not os.path.exists(f"projects/{project_name}"):
+                logger.error(f"Project directory not found: projects/{project_name}")
+                goto = "__end__"
+            else:
+                logging.debug("**Executor Started")
+                executor = ReadmeExecutor(project_path=f"projects/{project_name}")
+                executor.extract_commands_with_gemini()
+                executor.execute_commands()
+                logging.debug("**Executor Ended")
+
         goto = "__end__"
         logger.info("Workflow completed")
     elif goto in TEAM_MEMBERS:
