@@ -1,60 +1,60 @@
 {
-  "thought": "The user wants a simple 'Hello, World!' application implemented in Python. This involves creating a single Python file that prints 'Hello, World!' to the console. The plan will follow the standard process: research, diagramming, directory setup, path verification, dependency resolution, code planning, coding, and reporting.",
-  "project_name": "hello_world_python",
-  "title": "Simple Hello World Python Script",
+  "thought": "The user wants a simple command-line to-do list application in Python with data persistence. I will create a plan that covers research, design, directory structure, dependency verification, code planning, implementation, and reporting, using the specified agents in the correct order.",
+  "project_name": "cli_todo_app",
+  "title": "Simple Command-Line To-Do List Application in Python",
   "steps": [
     {
       "agent_name": "researcher",
-      "title": "Research Basic Python Print Function",
-      "description": "Research the basic syntax for printing output to the console in Python 3. Focus on the `print()` function.",
-      "note": "This ensures the correct and modern Python syntax is used for the core functionality."
+      "title": "Research Python CLI Development Basics and JSON File Handling",
+      "description": "Research fundamental Python concepts required for building a simple CLI application, including:\n- Handling user input (`input()`).\n- Basic data structures (lists, dictionaries) for storing tasks.\n- File input/output operations for saving and loading data.\n- Using Python's built-in `json` module for data persistence.\n\nOutput: Summarized research findings on these topics.",
+      "note": "This research will provide the necessary technical foundation for the project."
     },
     {
       "agent_name": "diagram",
-      "title": "Generate Hello World Python Script Conceptual Diagram",
-      "description": "Generate a conceptual component diagram illustrating the simple process of the Python script: execution -> print function -> output 'Hello, World!' to console.",
-      "note": "This diagram visualizes the basic flow of the script."
+      "title": "Generate Conceptual Diagram for CLI To-Do App Flow",
+      "description": "Generate a conceptual component diagram illustrating the main flow of the CLI to-do application: User Input -> Command Parsing -> Task Management Logic (Add, List, Complete, Remove) -> Data Persistence (Load/Save to JSON file) -> Output to User.\n\nOutput: A conceptual diagram image or description.",
+      "note": "This diagram visualizes the high-level architecture and data flow."
     },
     {
       "agent_name": "directory_generator",
       "title": "Generate Project Directory Structure",
-      "description": "Generate the directory structure for the 'Hello, World!' Python script project. Include:\n- `hello_world.py`: The main Python script.\n- `README.md`: A basic project documentation file.",
+      "description": "Generate the directory structure for the CLI To-Do App project. Include:\n- `cli_todo_app.py`: The main Python script containing the application logic.\n- `tasks.json`: A file to store the to-do tasks (will be created/managed by the script).\n- `README.md`: A basic project documentation file.\n\nOutput: A description or representation of the directory structure.",
       "note": "This sets up the basic file organization for the project."
     },
     {
       "agent_name": "diagram",
-      "title": "Generate Hello World Python Project Component Diagram with Directory Structure Context",
-      "description": "Generate a component diagram illustrating the main components of the Hello World Python project, reflecting their placement within the generated directory structure. Key components should include `hello_world.py` and `README.md`, showing how they relate to the project root.",
+      "title": "Generate CLI To-Do App Project Component Diagram with Directory Structure Context",
+      "description": "Generate a component diagram illustrating the main components of the CLI To-Do App project, reflecting their placement within the generated directory structure. Key components should include `cli_todo_app.py`, `tasks.json`, and `README.md`, showing how they relate to the project root.\n\nOutput: A component diagram image or description showing the physical structure.",
       "note": "This diagram visualizes the physical structure of the project files."
     },
     {
       "agent_name": "import-export",
       "title": "Verify Import and Export Paths",
-      "description": "Verify the correctness of file paths within the generated directory structure. Ensure that `hello_world.py` is a self-contained script and does not require any external imports or dependencies referenced via file paths within the project.",
-      "note": "This step confirms the project's simplicity and single-file nature."
+      "description": "Verify the correctness of file paths within the generated directory structure. Ensure that `cli_todo_app.py` correctly references `tasks.json` for loading and saving data. Confirm that no external imports requiring path verification outside the project structure are needed.\n\nOutput: Confirmation that internal file references are correctly planned or notes on any required adjustments.",
+      "note": "This step confirms internal file references are correctly planned."
     },
     {
       "agent_name": "version_resolver",
       "title": "Resolve and Correct Dependencies",
-      "description": "Analyze the project structure to identify necessary dependencies. For this simple Python script, the primary 'dependency' is the standard Python interpreter. Confirm that no external libraries or frameworks requiring version resolution are needed. Note that a `requirements.txt` or `setup.py` is not applicable or required for this project.",
+      "description": "Analyze the project structure to identify necessary dependencies. For this simple Python CLI script, the primary 'dependency' is the standard Python interpreter and its built-in `json` module. Confirm that no external libraries or frameworks requiring version resolution are needed. Note that a `requirements.txt` or `setup.py` is not applicable or required for this project.\n\nOutput: Confirmation that only standard Python dependencies are required and no external dependencies need resolution.",
       "note": "This step ensures that the project relies only on standard Python capabilities."
     },
     {
       "agent_name": "code_planner",
-      "title": "Plan Code Implementation Details for hello_world.py",
-      "description": "Create a detailed plan for the `coder_master` to implement the `hello_world.py` file. This plan should specify:\n- Using the standard Python `print()` function.\n- The exact string to be printed: 'Hello, World!'.\n- Ensure the plan emphasizes creating a single, self-contained Python file with just the print statement.",
+      "title": "Plan Code Implementation Details for cli_todo_app.py",
+      "description": "Create a detailed plan for the `coder_master` to implement the `cli_todo_app.py` file. This plan should specify:\n- Functions for loading tasks from `tasks.json`.\n- Functions for saving tasks to `tasks.json`.\n- A data structure (e.g., a list of dictionaries) to hold tasks in memory, where each task is a dictionary like `{'task': 'Task description', 'completed': False}`.\n- Functions for core to-do operations: `add_task`, `list_tasks`, `complete_task`, `remove_task`.\n- A main loop to handle user input and dispatch commands (e.g., 'add', 'list', 'done', 'remove', 'quit').\n- Basic error handling for invalid commands or task indices.\n- Ensure the plan emphasizes creating a single, self-contained Python file.\n\nOutput: A detailed, step-by-step code implementation plan.",
       "note": "This plan will serve as a comprehensive guide for the `coder_master` to write the Python code."
     },
     {
       "agent_name": "coder_master",
-      "title": "Implement Simple Hello World Python Script",
-      "description": "Write the complete code for the `hello_world.py` file based on the project requirements and the detailed code plan. Implement a single line of code that uses the `print()` function to output the string 'Hello, World!' to the console. Ensure the output is a single, well-formatted Python file.",
-      "note": "This step involves writing all the application code for the 'Hello, World!' script."
+      "title": "Implement Simple CLI To-Do List Application",
+      "description": "Write the complete code for the `cli_todo_app.py` file based on the project requirements and the detailed code plan. Implement the functions for loading/saving tasks using the `json` module, managing tasks in a list of dictionaries, and handling user commands (add, list, done, remove, quit) in a main loop. Include basic error handling. The output should be the complete, well-formatted Python code for `cli_todo_app.py`.\n\nOutput: The full Python code for the CLI To-Do List application.",
+      "note": "This step involves writing all the application code for the CLI to-do list app."
     },
     {
       "agent_name": "reporter",
       "title": "Generate Project Report",
-      "description": "Generate a final report summarizing the implemented 'Hello, World!' Python script. Include a brief overview of the project, the technology used (Python 3), the core functionality (printing 'Hello, World!'), and confirm that it is a single-file implementation as requested.",
+      "description": "Generate a final report summarizing the implemented CLI To-Do List Application. Include a brief overview of the project, the technology used (Python 3), the core functionality (add, list, complete, remove tasks with JSON persistence), and confirm that it is a single-file implementation as planned. Mention the directory structure and the use of standard Python libraries.\n\nOutput: A professional project report.",
       "note": "This report provides a comprehensive overview of the completed project."
     }
   ]

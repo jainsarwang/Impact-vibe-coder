@@ -3,11 +3,33 @@ import logging
 import os
 from typing import Dict, List, Optional
 from pymongo import MongoClient
+from datetime import datetime
 from ..utils.session_manager import SessionManager
+from ..model.session_schema import session_schema 
 
 client = MongoClient("mongodb://localhost:27017")
 db = client["impact_vibe_coder"]
-session_db = db["session"]
+
+# Create collection with strict schema validation
+try:
+    db.create_collection("session", validator=session_schema)
+    db.command({
+        'collMod': 'session',
+        'validator': session_schema,
+        'validationLevel': 'strict',
+        'validationAction': 'error'  # This makes it fail hard on invalid data
+    })
+except Exception as e:
+    logging.debug(f"Collection setup note: {str(e)}")
+    # For existing collections, ensure the schema is applied strictly
+    db.command({
+        'collMod': 'session',
+        'validator': session_schema,
+        'validationLevel': 'strict',
+        'validationAction': 'error'
+    })
+    
+    session_db = db["session"]
 
 class ChecklistManager:
     """Manages the checklist for tracking file generation progress."""
@@ -210,19 +232,35 @@ class ChecklistManager:
         return complete
     
     def _save_checklist(self) -> None:
-        """Save checklist to file."""
+        """Save checklist to database with schema validation."""
         try:
+            now = datetime.utcnow()
+            
+            update_data = {
+                '$set': {
+                    'checklist': self.checklist,
+                    'updated_at': now,
+                },
+                '$setOnInsert': {
+                    'created_at': now,
+                    'session_id': self.session_id
+                }
+            }
+            
             session_db.update_one(
                 {"session_id": self.session_id},
-                {"$set": {"checklist": self.checklist}},
-                upsert=False
+                update_data,
+                upsert=True
             )
             logging.debug(f"Checklist saved to session database")
         except Exception as e:
             logging.error(f"Error saving checklist: {str(e)}")
+            if "Document failed validation" in str(e):
+                logging.error("Data validation failed. Checklist data doesn't match schema.")
+        
     
     def load_checklist(self) -> List[Dict]:
-        """Load checklist from file."""
+        """Load checklist from database."""
         try:
             session_data = session_db.find_one({"session_id": self.session_id})
             if session_data and "checklist" in session_data:
