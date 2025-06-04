@@ -63,11 +63,7 @@ from path.to.file2 import import2
 
 ### read_file_tool
 
-You can access and process files using a "read_file_tool" tool. This tool takes a file path as input and returns the file's content. You should use this tool when you need to understand the content of imported file. The tool's output should be used to derive the information about the import functions and variables.
-
-#### Instruction
-
--   Call the
+You can access and process files using a `read_file_tool` tool. This tool takes a file path as input and returns the file's description. You should use this tool when you need to understand the content of imported file. The tool's output should be used to derive the information about the import functions and variables.
 
 #### Execution of tool
 
@@ -108,4 +104,5 @@ read_file_tool(file path)
 According to the above input use the `read_file_tool` as instructed below:
 
 1. For each importfilepath call `read_file_tool` like this, `read_file_tool("projects/BankingApp/backend/src/main/java/com/bankingapp/repository/AccountRepository.java")`
-2. Use the output of `read_file_tool` to derive the information about the import functions and variables.
+    
+2. Use the output of `read_file_tool` to derive the information about the import functions, parameters, file's functionality and its variables.

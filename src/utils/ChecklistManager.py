@@ -233,16 +233,14 @@ class ChecklistManager:
     
     def _save_checklist(self) -> None:
         """Save checklist to database with schema validation."""
-        try:
-            now = datetime.utcnow()
-            
+        try:            
             update_data = {
                 '$set': {
                     'checklist': self.checklist,
-                    'updated_at': now,
+                    'updated_at': datetime.now(),
                 },
                 '$setOnInsert': {
-                    'created_at': now,
+                    'created_at': datetime.now(),
                     'session_id': self.session_id
                 }
             }

@@ -494,9 +494,15 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
     current_generated_files = state.get('generated_files', [])
     newly_generated_this_run: List[str] = []
     processed_file_specs: List[Dict[str, str]] = []
-
+    if isinstance(parsed_response, list):
+        parsed_response = dict(parsed_response)
+    elif isinstance(parsed_response, str):
+        parsed_response = dict(parsed_response)
+    else:
+        if not isinstance(parsed_response, dict):
+            parsed_response = dict(parsed_response)
+    logger.info(f"Parsed response from '{prompt_name}': {parsed_response}")
     files_spec_from_llm = parsed_response.get("FILE")
-
     if isinstance(files_spec_from_llm, str):
         path = files_spec_from_llm
         content = parsed_response.get("code", "")
@@ -509,6 +515,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
             elif isinstance(item, dict):
                 path = item.get("path")
                 content = item.get("content", parsed_response.get("code", ""))
+                logger.info(f"Content : {content}")
                 if path:
                     processed_file_specs.append({"path": path, "content": content if content is not None else ""})
     elif files_spec_from_llm is None:
