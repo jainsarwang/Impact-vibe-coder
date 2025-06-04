@@ -2,6 +2,7 @@ import { Message } from "@/lib/types";
 import { create } from "zustand";
 
 interface State {
+    session_id: string | null;
     messages: Message[];
     responding: boolean;
     directory_structure: Object;
@@ -26,6 +27,7 @@ interface State {
 }
 
 export const useStore = create<State>(() => ({
+    session_id: null,
     messages: [],
     responding: false,
     directory_structure: {},
@@ -75,5 +77,5 @@ export const useStore = create<State>(() => ({
         useStore.setState({ directory_structure: {} }),
     clearAgentWorking: () => useStore.setState({ agentWorking: null }),
     setWorkflowStarted: (id) => useStore.setState({ workflowStarted: id }),
-    clearWorkflowStarted: () => useStore.setState({ workflowStarted: false }),
+    clearWorkflowStarted: () => useStore.setState({ workflowStarted: null }),
 }));

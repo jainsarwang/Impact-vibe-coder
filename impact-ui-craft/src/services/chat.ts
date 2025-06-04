@@ -9,6 +9,7 @@ export const sendChat = async (
     options: { abortSignal?: AbortSignal } = {}
 ) => {
     const {
+        session_id,
         setAgentWorking,
         clearAgentWorking,
         addMessage,
@@ -21,7 +22,9 @@ export const sendChat = async (
     setResponding(true);
 
     const stream = fetchStream<ChatEvent>(
-        import.meta.env.VITE_BACKEND_URL + "/chat/stream",
+        `${
+            import.meta.env.VITE_BACKEND_URL
+        }/chat/stream?session_id=${session_id}`,
         {
             body: JSON.stringify({
                 messages: [...messages, userMessage],
