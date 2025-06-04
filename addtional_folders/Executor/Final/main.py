@@ -16,7 +16,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configure Gemini
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GEMINI_API_KEY:
     logger.error("GEMINI_API_KEY environment variable not set.")
     raise ValueError("GEMINI_API_KEY environment variable not set.")
@@ -47,7 +47,7 @@ class ReadmeExecutor:
             2. Frontend commands (client-side execution)
             3. Backend commands (server-side execution)
             4. Test commands (testing the application)
-            5. Never Execute commands (commands that should not be run) like git commands.
+            5. Never Execute commands that should not be run like 'git' commands.
             6. When in readme you got the command to activate the virtual environment like this:
             ```
             source venv/bin/activate
@@ -56,7 +56,7 @@ class ReadmeExecutor:
             ```
             .\venv\Scripts\activate
             ```
-                you should not include the source command in the setup commands. Just run *environment_name*\Scripts\activate, Not include .bat with activate.
+                you should not include the source command in the setup commands. Just run *environment_name*\Scripts\activate, Not include '.bat' with activate.
 
             Return only a JSON response with this structure:
             {{
