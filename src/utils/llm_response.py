@@ -473,6 +473,18 @@ version_resolver_response = genai.types.Schema(
     },
 )
 
+# terraform planner Response Schema
+# TODO: Needs to be defined properly
+# terraform_planner_response = genai.types.Schema(
+#     type = genai.types.Type.OBJECT,
+#     required = ["agent", ''],
+#     properties = {
+#         "agent": genai.types.response_schema(
+#             type = genai.types.Type.STRING
+#         )
+#     }
+# )
+
 # Complete Response Schema Dictionary
 response_schema = {
     "planner": planner_response,

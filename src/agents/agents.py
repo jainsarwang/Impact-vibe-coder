@@ -126,3 +126,9 @@ version_agent =  create_react_agent(
     tools=[bash_tool], 
     prompt=lambda state: apply_prompt_template("version_resolver", state),
 )
+
+terraform_planner_agent = create_react_agent(
+    get_llm_by_type(AGENT_LLM_MAP["terraform_planner"], get_response_schema("terraform_planner")),
+    tools=[bash_tool],
+    prompt=lambda state: apply_prompt_template_planner("terraform_planner", state),
+)

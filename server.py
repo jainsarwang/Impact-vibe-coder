@@ -3,8 +3,12 @@ Server script for running the LangManus API.
 """
 
 import logging
+from dotenv import load_dotenv
 import uvicorn
 import sys
+
+load_dotenv()
+
 
 # Configure logging
 logging.basicConfig(
@@ -13,6 +17,8 @@ logging.basicConfig(
     filename="app.log",
     filemode='a'
 )
+
+# from src.service.mongodb import con
 
 logger = logging.getLogger(__name__)
 
