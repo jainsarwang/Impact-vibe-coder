@@ -780,7 +780,7 @@ async def admin_create_another_admin(
 @app.post("/organizations/status")
 async def update_organization_status(
     organization_name: str,
-    status: str | bool,
+    status: bool,
     current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -790,13 +790,12 @@ async def update_organization_status(
     organization= await organizations_collection.find_one({"organization_name": organization_name})
     if not organization:
         raise HTTPException(status_code=400, detail="Organization not found")
-    if status == 'active' or status == 'Active' or status == 'ACTIVE' or status == True or status=='true':
+    if status:
         organization['is_active']  = True
         await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": True}})
-    elif status == 'inactive' or status == 'Inactive' or status == 'INACTIVE' or status == False or status=='false':
+    else:
         organization['is_active']  = False
-        await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": True}})
-    else: raise HTTPException(status_code=400, detail="Deatails cannot be updated, please provide valid status")
+        await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": False}})
     organization= await organizations_collection.find_one({"organization_name": organization_name})
     return {
         "organization_id": organization['organization_id'],
