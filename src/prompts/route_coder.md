@@ -115,10 +115,9 @@ Provide files created in json with and only in json with the following format to
     "programming_language": "programmin_language",
     "code": "The code to be written in file",
     "description": """
-    1. Functions is being created in this file
+    1. Name of the functions created in the file
     2. Parameter and return type of each funciton being created in this File
-    3. Short Description of its functionality
-    """
+    3. Short Description of each of the functions.
 }
 ```
 

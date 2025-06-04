@@ -1,22 +1,41 @@
 from langchain_core.tools import tool
 from .decorators import log_io
+from pymongo import MongoClient
+from ..utils.session_manager import SessionManager
+import logging
+
+client = MongoClient("mongodb://localhost:27017")
+db = client["impact_vibe_coder"]
+db = db["session"]
 
 @tool
 @log_io
-def read_file_tool(file_path: str) -> str:
+def read_file_tool(path: str) -> str:
     """
-    Reads a file and returns its content.
+    Read the description of the file from mongo database.
+    
     Args:
-        file_path (str): The path to the file to read.
+        path (str): The path of the file to look up
+        
     Returns:
-        str: The content of the file or an error message if the file cannot be read.
+        str: The description of the file if found, otherwise "File not found" or error message.
     """
+    logging.info(f"Reading file description for path: {path}")
     try:
-        with open(file_path, "r") as f:
-            print(file_path)
-            content = f.read()
-        return content
-    except FileNotFoundError:
-        return "File not found."
+        session_id = SessionManager.get()
+        document = db.find_one({"session_id": session_id})
+        
+        if not document:
+            return "Session not found"
+            
+        # Search through the checklist array
+        for item in document.get("checklist", []):
+            if item.get("file_path") == path:
+                logging.info(f"Found file description: {item.get('description', 'No description available')}")
+                return item.get("description", "No description available")
+            
+        logging.warning(f"File not found in checklist for path: {path}")
+        return "File not found in checklist"
+        
     except Exception as e:
         return f"Error reading file: {str(e)}"

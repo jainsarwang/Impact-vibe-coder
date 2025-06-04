@@ -539,6 +539,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
             checklist_manager.mark_file_created(file_path)
             if description:
                 checklist_manager.update_file_description(file_path, description)
+                logger.info(f"Updated description for file '{file_path}': {description}")
 
         except Exception as e:
             logger.error(f"Error writing file {file_path}: {str(e)}", exc_info=True)

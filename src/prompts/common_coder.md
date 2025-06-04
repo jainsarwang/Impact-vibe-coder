@@ -3,7 +3,9 @@
 -   You are Writing professional level code not prototypes.
 -   Always use the context of the entire project before writing the file
 -   It must follow the standard import as used in the respective languages.
--   If imports are available for a file always and mandatorily use the `read_file_tool` to read the imports file and then write the code.\
+-   If imports are available for a file always and mandatorily use the `read_file_tool` to read the imports file and then write the code.
+-   Call the `read_file_tool` with the complete path example if imports looks like this ..models/connection.js call the tool with path whatsapp/backend/src/models/connection.js.
+-   For href type imports call the `read_file_tool`.
 -   If a file is in any way referencing to another file then use `read_file_tool` to read the code of that file
 -   Strictly follow the imports statement and the import dictionary
 -   Use the correct vesion dependencies as provide, and use the function from that dependencies only
