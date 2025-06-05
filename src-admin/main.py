@@ -596,7 +596,8 @@ async def superadmin_create_admin_with_org(
             "organization_name": request.organization_name,
             "total_tokens": request.total_tokens,
             "tokens_remaining": request.total_tokens,
-            "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)
+            "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(),
+            "is_active": True
         }
         await organizations_collection.insert_one(org_data)
         logger.info(f"Organization '{request.organization_name}' (ID: {organization_id}) created.")
