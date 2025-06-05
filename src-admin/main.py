@@ -836,7 +836,14 @@ async def add_tokens_to_organization(
     user["tokens_allowed"] = user.get("tokens_allowed", 0) + tokens_to_be_added
     await users_collection.update_one({"organization_name": organization_name}, {"$set": {"tokens_allowed": user.get("tokens_allowed", 0) + tokens_to_be_added}})
     
+    primary_admin = users_collection.find_one({"organization_id":organization.get("organization_id")})
+    if not primary_admin.get("is_active"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot add Tokens")
+    
+    await users_collection.update_one({"user_id": primary_admin.get("user_id")}, {"$set": {"total_tokens": primary_admin.get("total_tokens")+ tokens_to_be_added}})
     await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"total_tokens": organization['total_tokens'], "tokens_remaining": organization['tokens_remaining']}})
+    
+    primary_admin['total_tokens'] = primary_admin['total_tokens'] + tokens_to_be_added
     
     return {
         "organization":
@@ -850,7 +857,14 @@ async def add_tokens_to_organization(
                     "username": user['username'],
                     "is_primary_admin": user.get("is_primary_admin", False),
                     "tokens_allowed": user.get("tokens_allowed", 0)
-                }    
+                },
+            "primary_admin":
+                {
+                    "username": primary_admin.get("username"),
+                    "is_primary_admin": primary_admin.get("is_primary_admin"),
+                    "tokens_allowed": primary_admin.get("tokens_allowed")
+                }
+                    
 }
     
 
@@ -922,7 +936,7 @@ async def update_user_tokens(
     projects = await projects_cursor.to_list(length=None)
     used_tokens = sum(project.get("tokens_consumed", 0) for project in projects)
 
-    await users_collection.update_one({"user_id": user_id}, {"$set": {"tokens_consumed": tokens}})
+    # await users_collection.update_one({"user_id": user_id}, {"$set": {"tokens_consumed": tokens}})
 
     if used_tokens >= tokens: 
         # Deactivate user if updated tokens are less than used tokens
