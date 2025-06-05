@@ -616,9 +616,10 @@ async def superadmin_create_admin_with_org(
             "user_id": user_id, "role_id": admin_role["role_id"], "organization_id": organization_id,
             "name": request.name, "username": username, "email": request.email,
             "password": get_password_hash(password), # Store hashed password
-            "is_active": True, "is_primary_admin": True, # Admin created by superadmin is a primary admin
+            "is_active": True,
+            "is_primary_admin": True, # Admin created by superadmin is a primary admin
             "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc),
-            "tokens": 0 # Default token balance for new user
+            "tokens": 0 
         }
         await users_collection.insert_one(user_data)
         logger.info(f"Primary Admin '{username}' (ID: {user_id}) created by superadmin '{current_user.username}' for organization '{organization_id}'.")
@@ -666,6 +667,7 @@ async def get_all_organizations(current_user: User = Depends(get_current_active_
             "organization_name": org_doc.get("organization_name"),
             "total_tokens": org_doc.get("total_tokens", 0),
             "tokens_remaining": org_doc.get("tokens_remaining", 0),
+            "is_active": org_doc.get("is_active", True),
             "created_at": org_doc.get("created_at", datetime.min).isoformat(),
             "updated_at": org_doc.get("updated_at", datetime.min).isoformat(),
             "user_count": len(formatted_users_in_org),
