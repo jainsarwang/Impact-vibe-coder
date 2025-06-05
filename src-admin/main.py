@@ -1026,7 +1026,38 @@ async def update_user_tokens(
         "user_id": user_id,
         "tokens": tokens
     }
-    
+
+
+@app.post("/admin/users/{user_id}/toggle_status")
+async def toggle_user_status(
+    user_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    if not await verify_role(current_user, "admin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can toggle user status.")
+    if await verify_role(current_user, "superadmin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Superadmin cannot toggle organization's user status, Only admins can toggle user status.")
+
+    user_doc = await users_collection.find_one({"user_id": user_id})
+    if not user_doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cnnot toggle status, User not found.")
+
+    # Toggle the user's active status
+    new_status = not user_doc["is_active"]
+    await users_collection.update_one(
+        {"user_id": user_id},
+        {"$set": {"is_active": new_status, "updated_at": datetime.now(timezone.utc)}}
+    )
+
+    logger.info(f"User {user_doc['username']} status toggled to {'active' if new_status else 'inactive'}")
+
+    return {
+        "message": f"User status updated to {'active' if new_status else 'inactive'}",
+        "user_id": user_id,
+        "is_active": new_status
+    }
+
+
 
 @app.get("/organizations/{organization_name}/tokens") # Path parameter for organization_name
 async def get_tokens_assigned(
