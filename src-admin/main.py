@@ -596,6 +596,7 @@ async def superadmin_create_admin_with_org(
             "organization_name": request.organization_name,
             "total_tokens": request.total_tokens,
             "tokens_remaining": request.total_tokens,
+            "is_active": True,
             "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)
         }
         await organizations_collection.insert_one(org_data)
@@ -615,7 +616,8 @@ async def superadmin_create_admin_with_org(
             "user_id": user_id, "role_id": admin_role["role_id"], "organization_id": organization_id,
             "name": request.name, "username": username, "email": request.email,
             "password": get_password_hash(password), # Store hashed password
-            "is_active": True, "is_primary_admin": True, # Admin created by superadmin is a primary admin
+            "is_active": True, 
+            "is_primary_admin": True, # Admin created by superadmin is a primary admin
             "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc),
             "tokens": 0 # Default token balance for new user
         }
