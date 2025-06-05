@@ -2,13 +2,10 @@ import json
 import logging
 import os
 from typing import Dict, List, Optional
-from pymongo import MongoClient
 from datetime import datetime
 from ..utils.session_manager import SessionManager
 from ..model.session_schema import session_schema 
-
-client = MongoClient("mongodb://localhost:27017")
-db = client["impact_vibe_coder"]
+from ..service import db
 
 # Create collection with strict schema validation
 try:
@@ -29,7 +26,7 @@ except Exception as e:
         'validationAction': 'error'
     })
     
-    session_db = db["session"]
+session_db = db["session"]
 
 class ChecklistManager:
     """Manages the checklist for tracking file generation progress."""

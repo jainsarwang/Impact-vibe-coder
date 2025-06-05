@@ -1,12 +1,9 @@
 from langchain_core.tools import tool
-from .decorators import log_io
-from pymongo import MongoClient
-from ..utils.session_manager import SessionManager
 import logging
-import os
+from .decorators import log_io
+from ..service import db
+from ..utils.session_manager import SessionManager
 
-client = MongoClient("mongodb://localhost:27017")
-db = client["impact_vibe_coder"]
 collection = db["session"]
 
 @tool

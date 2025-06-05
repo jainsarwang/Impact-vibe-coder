@@ -48,10 +48,6 @@ import json
 
 logger = logging.getLogger(__name__)
 
-client = MongoClient("mongodb://localhost:27017/")
-db = client["impact_vibe_coder"]
-collection = db["checklist"]
-
 def extract_and_save_json(response_text: str, output_file: str = 'project_requirements.json') -> bool:
     """
     Extracts JSON from response text and saves to file.

@@ -1,11 +1,10 @@
-from pymongo import MongoClient
-from ..model.session_schema import session_schema
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime
+from pymongo import MongoClient
 import logging
+from ..model.session_schema import session_schema
+from ..service import db
 
-client = MongoClient("mongodb://localhost:27017")
-db = client["impact_vibe_coder"]
 session_db = db["session"]
 
 class SessionManager:
