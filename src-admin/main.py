@@ -666,6 +666,7 @@ async def get_all_organizations(current_user: User = Depends(get_current_active_
             "organization_name": org_doc.get("organization_name"),
             "total_tokens": org_doc.get("total_tokens", 0),
             "tokens_remaining": org_doc.get("tokens_remaining", 0),
+            "is_active": org_doc.get("is_active", True),
             "created_at": org_doc.get("created_at", datetime.min).isoformat(),
             "updated_at": org_doc.get("updated_at", datetime.min).isoformat(),
             "user_count": len(formatted_users_in_org),
