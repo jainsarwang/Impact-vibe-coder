@@ -1059,7 +1059,8 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
                     content=response_content,
                     name="reporter",
                 )
-            ]
+            ],
+            "report": response_content,  # Save the report content in state
         },
         goto="supervisor",
     )

@@ -34,3 +34,4 @@ class State(MessagesState):
     code_plan: str
     previous_file_path: str
     previous_file_content: str
+    report: str
