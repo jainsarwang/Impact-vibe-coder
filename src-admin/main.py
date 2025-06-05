@@ -854,6 +854,166 @@ async def add_tokens_to_organization(
 }
     
 
+@app.get("/organization/get_users")
+async def get_organization_users(
+    organization_name: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    "Get all users of the current organization"
+    organization = await organizations_collection.find_one({"organization_name": organization_name})
+    if not organization:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+    users_of_organization_id = organization.get("organization_id")
+    if not users_of_organization_id:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail="Users for searched Organization not found")
+    users_cursor= users_collection.find({"organization_id": users_of_organization_id})
+    users = await users_cursor.to_list()
+    if not users:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Users for searched Organization not found")
+    result = []
+    result.append ({
+        "user":[
+        {
+        "username": user.get("username"),
+        "name": user.get("name"),
+        "email": user.get("email", ""),
+        "user_id": user.get("user_id"),
+        "role_id": user.get("role_id"),
+        "organization_id": user.get("organization_id"),
+        "tokens_allowed": user.get("tokens_allowed", 0),
+        "is_active": user.get("is_active", False),
+        "is_primary_admin": user.get("is_primary_admin", False),
+        "created_at": user.get("created_at", datetime.min).isoformat(),
+        "updated_at": user.get("updated_at", datetime.min).isoformat(),
+        }
+        for user in users
+        ]
+    })
+    return result        
+
+@app.post("/admin/users/{user_id}/update_tokens")
+async def update_user_tokens(
+    user_id: str,
+    tokens: int,
+    current_user: User = Depends(get_current_active_user)
+):
+    if tokens < 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens must be non-negative.")
+    
+    # Validation for admin role
+    if not await verify_role(current_user, "admin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can update user tokens.")
+    if await verify_role(current_user, "superadmin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Superadmins cannot update user's tokens directly. Organization Admins have the authority.")
+
+    # Finding Active and not_primary_Admin user
+    user_doc = await users_collection.find_one({"user_id": user_id})
+    if not user_doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tokens cannot be updated, Try Again")
+    
+    if user_doc.get("is_active") is False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot update tokens for an inactive user.")
+    
+    if user_doc.get("is_primary_admin") is True:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN , detail="Primary Admin's token cannot be updated by an admin.")
+        
+    # Calculate tokens used in projects
+    projects_cursor = projects_collection.find({"user_id": user_id})
+    projects = await projects_cursor.to_list(length=None)
+    used_tokens = sum(project.get("tokens_consumed", 0) for project in projects)
+
+    await users_collection.update_one({"user_id": user_id}, {"$set": {"tokens_consumed": tokens}})
+
+    if used_tokens >= tokens: 
+        # Deactivate user if updated tokens are less than used tokens
+        await users_collection.update_one({"user_id": user_id}, {"$set": {"is_active": False}})
+        return {
+            "message": "Used tokens exceed the updating token limit, hence deactivating the user",
+            "user_id": user_doc.get("user_id"),
+            "user_name": user_doc.get("user_name"),
+            "is_active": False,
+            "updated_tokens": tokens
+        }
+    
+    # Find primary admin of the organization
+    primary_admin = await users_collection.find_one({
+        "organization_id": user_doc.get("organization_id"), 
+        "is_primary_admin": True
+    })
+    if not primary_admin:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tokens cannot be updated, try again")
+    
+    if tokens < user_doc.get("tokens_allowed"):
+        # If reducing tokens, return remaining tokens to primary admin & org
+        remaining_tokens = user_doc.get("tokens_allowed") - tokens
+        
+        await users_collection.update_one(
+            {"user_id": user_doc.get("user_id")}, 
+            {"$set": {"tokens_allowed": tokens}}
+        )
+        
+        # Add remaining tokens to primary admin
+        await users_collection.update_one(
+            {"user_id": primary_admin.get("user_id")}, 
+            {"$inc": {"tokens_allowed": remaining_tokens}}
+        )
+        
+        # Update organization tokens
+        await organizations_collection.update_one(
+            {"organization_id": primary_admin.get("organization_id")}, 
+            {"$inc": {"tokens_remaining": remaining_tokens}}
+        )
+        
+        return {
+            "message": "Tokens updated of user, primary admin and organization",
+            "user_id": user_doc.get("user_id"),
+            "user_name": user_doc.get("user_name"),
+            "is_active": user_doc.get("is_active"),
+            "updated_tokens": tokens
+        }
+    
+    if tokens == user_doc.get("tokens_allowed"):
+        return {
+            "message": "User tokens updated successfully",
+            "user_id": user_id,
+            "tokens": tokens
+        }
+        
+    # If increasing tokens, check if primary admin has enough tokens
+    if tokens > (user_doc.get("tokens_allowed") + primary_admin.get("tokens_allowed")):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Insufficient Tokens with Organization's Primary Admin"
+        )
+    
+    # Take required tokens from primary admin
+    tokens_needed = tokens - user_doc.get("tokens_allowed")
+    await users_collection.update_one(
+        {"user_id": primary_admin.get("user_id")}, 
+        {"$inc": {"tokens_allowed": -tokens_needed}}
+    )
+    
+    # Update organization's remaining tokens
+    await organizations_collection.update_one(
+        {"organization_id": primary_admin.get("organization_id")}, 
+        {"$inc": {"tokens_remaining": -tokens_needed}}
+    )
+    
+    # Finally, update the user's tokens
+    await users_collection.update_one(
+        {"user_id": user_id}, 
+        {"$set": {"tokens_allowed": tokens}}
+    )
+    
+    logger.info(f"User {user_doc.get('username')} tokens updated to {tokens}")
+    
+    return {
+        "message": "User tokens updated successfully",
+        "user_id": user_id,
+        "tokens": tokens
+    }
+    
+
 @app.get("/organizations/{organization_name}/tokens") # Path parameter for organization_name
 async def get_tokens_assigned(
     organization_name: str,
