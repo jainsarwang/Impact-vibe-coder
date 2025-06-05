@@ -1079,8 +1079,10 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     response_content = response.content
     global token_count_value
     token_count_value += token_count.token_count(response_content)
-    # 尝试修复可能的JSON输出
     response_content = repair_json_output(response_content)
+
+    # Todo: Add report to state
+
     logger.debug(f"reporter response: {response_content}")
 
     return Command(
@@ -1138,4 +1140,101 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
             "component_diagram": response.content, 
         },
         goto="supervisor",
+    )
+
+"""
+##### Terraform Generation
+
+terraform Solution architect (image generation and requiement analsis)
+terraform planner
+terraform directory
+terraform engineer
+terraform script executor
+    terraform init
+    terraform validate
+    terraform plan
+    terraform apply
+
+depployer
+    ssh setup
+    scp code push
+    ssh code setup
+    server begins
+
+"""
+def terraform_planner_node(state: State) -> Command[Literal["supervisor"]]:
+    """Terraform Planner node for graph"""
+
+    logger.info("Terraform Planner generating full plan")
+
+    directory_structure = state.get('directory_structure')
+    
+    if not directory_structure:
+        logging.warning("No Directory Object in State, Going back to supervisor")
+        return Command(goto='supervisor')
+
+    # Prepare all variables for the prompt
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        "CODER_AGENTS": ", ".join(CODER_AGENTS),  # Convert list to string
+        "directory_structure": directory_structure,
+        **state  # Include other state variables
+    }
+
+    template = get_prompt_template('code_planner')
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME", "CODER_AGENTS","directory_structure"],
+        template=template,
+    ).format(**prompt_vars)
+
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": "Create a Code plan"
+        }
+    ]
+    messages = apply_prompt_template_planner("code_planner", state)
+    # whether to enable deep thinking mode
+    llm = get_llm_by_type("basic", schema=get_response_schema("code_planner"))
+    response = llm.invoke(messages)
+    global token_count_value
+    token_count_value += token_count.token_count(response.content)
+    full_response = response.content
+    # extract_and_save_json(full_response)
+    logger.debug(f"Current state messages: {state['messages']}")
+    logger.info(f"Code Planner response: {full_response}")
+
+    # extract_and_save_json(full_response, "code_planner.json")
+
+    if full_response.startswith("```json"):
+        full_response = full_response.removeprefix("```json")
+
+    if full_response.endswith("```"):
+        full_response = full_response.removesuffix("```")
+
+    goto = "supervisor"
+
+    try:
+        repaired_response = json_repair.loads(full_response)
+        full_response = json.dumps(repaired_response)
+
+        with open("code_planner.json", "w", encoding="utf-8") as f:
+            json.dump(repaired_response, f, indent=2, ensure_ascii=False)
+
+        # Update checklist from the plan
+        checklist_manager.update_from_plan(repaired_response)
+    except json.JSONDecodeError:
+        logger.warning("Code Planner response is not a valid JSON")
+        goto = "__end__"
+
+    return Command(
+        update={
+            "messages": [HumanMessage(content=full_response, name="code_planner")],
+            "code_plan": full_response,
+        },
+        goto=goto,
     )
