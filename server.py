@@ -12,7 +12,7 @@ load_dotenv()
 
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s - %(name)s - %(filename)s - %(levelname)s - %(message)s - Line No : %(lineno)d",
     filename="app.log",
     filemode='a'
@@ -23,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    logger.info("Starting LangManus API server")
+    logger.info("Starting IVC API server")
     reload = True
     if sys.platform.startswith("win"):
         reload = False

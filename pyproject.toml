@@ -40,6 +40,7 @@ dependencies = [
     "crypto>=1.4.1",
     "pip>=25.1.1",
     "jose>=1.0.0",
+    "tornado[gen]>=6.5.1",
 ]
 
 [project.optional-dependencies]

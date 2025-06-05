@@ -9,7 +9,6 @@ from langgraph.prebuilt.chat_agent_executor import AgentState
 from ..graph.types import State
 from ..utils import token_count
 
-token_count_value = 0
 
 def get_prompt_template(prompt_name: str) -> str:
     template = open(os.path.join(os.path.dirname(__file__), f"{prompt_name}.md")).read()
@@ -24,8 +23,8 @@ def apply_prompt_template(prompt_name: str, state: AgentState) -> list:
         input_variables=["CURRENT_TIME"],
         template=get_prompt_template(prompt_name),
     ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
-    global token_count_value
-    token_count_value += token_count.token_count(system_prompt)
+    token_count.set_token_count(token_count.token_count(system_prompt))
+    logging.info("token_count_value: %d for prompt_name: %s", token_count.get_token_count(), prompt_name)
     return [{"role": "system", "content": system_prompt}] + state["messages"]
 
 def apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
@@ -37,8 +36,8 @@ def apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
         ADDITIONAL_RULES = get_prompt_template('common_coder'),
         **state
     )
-    global token_count_value
-    token_count_value += token_count.token_count(system_prompt)
+    token_count.set_token_count(token_count.token_count(system_prompt))
+    logging.info("token_count_value: %d for prompt_name: %s", token_count.get_token_count(), prompt_name)
     logging.info("component_diagram: %s", state.get("component_diagram", ""))
     return [
             {"role": "system", "content": system_prompt}
@@ -64,8 +63,8 @@ def apply_prompt_template_planner(prompt_name: str, state: AgentState) -> list:
             project_requirements=json.dumps(project_requirements, indent=2),  # Convert dict to formatted JSON string
             **state
         )
-        global token_count_value
-        token_count_value += token_count.token_count(system_prompt)
+        token_count.set_token_count(token_count.token_count(system_prompt))
+        logging.info("token_count_value: %d for prompt_name: %s", token_count.get_token_count(), prompt_name)
         return [{"role": "system", "content": system_prompt}] + state["messages"]
     
     except FileNotFoundError:
