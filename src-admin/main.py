@@ -139,7 +139,7 @@ class AdminCreateRequest(BaseModel): # For superadmin to create a new admin + or
     name: str = Field(..., min_length=1, max_length=100)
     email: EmailStr
     organization_name: str = Field(..., min_length=1, max_length=100)
-    total_tokens: int = Field(..., ge=0)
+    tokens_allowed: int = Field(..., ge=0)
 
 class AdminCreateResponse(BaseModel):
     username: str
@@ -613,13 +613,18 @@ async def superadmin_create_admin_with_org(
         password = generate_password()
         user_id = str(uuid4())
         user_data = {
-            "user_id": user_id, "role_id": admin_role["role_id"], "organization_id": organization_id,
-            "name": request.name, "username": username, "email": request.email,
+            "user_id": user_id,
+            "role_id": admin_role["role_id"], 
+            "organization_id": organization_id,
+            "name": request.name,
+            "username": username, 
+            "email": request.email,
             "password": get_password_hash(password), # Store hashed password
             "is_active": True,
+            "tokens_allowed": 0,
             "is_primary_admin": True, # Admin created by superadmin is a primary admin
-            "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc),
-            "tokens": 0 
+            "created_at": datetime.now(timezone.utc), 
+            "updated_at": datetime.now(timezone.utc),
         }
         await users_collection.insert_one(user_data)
         logger.info(f"Primary Admin '{username}' (ID: {user_id}) created by superadmin '{current_user.username}' for organization '{organization_id}'.")

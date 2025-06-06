@@ -110,7 +110,7 @@ roles_schema = {
     }
 }
 
-credit_allocation_schema = {
+token_allocation_schema = {
     '$jsonSchema': {
         'bsonType': 'object',
         'required': ['role_id', 'organization_id', 'tokens_allowed', 'is_active', 'reset_period', 'created_at', 'updated_at'],
