@@ -26,7 +26,8 @@ from .nodes import (
     reporter_node,
     planner_node,
     import_export_node,
-    version_resolver_node
+    version_resolver_node,
+    # terraform_generator_node
 )
 
 
@@ -56,4 +57,5 @@ def build_graph():
     builder.add_node("reporter", reporter_node)
     builder.add_node("import-export", import_export_node)
     builder.add_node("diagram",diagram_node)
+    # builder.add_node("terraform_generator", terraform_generator_node)
     return builder.compile()

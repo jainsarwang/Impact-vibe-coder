@@ -24,6 +24,7 @@ class TerraformGenerator:
         Returns a dictionary of generated file paths
         """
         generated_files = {}
+        print("generate terraform scripts called")
         
         # Create source code zip FIRST (before generating main.tf)
         if self.source_code_path and os.path.exists(self.source_code_path):
@@ -79,6 +80,7 @@ class TerraformGenerator:
 
     def _create_source_zip(self) -> str:
         """Creates a zip file of the source code"""
+        print("Creating source code zip...")
         # Ensure output directory exists
         os.makedirs(self.output_dir, exist_ok=True)
         

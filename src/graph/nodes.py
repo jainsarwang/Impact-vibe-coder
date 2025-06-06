@@ -8,6 +8,7 @@ from copy import deepcopy
 from io import BytesIO
 from PIL import Image
 from typing import Dict, List, Literal
+import subprocess
 
 
 from langchain_core.messages import HumanMessage, BaseMessage
@@ -41,10 +42,23 @@ from src.tools import tavily_tool, bash_tool
 from src.utils import executor,  repair_json_output
 from .types import State, Router
 from ..utils import ChecklistManager, get_response_schema
+from ..terraform_generator.src.main import main as terraform_generator_main
 import re
 import json
 
 logger = logging.getLogger(__name__)
+
+report = {
+    "project_name": "VibeCoder",
+    "instances": [
+        {
+            "ami_id": "ami-0af9569868786b23a",  # Default Amazon Linux 2 AMI
+            "instance_type": "t2.micro",
+            "tags": {"Name": "VibeCoder-Instance"},
+            "security_groups": []
+        }
+    ]
+}
 
 def extract_and_save_json(response_text: str, output_file: str = 'project_requirements.json') -> bool:
     """
@@ -107,6 +121,7 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
         },
         goto="supervisor",
     )
+
 
 def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the directory generator agent that generator directory structure."""
@@ -944,7 +959,8 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
             project_requirement = f.read()
         
         logging.debug("**Executor Started")
-        executor.execute(state, project_requirement)
+        # executor.execute(state, project_requirement)
+        terraform_generator_node(state)
         logging.debug("**Executor Ended")
         
         goto = "__end__"
@@ -1059,8 +1075,7 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
                     content=response_content,
                     name="reporter",
                 )
-            ],
-            "report": response_content,  # Save the report content in state
+            ]
         },
         goto="supervisor",
     )
@@ -1107,3 +1122,54 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
         },
         goto="supervisor",
     )
+
+
+def terraform_generator_node(state: State) -> Command[Literal["supervisor"]]:
+    """Node for the Terraform Generator that creates infrastructure configurations."""
+    logger.info("Terraform Generator starting task")
+    
+    try:
+        # Get directory structure and code plan from state
+        directory_structure = state.get('full_plan')
+        if not directory_structure:
+            logger.warning("No directory structure found in state")
+            return Command(goto="supervisor")
+
+        # Parse directory_structure if it's a string
+        if isinstance(directory_structure, str):
+            try:
+                directory_structure = json.loads(directory_structure)
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse directory_structure JSON: {e}")
+                return Command(goto="supervisor")
+
+        # Ensure directory_structure is a dictionary
+        if not isinstance(directory_structure, dict):
+            logger.error(f"Invalid directory_structure type: {type(directory_structure)}")
+            return Command(goto="supervisor")
+
+        # Update report with project name
+        global report
+        report["project_name"] = directory_structure.get("project_name", "sample_project")
+        project_path = f"projects/{report['project_name']}"
+        
+        terraform_generator_main(project_path=project_path, report=report)
+        
+        # subprocess.run("cd terraform_output", shell = True, check=True, text=True, capture_output=True)
+        output = bash_tool.invoke("""cd terraform_output && terraform init && terraform plan && terraform apply -auto-approve""")
+        
+        output = bash_tool.invoke("""for /f "tokens=*" %i in ('terraform output -raw instance_1_public_ip') do set INSTANCE_IP=%i""")
+        output = bash_tool.invoke("""echo %INSTANCE_IP%""")
+        output = bash_tool.invoke("set KEY_PATH=vibecoder-key.pem")
+        output = bash_tool.invoke("""echo %KEY_PATH%""")
+        output = bash_tool.invoke("icacls %KEY_PATH% /inheritance:r")
+        output = bash_tool.invoke("""icacls %KEY_PATH% /grant:r "%USERNAME%":"(R,W)" """)
+        output = bash_tool.invoke("""icacls %KEY_PATH% /remove "NT AUTHORITY\Authenticated Users" """)
+        print(output)
+
+        logger.info("Terraform Generator completed task")
+        return Command(goto="supervisor")
+
+    except Exception as e:
+        logger.error(f"Error in terraform_generator_node: {str(e)}", exc_info=True)
+        return Command(goto="supervisor")
