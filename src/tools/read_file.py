@@ -1,7 +1,7 @@
 from langchain_core.tools import tool
 import logging
 from .decorators import log_io
-from ..service import db
+from ..service.database import db
 from ..utils.session_manager import SessionManager
 
 collection = db["session"]

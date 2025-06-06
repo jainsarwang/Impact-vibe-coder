@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from uuid import uuid4
 import logging
 import asyncio # Needed for startup/shutdown if using in-memory db mocks or specific async tasks
+from contextlib import asynccontextmanager
 
 # --- Configure logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -54,11 +55,55 @@ projects_collection: Any = None
 chats_collection: Any = None
 chat_history_collection: Any = None
 
+# --- Lifespan Events ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    global client, organizations_collection, users_collection, roles_collection, \
+        permissions_collection, role_has_permission_collection, \
+        token_allocations_collection, projects_collection, \
+        chats_collection, chat_history_collection
+
+    logger.info("Connecting to MongoDB...")
+    try:
+        client = motor.motor_asyncio.AsyncIOMotorClient(
+            DB_URL,
+            serverSelectionTimeoutMS=5000,
+            uuidRepresentation='standard'
+        )
+        await client.admin.command('ping')
+        db = client[DB_NAME]
+
+        # Assign collections
+        organizations_collection = db["organizations"]
+        users_collection = db["users"]
+        roles_collection = db["roles"]
+        permissions_collection = db["permissions"]
+        role_has_permission_collection = db["role_has_permission"]
+        token_allocations_collection = db["token_allocations"]
+        projects_collection = db["projects"]
+        chats_collection = db["chats"]
+        chat_history_collection = db["chat_history"]
+
+        logger.info(f"Successfully connected to MongoDB: {DB_URL}/{DB_NAME}")
+        await seed_initial_data()
+    except Exception as e:
+        logger.error(f"Failed to connect to MongoDB on startup: {e}", exc_info=True)
+        raise
+
+    yield  # Server is running
+
+    # Shutdown
+    if client:
+        logger.info("Closing MongoDB connection.")
+        client.close()
+
 # --- FastAPI App Initialization ---
 app = FastAPI(
     title="Impact Vibe Coder API",
     description="Secure authentication and user management API",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # --- Add CORS middleware ---
@@ -73,26 +118,56 @@ app.add_middleware(
 # --- Security scheme ---
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login") # This tokenUrl must match the actual login endpoint
 
-# --- Pydantic Models ---
+# --- Base Models ---
+class UserBase(BaseModel):
+    """Base model for user data"""
+    username: str = Field(..., min_length=3, max_length=50)
+    email: Optional[EmailStr] = None
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+
+# --- Request Models ---
+class AdminCreateRequest(BaseModel):
+    """Request model for superadmin to create a new admin + org"""
+    name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    organization_name: str = Field(..., min_length=1, max_length=100)
+    total_tokens: int = Field(..., ge=0)
+
+class UserCreateRequest(BaseModel):
+    """Request model for admin to create a user or another admin"""
+    name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+
+class OrganizationCreate(BaseModel):
+    """Request model for creating a new organization"""
+    organization_name: str = Field(..., min_length=1, max_length=100)
+    total_tokens: int = Field(..., ge=0)
+
+class ProjectCreate(BaseModel):
+    """Request model for creating a new project"""
+    project_name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+
+class ChatMessage(BaseModel):
+    """Request model for sending a chat message"""
+    message: str = Field(..., min_length=1)
+
+# --- Response Models ---
 class Token(BaseModel):
+    """Response model for authentication token"""
     access_token: str
     token_type: str
 
 class TokenData(BaseModel):
-    # These fields are what we expect in the JWT payload (claims)
-    sub: str # username
+    """Model for JWT payload data"""
+    sub: str  # username
     user_id: str
     role_id: Optional[str] = None
     organization_id: Optional[str] = None
     is_primary_admin: bool = False
 
-class UserBase(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
-    username: str = Field(..., min_length=3, max_length=50)
-    email: Optional[EmailStr] = None
-    name: Optional[str] = Field(None, min_length=1, max_length=100)
-
 class User(UserBase):
+    """Response model for user data"""
     user_id: str
     role_id: str
     organization_id: str
@@ -100,17 +175,7 @@ class User(UserBase):
     is_primary_admin: bool = False
     created_at: datetime
     updated_at: datetime
-    tokens: int = 0 # Individual user token balance
-
-    class Config:
-        populate_by_name = True # Allow parsing from DB keys
-        json_encoders = {
-            datetime: lambda dt: dt.isoformat() # For consistent datetime serialization to ISO format string
-        }
-
-class UserInDB(User):
-    # This maps the 'password' key from MongoDB to 'hashed_password' in the Pydantic model
-    password: str # This field will hold the hashed password string from the DB
+    tokens: int = 0  # Individual user token balance
 
     class Config:
         populate_by_name = True
@@ -118,13 +183,18 @@ class UserInDB(User):
             datetime: lambda dt: dt.isoformat()
         }
 
-class OrganizationCreate(BaseModel):
-    organization_name: str = Field(..., min_length=1, max_length=100)
-    total_tokens: int = Field(..., ge=0)
-    organization_name: str = Field(..., min_length=1, max_length=100)
-    total_tokens: int = Field(..., ge=0)
+class UserInDB(User):
+    """Internal model for user data with hashed password"""
+    password: str  # Hashed password string from DB
+
+    class Config:
+        populate_by_name = True
+        json_encoders = {
+            datetime: lambda dt: dt.isoformat()
+        }
 
 class Organization(OrganizationCreate):
+    """Response model for organization data"""
     organization_id: str
     tokens_remaining: int
     created_at: datetime
@@ -135,32 +205,21 @@ class Organization(OrganizationCreate):
             datetime: lambda dt: dt.isoformat()
         }
 
-class AdminCreateRequest(BaseModel): # For superadmin to create a new admin + org
-    name: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
-    organization_name: str = Field(..., min_length=1, max_length=100)
-    total_tokens: int = Field(..., ge=0)
-
 class AdminCreateResponse(BaseModel):
+    """Response model for admin creation"""
     username: str
-    password: str # Plain text password, to be shown once
+    password: str  # Plain text password, to be shown once
     organization_id: str
     user_id: str
 
-class UserCreateRequest(BaseModel): # For admin to create a user or another admin
-    name: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
-
 class UserCreateResponse(BaseModel):
+    """Response model for user creation"""
     username: str
-    password: str # Plain text password, to be shown once
+    password: str  # Plain text password, to be shown once
     user_id: str
 
-class ProjectCreate(BaseModel):
-    project_name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
-
 class Project(ProjectCreate):
+    """Response model for project data"""
     project_id: str
     user_id: str
     organization_id: str
@@ -168,21 +227,19 @@ class Project(ProjectCreate):
     tokens_consumed: int
     created_at: datetime
     updated_at: datetime
-    project_link: Optional[str] = None # Added for consistency if it exists in DB
+    project_link: Optional[str] = None
 
     class Config:
         json_encoders = {
             datetime: lambda dt: dt.isoformat()
         }
 
-class ChatMessage(BaseModel):
-    message: str = Field(..., min_length=1)
-
 class ChatMessageOut(ChatMessage):
+    """Response model for chat messages"""
     chat_history_id: str
     chat_id: str
     user_id: str
-    direction: str # e.g., "outgoing", "incoming"
+    direction: str  # e.g., "outgoing", "incoming"
     tokens_used: int
     created_at: datetime
 
@@ -328,48 +385,6 @@ async def check_username_exists(username: str, exclude_user_id: Optional[str] = 
     if exclude_user_id:
         query["user_id"] = {"$ne": exclude_user_id}
     return await users_collection.find_one(query) is not None
-
-# --- Startup/Shutdown Events for MongoDB connection and seeding ---
-@app.on_event("startup")
-async def startup_db_client():
-    global client, organizations_collection, users_collection, roles_collection, \
-           permissions_collection, role_has_permission_collection, \
-           token_allocations_collection, projects_collection, \
-           chats_collection, chat_history_collection
-
-    logger.info("Connecting to MongoDB...")
-    try:
-        client = motor.motor_asyncio.AsyncIOMotorClient(
-            DB_URL,
-            serverSelectionTimeoutMS=5000, # type: ignore
-            uuidRepresentation='standard' # Recommended for UUIDs
-        )
-        await client.admin.command('ping') # type: ignore
-        db = client[DB_NAME]
-
-        # Assign collections
-        organizations_collection = db["organizations"]
-        users_collection = db["users"]
-        roles_collection = db["roles"]
-        permissions_collection = db["permissions"]
-        role_has_permission_collection = db["role_has_permission"]
-        token_allocations_collection = db["token_allocations"]
-        projects_collection = db["projects"]
-        chats_collection = db["chats"]
-        chat_history_collection = db["chat_history"]
-
-        logger.info(f"Successfully connected to MongoDB: {DB_URL}/{DB_NAME}")
-        await seed_initial_data()
-    except Exception as e:
-        logger.error(f"Failed to connect to MongoDB on startup: {e}", exc_info=True)
-        # In a production environment, you might want to exit if DB is critical
-        raise
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    if client:
-        logger.info("Closing MongoDB connection.")
-        client.close()
 
 async def seed_initial_data():
     logger.info("Seeding initial data if not exists...")

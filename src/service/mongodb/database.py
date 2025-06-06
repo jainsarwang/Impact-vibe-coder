@@ -34,10 +34,10 @@ class Database:
             self.client.close()
             logging.info("MongoDB connection closed.")
 
-if os.getenv("MONGO_URI") is None or os.getenv("MONGO_DB_NAME") is None:
+if os.getenv("MONGO_URI") is None or os.getenv("MONGO_DB") is None:
     raise ValueError("Environment variables MONGO_URI and MONGO_DB_NAME must be set")
 
 db = Database(
     connection_string=os.getenv("MONGO_URI"),
-    db_name=os.getenv("MONGO_DB_NAME")
+    db_name=os.getenv("MONGO_DB")
 )

@@ -1,9 +1,6 @@
-from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime
-from pymongo import MongoClient
 import logging
-from ..model.session_schema import session_schema
-from ..service import db
+from ..service.database import db
 
 session_db = db["session"]
 

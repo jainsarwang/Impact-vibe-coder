@@ -4,8 +4,8 @@ import os
 from typing import Dict, List, Optional
 from datetime import datetime
 from ..utils.session_manager import SessionManager
-from ..model.session_schema import session_schema 
-from ..service import db
+from ..models.session_schema import session_schema 
+from ..service.database import db
 
 # Create collection with strict schema validation
 try:
