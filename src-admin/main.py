@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 from uuid import uuid4
 import logging
 import asyncio # Needed for startup/shutdown if using in-memory db mocks or specific async tasks
-from contextlib import asynccontextmanager
 
 # --- Configure logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -55,55 +54,11 @@ projects_collection: Any = None
 chats_collection: Any = None
 chat_history_collection: Any = None
 
-# --- Lifespan Events ---
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    global client, organizations_collection, users_collection, roles_collection, \
-        permissions_collection, role_has_permission_collection, \
-        token_allocations_collection, projects_collection, \
-        chats_collection, chat_history_collection
-
-    logger.info("Connecting to MongoDB...")
-    try:
-        client = motor.motor_asyncio.AsyncIOMotorClient(
-            DB_URL,
-            serverSelectionTimeoutMS=5000,
-            uuidRepresentation='standard'
-        )
-        await client.admin.command('ping')
-        db = client[DB_NAME]
-
-        # Assign collections
-        organizations_collection = db["organizations"]
-        users_collection = db["users"]
-        roles_collection = db["roles"]
-        permissions_collection = db["permissions"]
-        role_has_permission_collection = db["role_has_permission"]
-        token_allocations_collection = db["token_allocations"]
-        projects_collection = db["projects"]
-        chats_collection = db["chats"]
-        chat_history_collection = db["chat_history"]
-
-        logger.info(f"Successfully connected to MongoDB: {DB_URL}/{DB_NAME}")
-        await seed_initial_data()
-    except Exception as e:
-        logger.error(f"Failed to connect to MongoDB on startup: {e}", exc_info=True)
-        raise
-
-    yield  # Server is running
-
-    # Shutdown
-    if client:
-        logger.info("Closing MongoDB connection.")
-        client.close()
-
 # --- FastAPI App Initialization ---
 app = FastAPI(
     title="Impact Vibe Coder API",
     description="Secure authentication and user management API",
-    version="1.0.0",
-    lifespan=lifespan
+    version="1.0.0"
 )
 
 # --- Add CORS middleware ---
@@ -118,56 +73,25 @@ app.add_middleware(
 # --- Security scheme ---
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login") # This tokenUrl must match the actual login endpoint
 
-# --- Base Models ---
-class UserBase(BaseModel):
-    """Base model for user data"""
-    username: str = Field(..., min_length=3, max_length=50)
-    email: Optional[EmailStr] = None
-    name: Optional[str] = Field(None, min_length=1, max_length=100)
-
-# --- Request Models ---
-class AdminCreateRequest(BaseModel):
-    """Request model for superadmin to create a new admin + org"""
-    name: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
-    organization_name: str = Field(..., min_length=1, max_length=100)
-    total_tokens: int = Field(..., ge=0)
-
-class UserCreateRequest(BaseModel):
-    """Request model for admin to create a user or another admin"""
-    name: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
-
-class OrganizationCreate(BaseModel):
-    """Request model for creating a new organization"""
-    organization_name: str = Field(..., min_length=1, max_length=100)
-    total_tokens: int = Field(..., ge=0)
-
-class ProjectCreate(BaseModel):
-    """Request model for creating a new project"""
-    project_name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
-
-class ChatMessage(BaseModel):
-    """Request model for sending a chat message"""
-    message: str = Field(..., min_length=1)
-
-# --- Response Models ---
+# --- Pydantic Models ---
 class Token(BaseModel):
-    """Response model for authentication token"""
     access_token: str
     token_type: str
 
 class TokenData(BaseModel):
-    """Model for JWT payload data"""
-    sub: str  # username
+    # These fields are what we expect in the JWT payload (claims)
+    sub: str # username
     user_id: str
     role_id: Optional[str] = None
     organization_id: Optional[str] = None
     is_primary_admin: bool = False
 
+class UserBase(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    email: Optional[EmailStr] = None
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+
 class User(UserBase):
-    """Response model for user data"""
     user_id: str
     role_id: str
     organization_id: str
@@ -175,17 +99,17 @@ class User(UserBase):
     is_primary_admin: bool = False
     created_at: datetime
     updated_at: datetime
-    tokens: int = 0  # Individual user token balance
+    tokens: int = 0 # Individual user token balance
 
     class Config:
-        populate_by_name = True
+        populate_by_name = True # Allow parsing from DB keys
         json_encoders = {
-            datetime: lambda dt: dt.isoformat()
+            datetime: lambda dt: dt.isoformat() # For consistent datetime serialization to ISO format string
         }
 
 class UserInDB(User):
-    """Internal model for user data with hashed password"""
-    password: str  # Hashed password string from DB
+    # This maps the 'password' key from MongoDB to 'hashed_password' in the Pydantic model
+    password: str # This field will hold the hashed password string from the DB
 
     class Config:
         populate_by_name = True
@@ -193,8 +117,11 @@ class UserInDB(User):
             datetime: lambda dt: dt.isoformat()
         }
 
+class OrganizationCreate(BaseModel):
+    organization_name: str = Field(..., min_length=1, max_length=100)
+    total_tokens: int = Field(..., ge=0)
+
 class Organization(OrganizationCreate):
-    """Response model for organization data"""
     organization_id: str
     tokens_remaining: int
     created_at: datetime
@@ -205,21 +132,32 @@ class Organization(OrganizationCreate):
             datetime: lambda dt: dt.isoformat()
         }
 
+class AdminCreateRequest(BaseModel): # For superadmin to create a new admin + org
+    name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    organization_name: str = Field(..., min_length=1, max_length=100)
+    tokens_allowed: int = Field(..., ge=0)
+
 class AdminCreateResponse(BaseModel):
-    """Response model for admin creation"""
     username: str
-    password: str  # Plain text password, to be shown once
+    password: str # Plain text password, to be shown once
     organization_id: str
     user_id: str
 
+class UserCreateRequest(BaseModel): # For admin to create a user or another admin
+    name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+
 class UserCreateResponse(BaseModel):
-    """Response model for user creation"""
     username: str
-    password: str  # Plain text password, to be shown once
+    password: str # Plain text password, to be shown once
     user_id: str
 
+class ProjectCreate(BaseModel):
+    project_name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+
 class Project(ProjectCreate):
-    """Response model for project data"""
     project_id: str
     user_id: str
     organization_id: str
@@ -227,19 +165,21 @@ class Project(ProjectCreate):
     tokens_consumed: int
     created_at: datetime
     updated_at: datetime
-    project_link: Optional[str] = None
+    project_link: Optional[str] = None # Added for consistency if it exists in DB
 
     class Config:
         json_encoders = {
             datetime: lambda dt: dt.isoformat()
         }
 
+class ChatMessage(BaseModel):
+    message: str = Field(..., min_length=1)
+
 class ChatMessageOut(ChatMessage):
-    """Response model for chat messages"""
     chat_history_id: str
     chat_id: str
     user_id: str
-    direction: str  # e.g., "outgoing", "incoming"
+    direction: str # e.g., "outgoing", "incoming"
     tokens_used: int
     created_at: datetime
 
@@ -385,6 +325,48 @@ async def check_username_exists(username: str, exclude_user_id: Optional[str] = 
     if exclude_user_id:
         query["user_id"] = {"$ne": exclude_user_id}
     return await users_collection.find_one(query) is not None
+
+# --- Startup/Shutdown Events for MongoDB connection and seeding ---
+@app.on_event("startup")
+async def startup_db_client():
+    global client, organizations_collection, users_collection, roles_collection, \
+           permissions_collection, role_has_permission_collection, \
+           token_allocations_collection, projects_collection, \
+           chats_collection, chat_history_collection
+
+    logger.info("Connecting to MongoDB...")
+    try:
+        client = motor.motor_asyncio.AsyncIOMotorClient(
+            DB_URL,
+            serverSelectionTimeoutMS=5000, # type: ignore
+            uuidRepresentation='standard' # Recommended for UUIDs
+        )
+        await client.admin.command('ping') # type: ignore
+        db = client[DB_NAME]
+
+        # Assign collections
+        organizations_collection = db["organizations"]
+        users_collection = db["users"]
+        roles_collection = db["roles"]
+        permissions_collection = db["permissions"]
+        role_has_permission_collection = db["role_has_permission"]
+        token_allocations_collection = db["token_allocations"]
+        projects_collection = db["projects"]
+        chats_collection = db["chats"]
+        chat_history_collection = db["chat_history"]
+
+        logger.info(f"Successfully connected to MongoDB: {DB_URL}/{DB_NAME}")
+        await seed_initial_data()
+    except Exception as e:
+        logger.error(f"Failed to connect to MongoDB on startup: {e}", exc_info=True)
+        # In a production environment, you might want to exit if DB is critical
+        raise
+
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    if client:
+        logger.info("Closing MongoDB connection.")
+        client.close()
 
 async def seed_initial_data():
     logger.info("Seeding initial data if not exists...")
@@ -611,8 +593,8 @@ async def superadmin_create_admin_with_org(
             "organization_name": request.organization_name,
             "total_tokens": request.total_tokens,
             "tokens_remaining": request.total_tokens,
-            "is_active": True,
-            "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)
+            "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(),
+            "is_active": True
         }
         await organizations_collection.insert_one(org_data)
         logger.info(f"Organization '{request.organization_name}' (ID: {organization_id}) created.")
@@ -628,13 +610,18 @@ async def superadmin_create_admin_with_org(
         password = generate_password()
         user_id = str(uuid4())
         user_data = {
-            "user_id": user_id, "role_id": admin_role["role_id"], "organization_id": organization_id,
-            "name": request.name, "username": username, "email": request.email,
+            "user_id": user_id,
+            "role_id": admin_role["role_id"], 
+            "organization_id": organization_id,
+            "name": request.name,
+            "username": username, 
+            "email": request.email,
             "password": get_password_hash(password), # Store hashed password
-            "is_active": True, 
+            "is_active": True,
+            "tokens_allowed": 0,
             "is_primary_admin": True, # Admin created by superadmin is a primary admin
-            "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc),
-            "tokens": 0 # Default token balance for new user
+            "created_at": datetime.now(timezone.utc), 
+            "updated_at": datetime.now(timezone.utc),
         }
         await users_collection.insert_one(user_data)
         logger.info(f"Primary Admin '{username}' (ID: {user_id}) created by superadmin '{current_user.username}' for organization '{organization_id}'.")
@@ -682,6 +669,7 @@ async def get_all_organizations(current_user: User = Depends(get_current_active_
             "organization_name": org_doc.get("organization_name"),
             "total_tokens": org_doc.get("total_tokens", 0),
             "tokens_remaining": org_doc.get("tokens_remaining", 0),
+            "is_active": org_doc.get("is_active", True),
             "created_at": org_doc.get("created_at", datetime.min).isoformat(),
             "updated_at": org_doc.get("updated_at", datetime.min).isoformat(),
             "user_count": len(formatted_users_in_org),
@@ -797,7 +785,7 @@ async def admin_create_another_admin(
 @app.post("/organizations/status")
 async def update_organization_status(
     organization_name: str,
-    status: str | bool,
+    status: bool,
     current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -807,13 +795,12 @@ async def update_organization_status(
     organization= await organizations_collection.find_one({"organization_name": organization_name})
     if not organization:
         raise HTTPException(status_code=400, detail="Organization not found")
-    if status == 'active' or status == 'Active' or status == 'ACTIVE' or status == True or status=='true':
+    if status:
         organization['is_active']  = True
         await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": True}})
-    elif status == 'inactive' or status == 'Inactive' or status == 'INACTIVE' or status == False or status=='false':
+    else:
         organization['is_active']  = False
-        await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": True}})
-    else: raise HTTPException(status_code=400, detail="Deatails cannot be updated, please provide valid status")
+        await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": False}})
     organization= await organizations_collection.find_one({"organization_name": organization_name})
     return {
         "organization_id": organization['organization_id'],
@@ -822,16 +809,26 @@ async def update_organization_status(
 
 @app.post("/superadmin/organizations/token_addition")
 async def add_tokens_to_organization(
-    tokens_to_be_added: int,
-    organization_name: str,
+    tokens_to_be_added: int = Field(..., gt=0, description="Number of tokens to add to the organization"),
+    organization_name: str = Field(..., min_length=1, max_length=100),
     current_user: User = Depends(get_current_active_user)
 ):
-    "Add tokens to an organization by name. to user and increase the total tokens limit"
-    if tokens_to_be_added <= 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens to be added must be a positive integer")
+    """
+    Add tokens to an organization by name. Updates both organization and primary admin token balances.
+    Requires superadmin role.
+    """
+    if not await verify_role(current_user, "superadmin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only superadmin can add tokens to organizations"
+        )
+
+    if not await check_permission(current_user, "distribute_tokens"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to distribute tokens.")
+
     organization = await organizations_collection.find_one({"organization_name": organization_name})
     if not organization:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tokens cannot be added, organization not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found.")
     if organization.get("is_active", False) is False:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens cannot be added to an inactive organization")
 
@@ -849,9 +846,21 @@ async def add_tokens_to_organization(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens cannot be added to a user who is not a primary admin")
     
     user["tokens_allowed"] = user.get("tokens_allowed", 0) + tokens_to_be_added
-    await users_collection.update_one({"organization_name": organization_name}, {"$set": {"tokens_allowed": user.get("tokens_allowed", 0) + tokens_to_be_added}})
+    await users_collection.update_one({"user_id": user["user_id"]}, {"$set": {"tokens_allowed": user.get("tokens_allowed", 0) + tokens_to_be_added}})
     
+    primary_admin = await users_collection.find_one({
+        "organization_id": organization.get("organization_id"),
+        "is_primary_admin": True
+    })
+    if not primary_admin:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Primary admin not found for this organization")
+    if not primary_admin.get("is_active"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot add Tokens - Primary admin is inactive")
+    
+    await users_collection.update_one({"user_id": primary_admin.get("user_id")}, {"$set": {"total_tokens": primary_admin.get("total_tokens") + tokens_to_be_added}})
     await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"total_tokens": organization['total_tokens'], "tokens_remaining": organization['tokens_remaining']}})
+    
+    primary_admin['total_tokens'] = primary_admin['total_tokens'] + tokens_to_be_added
     
     return {
         "organization":
@@ -865,9 +874,206 @@ async def add_tokens_to_organization(
                     "username": user['username'],
                     "is_primary_admin": user.get("is_primary_admin", False),
                     "tokens_allowed": user.get("tokens_allowed", 0)
-                }    
+                },
+            "primary_admin":
+                {
+                    "username": primary_admin.get("username"),
+                    "is_primary_admin": primary_admin.get("is_primary_admin"),
+                    "tokens_allowed": primary_admin.get("tokens_allowed")
+                }
+                    
 }
+
+@app.get("/organization/get_users")
+async def get_organization_users(
+    organization_name: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    "Get all users of the current organization"
+    organization = await organizations_collection.find_one({"organization_name": organization_name})
+    if not organization:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+    users_of_organization_id = organization.get("organization_id")
+    if not users_of_organization_id:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail="Users for searched Organization not found")
+    users_cursor= users_collection.find({"organization_id": users_of_organization_id})
+    users = await users_cursor.to_list()
+    if not users:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Users for searched Organization not found")
+    result = []
+    result.append ({
+        "user":[
+        {
+        "username": user.get("username"),
+        "name": user.get("name"),
+        "email": user.get("email", ""),
+        "user_id": user.get("user_id"),
+        "role_id": user.get("role_id"),
+        "organization_id": user.get("organization_id"),
+        "tokens_allowed": user.get("tokens_allowed", 0),
+        "is_active": user.get("is_active", False),
+        "is_primary_admin": user.get("is_primary_admin", False),
+        "created_at": user.get("created_at", datetime.min).isoformat(),
+        "updated_at": user.get("updated_at", datetime.min).isoformat(),
+        }
+        for user in users
+        ]
+    })
+    return result        
+
+@app.post("/admin/users/{user_id}/update_tokens")
+async def update_user_tokens(
+    user_id: str,
+    tokens: int,
+    current_user: User = Depends(get_current_active_user)
+):
+    if tokens < 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens must be non-negative.")
     
+    # Validation for admin role
+    if not await verify_role(current_user, "admin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can update user tokens.")
+    if await verify_role(current_user, "superadmin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Superadmins cannot update user's tokens directly. Organization Admins have the authority.")
+
+    # Finding Active and not_primary_Admin user
+    user_doc = await users_collection.find_one({"user_id": user_id})
+    if not user_doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tokens cannot be updated, Try Again")
+    
+    if user_doc.get("is_active") is False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot update tokens for an inactive user.")
+    
+    if user_doc.get("is_primary_admin") is True:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN , detail="Primary Admin's token cannot be updated by an admin.")
+        
+    # Calculate tokens used in projects
+    projects_cursor = projects_collection.find({"user_id": user_id})
+    projects = await projects_cursor.to_list(length=None)
+    used_tokens = sum(project.get("tokens_consumed", 0) for project in projects)
+
+    await users_collection.update_one({"user_id": user_id}, {"$set": {"total_tokens": tokens}})
+
+    if used_tokens >= tokens: 
+        # Deactivate user if updated tokens are less than used tokens
+        await users_collection.update_one({"user_id": user_id}, {"$set": {"is_active": False}})
+        return {
+            "message": "Used tokens exceed the updating token limit, hence deactivating the user",
+            "user_id": user_doc.get("user_id"),
+            "user_name": user_doc.get("user_name"),
+            "is_active": False,
+            "updated_tokens": tokens
+        }
+    
+    # Find primary admin of the organization
+    primary_admin = await users_collection.find_one({
+        "organization_id": user_doc.get("organization_id"), 
+        "is_primary_admin": True
+    })
+    if not primary_admin:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tokens cannot be updated, try again")
+    
+    if tokens < user_doc.get("tokens_allowed"):
+        # If reducing tokens, return remaining tokens to primary admin & org
+        remaining_tokens = user_doc.get("tokens_allowed") - tokens
+        
+        await users_collection.update_one(
+            {"user_id": user_doc.get("user_id")}, 
+            {"$set": {"tokens_allowed": tokens}}
+        )
+        
+        # Add remaining tokens to primary admin
+        await users_collection.update_one(
+            {"user_id": primary_admin.get("user_id")}, 
+            {"$inc": {"tokens_allowed": remaining_tokens}}
+        )
+        
+        # Update organization tokens
+        await organizations_collection.update_one(
+            {"organization_id": primary_admin.get("organization_id")}, 
+            {"$inc": {"tokens_remaining": remaining_tokens}}
+        )
+        
+        return {
+            "message": "Tokens updated of user, primary admin and organization",
+            "user_id": user_doc.get("user_id"),
+            "user_name": user_doc.get("user_name"),
+            "is_active": user_doc.get("is_active"),
+            "updated_tokens": tokens
+        }
+    
+    if tokens == user_doc.get("tokens_allowed"):
+        return {
+            "message": "User tokens updated successfully",
+            "user_id": user_id,
+            "tokens": tokens
+        }
+        
+    # If increasing tokens, check if primary admin has enough tokens
+    if tokens > (user_doc.get("tokens_allowed") + primary_admin.get("tokens_allowed")):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Insufficient Tokens with Organization's Primary Admin"
+        )
+    
+    # Take required tokens from primary admin
+    tokens_needed = tokens - user_doc.get("tokens_allowed")
+    await users_collection.update_one(
+        {"user_id": primary_admin.get("user_id")}, 
+        {"$inc": {"tokens_allowed": -tokens_needed}}
+    )
+    
+    # Update organization's remaining tokens
+    await organizations_collection.update_one(
+        {"organization_id": primary_admin.get("organization_id")}, 
+        {"$inc": {"tokens_remaining": -tokens_needed}}
+    )
+    
+    # Finally, update the user's tokens
+    await users_collection.update_one(
+        {"user_id": user_id}, 
+        {"$set": {"tokens_allowed": tokens}}
+    )
+    
+    logger.info(f"User {user_doc.get('username')} tokens updated to {tokens}")
+    
+    return {
+        "message": "User tokens updated successfully",
+        "user_id": user_id,
+        "tokens": tokens
+    }
+
+
+@app.post("/admin/users/{user_id}/toggle_status")
+async def toggle_user_status(
+    user_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    if not await verify_role(current_user, "admin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can toggle user status.")
+    if await verify_role(current_user, "superadmin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Superadmin cannot toggle organization's user status, Only admins can toggle user status.")
+
+    user_doc = await users_collection.find_one({"user_id": user_id})
+    if not user_doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cnnot toggle status, User not found.")
+
+    # Toggle the user's active status
+    new_status = not user_doc["is_active"]
+    await users_collection.update_one(
+        {"user_id": user_id},
+        {"$set": {"is_active": new_status, "updated_at": datetime.now(timezone.utc)}}
+    )
+
+    logger.info(f"User {user_doc['username']} status toggled to {'active' if new_status else 'inactive'}")
+
+    return {
+        "message": f"User status updated to {'active' if new_status else 'inactive'}",
+        "user_id": user_id,
+        "is_active": new_status
+    }
+
+
 
 @app.get("/organizations/{organization_name}/tokens") # Path parameter for organization_name
 async def get_tokens_assigned(
@@ -1058,16 +1264,15 @@ async def get_project(
 
 @app.get("/users/{username}", response_model=Dict[str, Any])
 async def get_user_info(
-    username: str = Optional[str],
+    username: str,
     current_user: User = Depends(get_current_user)
 ):
     """
     Get user information by username
     """
-    if username:
-        user = await users_collection.find_one({"username": username})
-    else: 
-        user = current_user
+    user = await users_collection.find_one({"username": username})
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
     user_role_name = await get_role_name_by_id(current_user.role_id)
     is_admin_or_superadmin = (user_role_name == "admin" or user_role_name == "superadmin")
@@ -1079,8 +1284,6 @@ async def get_user_info(
             detail="Not authorized to access this user's information."
         )
 
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     projects_cursor = projects_collection.find({"user_id": user["user_id"]})
     projects_list = await projects_cursor.to_list(length=None)
     

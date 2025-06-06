@@ -1,6 +1,6 @@
 import os
 import logging
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from jose import jwt, JWTError
 from datetime import datetime, timezone
 from uuid import uuid4
@@ -29,33 +29,49 @@ async def authenticate_user(username: str, password: str) -> Optional[UserInDB]:
         logging.error(f"Error during user authentication for '{username}': {e}", exc_info=True)
         return None
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: Optional[str] = payload.get("sub")
-        user_id: Optional[str] = payload.get("user_id") # Assuming user_id is in token payload
+        # First try to get token from cookie
+        token_from_cookie = request.cookies.get("access_token")
+        if token_from_cookie and token_from_cookie.startswith("Bearer "):
+            token = token_from_cookie[7:]  # Remove "Bearer " prefix
         
-        if username is None or user_id is None:
-            logging.warning("JWT payload missing 'sub' or 'user_id'.")
+        if not token:
+            logging.warning("No token found in either cookie or authorization header")
             raise credentials_exception
         
-        # We fetch the full user document from DB to ensure it's up-to-date and active
+        try:
+            # Verify and decode the JWT token
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
+            username: Optional[str] = payload.get("sub")
+            user_id: Optional[str] = payload.get("user_id")
+            
+            if username is None or user_id is None:
+                logging.warning("JWT payload missing required claims (sub or user_id)")
+                raise credentials_exception
+            
+        except JWTError as e:
+            logging.warning(f"JWT decode error: {str(e)}")
+            raise credentials_exception
+        
+        # Fetch user from database
         user_doc = await users_collection.find_one({"user_id": user_id, "username": username})
         if user_doc is None:
-            logging.warning(f"User '{username}' (ID: {user_id}) from token not found in database.")
+            logging.warning(f"User '{username}' (ID: {user_id}) from token not found in database")
             raise credentials_exception
         
-        return User(**user_doc) # Return as Pydantic User model
-    except JWTError as e:
-        logging.warning(f"JWT decode error: {e}", exc_info=True)
-        raise credentials_exception
+        return User(**user_doc)
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logging.error(f"Unexpected error during token validation: {e}", exc_info=True)
+        logging.error(f"Unexpected error during token validation: {str(e)}", exc_info=True)
         raise credentials_exception
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
@@ -226,7 +242,6 @@ async def seed_initial_data():
                 "email": default_superadmin_email,
                 "password": get_password_hash(default_superadmin_password), # Storing hashed password under 'password' key
                 "is_active": True,
-                "total_tokens": 0,
                 "is_primary_admin": True, # Superadmins are considered primary
                 "tokens_allowed": 0,
                 "created_at": current_time,

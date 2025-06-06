@@ -49,6 +49,7 @@ class UserCreateRequest(BaseModel):
     """Request model for admin to create a user or another admin"""
     name: str = Field(..., min_length=1, max_length=100)
     email: EmailStr
+    tokens: int = 0
 
 class OrganizationCreate(BaseModel):
     """Request model for creating a new organization"""
@@ -117,6 +118,13 @@ class Organization(OrganizationCreate):
             datetime: lambda dt: dt.isoformat()
         }
 
+
+class AdminCreateRequest(BaseModel): # For superadmin to create a new admin + org
+    name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    organization_name: str = Field(..., min_length=1, max_length=100)
+    total_tokens: int = Field(..., ge=0)
+
 class AdminCreateResponse(BaseModel):
     """Response model for admin creation"""
     username: str
@@ -159,3 +167,6 @@ class ChatMessageOut(ChatMessage):
         json_encoders = {
             datetime: lambda dt: dt.isoformat()
         }
+
+class UpdateToken(BaseModel) :
+    tokens: int
