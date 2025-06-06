@@ -6,6 +6,8 @@
 -   Use the correct vesion dependencies as provide, and use the function from that dependencies only
 -   Write the complete code dont just create placeholders for functions.
 
+**Note: If file not found, return `file not found`. Generate code based on plan provided** 
+
 ## Import Export
 
 ### Example Input for the import

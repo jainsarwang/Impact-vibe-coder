@@ -88,7 +88,6 @@ class TokenData(BaseModel):
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
-    username: str = Field(..., min_length=3, max_length=50)
     email: Optional[EmailStr] = None
     name: Optional[str] = Field(None, min_length=1, max_length=100)
 
@@ -119,8 +118,6 @@ class UserInDB(User):
         }
 
 class OrganizationCreate(BaseModel):
-    organization_name: str = Field(..., min_length=1, max_length=100)
-    total_tokens: int = Field(..., ge=0)
     organization_name: str = Field(..., min_length=1, max_length=100)
     total_tokens: int = Field(..., ge=0)
 
@@ -816,12 +813,22 @@ async def add_tokens_to_organization(
     organization_name: str,
     current_user: User = Depends(get_current_active_user)
 ):
-    "Add tokens to an organization by name. to user and increase the total tokens limit"
-    if tokens_to_be_added <= 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens to be added must be a positive integer")
+    """
+    Add tokens to an organization by name. Updates both organization and primary admin token balances.
+    Requires superadmin role.
+    """
+    if not await verify_role(current_user, "superadmin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only superadmin can add tokens to organizations"
+        )
+
+    if not await check_permission(current_user, "distribute_tokens"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to distribute tokens.")
+
     organization = await organizations_collection.find_one({"organization_name": organization_name})
     if not organization:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tokens cannot be added, organization not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found.")
     if organization.get("is_active", False) is False:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens cannot be added to an inactive organization")
 
@@ -839,13 +846,18 @@ async def add_tokens_to_organization(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens cannot be added to a user who is not a primary admin")
     
     user["tokens_allowed"] = user.get("tokens_allowed", 0) + tokens_to_be_added
-    await users_collection.update_one({"organization_name": organization_name}, {"$set": {"tokens_allowed": user.get("tokens_allowed", 0) + tokens_to_be_added}})
+    await users_collection.update_one({"user_id": user["user_id"]}, {"$set": {"tokens_allowed": user.get("tokens_allowed", 0) + tokens_to_be_added}})
     
-    primary_admin = users_collection.find_one({"organization_id":organization.get("organization_id")})
+    primary_admin = await users_collection.find_one({
+        "organization_id": organization.get("organization_id"),
+        "is_primary_admin": True
+    })
+    if not primary_admin:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Primary admin not found for this organization")
     if not primary_admin.get("is_active"):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot add Tokens")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot add Tokens - Primary admin is inactive")
     
-    await users_collection.update_one({"user_id": primary_admin.get("user_id")}, {"$set": {"total_tokens": primary_admin.get("total_tokens")+ tokens_to_be_added}})
+    await users_collection.update_one({"user_id": primary_admin.get("user_id")}, {"$set": {"total_tokens": primary_admin.get("total_tokens") + tokens_to_be_added}})
     await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"total_tokens": organization['total_tokens'], "tokens_remaining": organization['tokens_remaining']}})
     
     primary_admin['total_tokens'] = primary_admin['total_tokens'] + tokens_to_be_added
@@ -871,15 +883,13 @@ async def add_tokens_to_organization(
                 }
                     
 }
-    
 
 @app.get("/organization/get_users")
 async def get_organization_users(
-    organization_name: str,
     current_user: User = Depends(get_current_active_user)
 ):
     "Get all users of the current organization"
-    organization = await organizations_collection.find_one({"organization_name": organization_name})
+    organization = await organizations_collection.find_one({"organization_id": current_user.get("organization_id")})
     if not organization:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
     users_of_organization_id = organization.get("organization_id")
@@ -1253,16 +1263,15 @@ async def get_project(
 
 @app.get("/users/{username}", response_model=Dict[str, Any])
 async def get_user_info(
-    username: str = Optional[str],
+    username: str,
     current_user: User = Depends(get_current_user)
 ):
     """
     Get user information by username
     """
-    if username:
-        user = await users_collection.find_one({"username": username})
-    else: 
-        user = current_user
+    user = await users_collection.find_one({"username": username})
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
     user_role_name = await get_role_name_by_id(current_user.role_id)
     is_admin_or_superadmin = (user_role_name == "admin" or user_role_name == "superadmin")
@@ -1274,8 +1283,6 @@ async def get_user_info(
             detail="Not authorized to access this user's information."
         )
 
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     projects_cursor = projects_collection.find({"user_id": user["user_id"]})
     projects_list = await projects_cursor.to_list(length=None)
     
