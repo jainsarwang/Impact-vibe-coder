@@ -1,10 +1,18 @@
 ## Basic Rules
 
+-   You are Writing professional level code not prototypes.
+-   Always use the context of the entire project before writing the file and its code.
 -   It must follow the standard import as used in the respective languages.
 -   If imports are available for a file always and mandatorily use the `read_file_tool` to read the imports file and then write the code.
+-   Call the `read_file_tool` with the complete path example if imports looks like this ..models/connection.js call the tool with path whatsapp/backend/src/models/connection.js.
+-   For href type imports call the `read_file_tool`.
+-   If a file is in any way referencing to another file then use `read_file_tool` to read the code of that file
 -   Strictly follow the imports statement and the import dictionary
 -   Use the correct vesion dependencies as provide, and use the function from that dependencies only
--   Write the complete code dont just create placeholders for functions.
+-   Keep Going until the job is completely solved before ending your turn.
+-   Write the complete code and do not give placeholders.
+
+**Note: If file not found, return `file not found`. Generate code based on plan provided** 
 
 **Note: If file not found, return `file not found`. Generate code based on plan provided** 
 
@@ -59,11 +67,7 @@ from path.to.file2 import import2
 
 ### read_file_tool
 
-You can access and process files using a "read_file_tool" tool. This tool takes a file path as input and returns the file's content. You should use this tool when you need to understand the content of imported file. The tool's output should be used to derive the information about the import functions and variables.
-
-#### Instruction
-
--   Call the
+You can access and process files using a `read_file_tool` tool. This tool takes a file path as input and returns the file's description. You should use this tool when you need to understand the content of imported file. The tool's output should be used to derive the information about the import functions and variables.
 
 #### Execution of tool
 
@@ -103,5 +107,6 @@ read_file_tool(file path)
 
 According to the above input use the `read_file_tool` as instructed below:
 
-1. For each importfilepath call `read_file_tool` like this, `read_file_tool("backend/src/main/java/com/bankingapp/repository/AccountRepository.java")`
-2. Use the output of `read_file_tool` to derive the information about the import functions and variables.
+1. For each importfilepath call `read_file_tool` like this, `read_file_tool("projects/BankingApp/backend/src/main/java/com/bankingapp/repository/AccountRepository.java")`
+    
+2. Use the output of `read_file_tool` to derive the information about the import functions, parameters, file's functionality and its variables.

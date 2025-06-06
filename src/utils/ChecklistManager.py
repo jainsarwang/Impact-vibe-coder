@@ -2,16 +2,45 @@ import json
 import logging
 import os
 from typing import Dict, List, Optional
+from pymongo import MongoClient
+from datetime import datetime
+from ..utils.session_manager import SessionManager
+from ..model.session_schema import session_schema 
+
+client = MongoClient("mongodb://localhost:27017")
+db = client["impact_vibe_coder"]
+
+# Create collection with strict schema validation
+try:
+    db.create_collection("session", validator=session_schema)
+    db.command({
+        'collMod': 'session',
+        'validator': session_schema,
+        'validationLevel': 'strict',
+        'validationAction': 'error'  # This makes it fail hard on invalid data
+    })
+except Exception as e:
+    logging.debug(f"Collection setup note: {str(e)}")
+    # For existing collections, ensure the schema is applied strictly
+    db.command({
+        'collMod': 'session',
+        'validator': session_schema,
+        'validationLevel': 'strict',
+        'validationAction': 'error'
+    })
+    
+    session_db = db["session"]
 
 class ChecklistManager:
     """Manages the checklist for tracking file generation progress."""
     def __init__(self, checklist_file: str = "checklist.json", project_prefix: str = None):
+        self.session_id = ""
         self.checklist_file = checklist_file
-        self.checklist: Dict[str, Dict] = {}
+        self.checklist: List[Dict] = []
         self._normalize_paths = True
         # Store the project prefix to handle paths consistently
         self.project_prefix = project_prefix
-    
+        
     def _normalize_path(self, path: str) -> str:
         """
         Normalize path for consistent comparison.
@@ -45,40 +74,21 @@ class ChecklistManager:
         
         return normalized
     
-    def get_canonical_path(self, path: str) -> str:
-        """
-        Get the canonical path used in the checklist for a given path.
-        This helps find the proper key when there might be multiple ways to refer to the same file.
-        """
-        normalized = self._normalize_path(path)
-        
-        # First try direct lookup
-        if normalized in self.checklist:
-            return normalized
-            
-        # Try with/without project prefix
-        if normalized.startswith("projects/"):
-            alt_path = normalized.split("/", 1)[1]
-            if alt_path in self.checklist:
-                return alt_path
-        else:
-            alt_path = f"projects/{normalized}"
-            if alt_path in self.checklist:
-                return alt_path
-                
-        # Try the path as provided
-        if path in self.checklist:
-            return path
-            
-        # If all else fails, return the normalized path
-        return normalized
+    def _find_checklist_entry(self, file_path: str) -> Optional[Dict]:
+        """Find a checklist entry by file path (normalized comparison)."""
+        normalized_path = self._normalize_path(file_path)
+        for entry in self.checklist:
+            if self._normalize_path(entry["file_path"]) == normalized_path:
+                return entry
+        return None
     
-    def initialize_from_directory(self, directory_structure: Dict) -> Dict:
+    def initialize_from_directory(self, directory_structure: Dict) -> List[Dict]:
         """Initialize checklist from directory structure."""
         try:
+            self.session_id = SessionManager.get()
             if isinstance(directory_structure, str):
                 directory_structure = json.loads(directory_structure)
-            self.checklist = {}
+            self.checklist = []
             
             # Extract project name if present
             if "project_name" in directory_structure:
@@ -89,11 +99,13 @@ class ChecklistManager:
                     if key == "files":
                         for file in value:
                             file_path = self._normalize_path(os.path.join(current_path, file))
-                            self.checklist[file_path] = {
+                            self.checklist.append({
+                                "file_path": file_path,
                                 "plan_created": False,
                                 "file_created": False,
-                                "coder": None
-                            }
+                                "coder": None,
+                                "description": ""
+                            })
                             logging.debug(f"Added directory file to checklist: {file_path}")
                     elif isinstance(value, dict):
                         new_path = os.path.join(current_path, key)
@@ -105,9 +117,9 @@ class ChecklistManager:
             return self.checklist
         except Exception as e:
             logging.error(f"Error initializing checklist from directory: {str(e)}")
-            return {}
+            return []
     
-    def update_from_plan(self, plan: List[Dict]) -> Dict:
+    def update_from_plan(self, plan: List[Dict]) -> List[Dict]:
         """Update checklist based on the development plan."""
         try:
             if isinstance(plan, str):
@@ -120,25 +132,25 @@ class ChecklistManager:
             for item in plan:
                 if "file" in item:
                     file_path = self._normalize_path(item["file"])
-                    # Check if this file or a variant already exists in the checklist
-                    existing_path = self.get_canonical_path(file_path)
+                    entry = self._find_checklist_entry(file_path)
                     
-                    if existing_path != file_path and existing_path in self.checklist:
-                        # Update the existing entry instead of creating a new one
-                        self.checklist[existing_path]["plan_created"] = True
-                        self.checklist[existing_path]["coder"] = item.get("coder")
-                        logging.debug(f"Updated existing file in checklist: {existing_path} (from {file_path})")
-                    elif file_path not in self.checklist:
-                        self.checklist[file_path] = {
+                    if entry:
+                        # Update existing entry
+                        entry["plan_created"] = True
+                        entry["coder"] = item.get("coder")
+                        if "description" in item:
+                            entry["description"] = item.get("description")
+                        logging.debug(f"Updated existing file in checklist: {file_path}")
+                    else:
+                        # Add new entry
+                        self.checklist.append({
+                            "file_path": file_path,
                             "plan_created": True,
                             "file_created": False,
-                            "coder": item.get("coder")
-                        }
+                            "coder": item.get("coder"),
+                            "description": item.get("description", "")
+                        })
                         logging.debug(f"Added new planned file to checklist: {file_path}")
-                    else:
-                        self.checklist[file_path]["plan_created"] = True
-                        self.checklist[file_path]["coder"] = item.get("coder")
-                        logging.debug(f"Updated existing file in checklist: {file_path}")
             
             self._save_checklist()
             logging.info(f"Checklist updated with plan, now contains {len(self.checklist)} items")
@@ -149,32 +161,45 @@ class ChecklistManager:
     
     def mark_file_created(self, file_path: str) -> None:
         """Mark a file as created in the checklist."""
-        # Try to find the canonical path in the checklist
-        canonical_path = self.get_canonical_path(file_path)
+        entry = self._find_checklist_entry(file_path)
         
-        if canonical_path in self.checklist:
-            self.checklist[canonical_path]["file_created"] = True
+        if entry:
+            entry["file_created"] = True
             self._save_checklist()
-            logging.debug(f"Marked file as created in checklist: {canonical_path}")
+            logging.debug(f"Marked file as created in checklist: {file_path}")
         else:
             # If file wasn't in checklist but was created, add it
             normalized_path = self._normalize_path(file_path)
-            self.checklist[normalized_path] = {
+            self.checklist.append({
+                "file_path": normalized_path,
                 "plan_created": False,  # Wasn't planned but exists
                 "file_created": True,
-                "coder": None
-            }
+                "coder": None,
+                "description": ""
+            })
             self._save_checklist()
             logging.warning(f"File {normalized_path} was created but wasn't in checklist. Added to checklist.")
+
+    def update_file_description(self, file_path: str, description: str) -> None:
+        """Update the description of a file in the checklist."""
+        entry = self._find_checklist_entry(file_path)
+        
+        if entry:
+            entry["description"] = description
+            self._save_checklist()
+            logging.debug(f"Updated description for file in checklist: {file_path}")
+        else:
+            logging.warning(f"Attempted to update description for file not in checklist: {file_path}")
     
     def get_next_file_to_process(self) -> Optional[Dict]:
         """Get the next file that needs to be processed."""
-        for file_path, status in self.checklist.items():
-            if status["plan_created"] and not status["file_created"]:
-                logging.debug(f"Found next file to process: {file_path}")
+        for entry in self.checklist:
+            if entry["plan_created"] and not entry["file_created"]:
+                logging.debug(f"Found next file to process: {entry['file_path']}")
                 return {
-                    "file_path": file_path,
-                    "coder": status["coder"]
+                    "file_path": entry["file_path"],
+                    "coder": entry["coder"],
+                    "description": entry.get("description", "")
                 }
         logging.debug("No files left to process in checklist")
         return None
@@ -182,8 +207,8 @@ class ChecklistManager:
     def get_unplanned_files(self) -> List[str]:
         """Get files that exist in directory but have no plan."""
         unplanned = [
-            file_path for file_path, status in self.checklist.items()
-            if not status["plan_created"] and status["file_created"]
+            entry["file_path"] for entry in self.checklist
+            if not entry["plan_created"] and entry["file_created"]
         ]
         logging.debug(f"Found {len(unplanned)} unplanned files")
         return unplanned
@@ -191,8 +216,8 @@ class ChecklistManager:
     def get_missing_files(self) -> List[str]:
         """Get files that are planned but not created."""
         missing = [
-            file_path for file_path, status in self.checklist.items()
-            if status["plan_created"] and not status["file_created"]
+            entry["file_path"] for entry in self.checklist
+            if entry["plan_created"] and not entry["file_created"]
         ]
         logging.debug(f"Found {len(missing)} missing files")
         return missing
@@ -200,74 +225,81 @@ class ChecklistManager:
     def is_complete(self) -> bool:
         """Check if all planned files have been created."""
         complete = all(
-            not status["plan_created"] or status["file_created"]
-            for status in self.checklist.values()
+            not entry["plan_created"] or entry["file_created"]
+            for entry in self.checklist
         )
         logging.debug(f"Checklist completion status: {complete}")
         return complete
     
     def _save_checklist(self) -> None:
-        """Save checklist to file."""
-        try:
-            with open(self.checklist_file, "w") as f:
-                json.dump(self.checklist, f, indent=2)
-            logging.debug(f"Checklist saved to {self.checklist_file}")
+        """Save checklist to database with schema validation."""
+        try:            
+            update_data = {
+                '$set': {
+                    'checklist': self.checklist,
+                    'updated_at': datetime.now(),
+                },
+                '$setOnInsert': {
+                    'created_at': datetime.now(),
+                    'session_id': self.session_id
+                }
+            }
+            
+            session_db.update_one(
+                {"session_id": self.session_id},
+                update_data,
+                upsert=True
+            )
+            logging.debug(f"Checklist saved to session database")
         except Exception as e:
             logging.error(f"Error saving checklist: {str(e)}")
+            if "Document failed validation" in str(e):
+                logging.error("Data validation failed. Checklist data doesn't match schema.")
+        
     
-    def load_checklist(self) -> Dict:
-        """Load checklist from file."""
+    def load_checklist(self) -> List[Dict]:
+        """Load checklist from database."""
         try:
-            with open(self.checklist_file) as f:
-                self.checklist = json.load(f)
-            logging.info(f"Loaded checklist with {len(self.checklist)} items from {self.checklist_file}")
+            session_data = session_db.find_one({"session_id": self.session_id})
+            if session_data and "checklist" in session_data:
+                self.checklist = session_data["checklist"]
+                logging.info(f"Loaded checklist with {len(self.checklist)} items from session")
+            else:
+                self.checklist = []
+                logging.info("No existing checklist found in session, starting fresh")
             return self.checklist
-        except (FileNotFoundError, json.JSONDecodeError):
-            logging.info("No existing checklist found, starting fresh")
-            return {}
+        except Exception as e:
+            logging.error(f"Error loading checklist: {str(e)}")
+            return []
     
-    def cleanup_duplicated_paths(self) -> Dict:
+    def cleanup_duplicated_paths(self) -> List[Dict]:
         """
         Clean up any duplicate paths in the checklist by merging information.
         This helps fix the issue when the same file is tracked multiple times with different paths.
         """
-        # Build a map of normalized paths to all their variant forms
-        path_variants = {}
-        for path in list(self.checklist.keys()):
-            norm_path = self._normalize_path(path)
-            if norm_path not in path_variants:
-                path_variants[norm_path] = []
-            path_variants[norm_path].append(path)
+        # Build a map of normalized paths to their entries
+        path_map = {}
+        to_remove = set()
         
-        # Process duplicates
-        merged_count = 0
-        for norm_path, variants in path_variants.items():
-            if len(variants) > 1:
-                # Multiple entries for the same normalized path - merge them
-                merged_entry = {
-                    "plan_created": False,
-                    "file_created": False,
-                    "coder": None
-                }
-                
-                # Combine information from all variants
-                for variant in variants:
-                    entry = self.checklist[variant]
-                    merged_entry["plan_created"] |= entry["plan_created"]
-                    merged_entry["file_created"] |= entry["file_created"]
-                    if entry["coder"] is not None:
-                        merged_entry["coder"] = entry["coder"]
-                    
-                    # Remove all but the first variant
-                    if variant != variants[0]:
-                        del self.checklist[variant]
-                
-                # Update the remaining entry with merged info
-                self.checklist[variants[0]] = merged_entry
-                merged_count += 1
+        for i, entry in enumerate(self.checklist):
+            norm_path = self._normalize_path(entry["file_path"])
+            if norm_path not in path_map:
+                path_map[norm_path] = entry
+            else:
+                # Merge with existing entry
+                existing = path_map[norm_path]
+                existing["plan_created"] |= entry["plan_created"]
+                existing["file_created"] |= entry["file_created"]
+                if entry["coder"] is not None:
+                    existing["coder"] = entry["coder"]
+                if entry.get("description"):
+                    existing["description"] = entry["description"]
+                to_remove.add(i)
         
-        if merged_count > 0:
-            logging.info(f"Merged {merged_count} duplicate path entries in checklist")
+        # Remove duplicates (working backwards to preserve indices)
+        if to_remove:
+            self.checklist = [entry for i, entry in enumerate(self.checklist) if i not in to_remove]
+            logging.info(f"Removed {len(to_remove)} duplicate path entries from checklist")
             self._save_checklist()
             
         return self.checklist

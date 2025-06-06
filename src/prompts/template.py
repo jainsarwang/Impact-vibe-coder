@@ -7,6 +7,7 @@ from datetime import datetime
 from langchain_core.prompts import PromptTemplate
 from langgraph.prebuilt.chat_agent_executor import AgentState
 from ..graph.types import State
+from ..utils import token_count
 
 
 def get_prompt_template(prompt_name: str) -> str:
@@ -22,6 +23,8 @@ def apply_prompt_template(prompt_name: str, state: AgentState) -> list:
         input_variables=["CURRENT_TIME"],
         template=get_prompt_template(prompt_name),
     ).format(CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"), **state)
+    token_count.set_token_count(token_count.token_count(system_prompt))
+    logging.info("token_count_value: %d for prompt_name: %s", token_count.get_token_count(), prompt_name)
     return [{"role": "system", "content": system_prompt}] + state["messages"]
 
 def apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
@@ -33,13 +36,15 @@ def apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
         ADDITIONAL_RULES = get_prompt_template('common_coder'),
         **state
     )
-    
+    token_count.set_token_count(token_count.token_count(system_prompt))
+    logging.info("token_count_value: %d for prompt_name: %s", token_count.get_token_count(), prompt_name)
+    logging.info("component_diagram: %s", state.get("component_diagram", ""))
     return [
             {"role": "system", "content": system_prompt}
         ] + [
             {
                 "role": "user", 
-                "content": state["coder_instruction"] + "And this is the required research content to generate the files." +state.get("researched_content"," ") +"Carefully and mandatorily follow this component diagram" +state.get("component_diagram","")
+                "content": state["coder_instruction"] + "And this is the required research content to generate the files." +state.get("researched_content"," ") +"Carefully and mandatorily follow this component diagram" +state.get("component_diagram","")+"Also find the content and path of a already existing file that you can use to generate the new file. " + state.get("previous_file_content", "") + "The path of the previous file is: " + state.get("previous_file_path", "")  
             }
         ]
 
@@ -58,7 +63,8 @@ def apply_prompt_template_planner(prompt_name: str, state: AgentState) -> list:
             project_requirements=json.dumps(project_requirements, indent=2),  # Convert dict to formatted JSON string
             **state
         )
-        
+        token_count.set_token_count(token_count.token_count(system_prompt))
+        logging.info("token_count_value: %d for prompt_name: %s", token_count.get_token_count(), prompt_name)
         return [{"role": "system", "content": system_prompt}] + state["messages"]
     
     except FileNotFoundError:

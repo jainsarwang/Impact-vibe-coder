@@ -1,43 +1,29 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
-.coverage
-agent_history.gif
-node_modules
-chatbot
-groq_chatbot
-GroqChat
-job_portal
-library_management_system
-sorter
-sorting_visulizer
-WeatherWise
-school_management_system
-# Virtual environments
-.venv
+# Node modules
+node_modules/
+/backend/node_modules
 
 # Environment variables
 .env
 
-.idea/
+# Frontend build output
+/frontend/dist
 
 .venv
-.env
-htmlcov
 
-project_requirements.json
-projects/
-project_zips/
+__pycache__
+
+projects
+
+checklist.json
+code_planner.json
 directory_structure.json
 project_structure.json
-app.log
+import-export.json
 code_planner.json
-.dependency_graph.png
 checklist.json
+app.log
+.dependency_graph.png
 project_structure.html
 project_analysis.json
 project_structure.png
+project_requirements.json
