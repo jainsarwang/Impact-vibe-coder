@@ -936,7 +936,7 @@ async def update_user_tokens(
     projects = await projects_cursor.to_list(length=None)
     used_tokens = sum(project.get("tokens_consumed", 0) for project in projects)
 
-    # await users_collection.update_one({"user_id": user_id}, {"$set": {"tokens_consumed": tokens}})
+    await users_collection.update_one({"user_id": user_id}, {"$set": {"total_tokens": tokens}})
 
     if used_tokens >= tokens: 
         # Deactivate user if updated tokens are less than used tokens
