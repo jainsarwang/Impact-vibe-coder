@@ -99,3 +99,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+pre {
+  overflow: auto;
+  @apply p-2 rounded-md mt-2 bg-white/15;
+}

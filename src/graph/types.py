@@ -20,6 +20,7 @@ class State(MessagesState):
 
     # Constants
     TEAM_MEMBERS: list[str]
+    session_id: str
 
     # Runtime Variables
     next: str # Information about the next agent

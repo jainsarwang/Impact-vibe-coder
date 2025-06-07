@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { X, Copy, Download, Code } from 'lucide-react';
-import { FileStatus } from './ProjectBuilder';
+import { FileStatus } from '../lib/types';
+import Markdown from 'markdown-to-jsx';
 
 interface FileViewerProps {
   file: FileStatus;
@@ -14,6 +15,8 @@ const FileViewer = ({ file, onClose }: FileViewerProps) => {
       navigator.clipboard.writeText(file.content);
     }
   };
+
+  console.log(file);
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -60,9 +63,9 @@ const FileViewer = ({ file, onClose }: FileViewerProps) => {
           <div className="flex-1 overflow-auto p-6">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-2xl"></div>
-              <pre className="relative bg-black/50 rounded-2xl p-6 text-sm text-slate-200 font-mono overflow-x-auto border border-white/10 backdrop-blur-sm">
-                <code>{file.content || '// File content will appear here...'}</code>
-              </pre>
+              <Markdown  className="relative bg-black/50 rounded-2xl p-6 text-sm text-slate-200 font-mono overflow-x-auto border border-white/10 backdrop-blur-sm">
+                {file.content || '// File content will appear here...'}
+              </Markdown>
             </div>
           </div>
         </div>

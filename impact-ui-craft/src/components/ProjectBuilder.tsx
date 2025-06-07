@@ -1,30 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useStore } from "@/hooks/useStore";
+import { Message } from "@/lib/types";
+import { getAgentName } from "@/lib/agentNames";
+import { sendChat } from "@/services/chat";
 import PromptInput from "./PromptInput";
 import QuestionFlow from "./QuestionFlow";
 import FileProgress from "./FileProgress";
-import {
-    impactVibeAPI,
-    type AgentUpdate,
-    type FileUpdate,
-} from "../services/impactVibeAPI";
-import { useStore } from "@/hooks/useStore";
-import { Message } from "@/lib/types";
-import { sendChat } from "@/services/chat";
-
-export interface FileStatus {
-    name: string;
-    status: "pending" | "generating" | "completed";
-    content?: string;
-    agent?: string;
-    task?: string;
-}
-
-export interface AgentStatus {
-    name: string;
-    status: "idle" | "working" | "completed";
-    currentTask?: string;
-    progress?: number;
-}
 
 type BuilderStep = "prompt" | "requirementGathering" | "building";
 
@@ -32,20 +13,21 @@ const ProjectBuilder = () => {
     const [prompt, setPrompt] = useState<string>(null);
     const [currentStep, setCurrentStep] = useState<BuilderStep>("prompt");
     const [isGenerating, setIsGenerating] = useState(false);
-    const [files, setFiles] = useState<FileStatus[]>([]);
     const [currentInput, setCurrentInput] = useState("");
-    const [agents, setAgents] = useState<AgentStatus[]>([]);
     const [sessionId, setSessionId] = useState<string>("");
     const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
+    const clearArchitectAgents = useStore(
+        (state) => state.clearArchitectAgents
+    );
     const agentWorking = useStore((state) => state.agentWorking);
     const messages = useStore((state) => state.messages);
     const clearMessages = useStore((state) => state.clearMessages);
-    const addMessage = useStore((state) => state.addMessage);
     const workflowStarted = useStore((state) => state.workflowStarted);
     const clearWorkflowStarted = useStore(
         (state) => state.clearWorkflowStarted
     );
+    const clearFiles = useStore((state) => state.clearFiles);
 
     useEffect(() => {
         if (workflowStarted) handleReqGatheringComplete();
@@ -101,11 +83,11 @@ const ProjectBuilder = () => {
         console.log("Going back to prompt");
         setCurrentStep("prompt");
 
-        setFiles([]);
+        clearFiles();
 
         clearMessages();
         setCurrentInput("");
-        setAgents([]);
+        clearArchitectAgents();
         setUploadedImage(null);
         clearWorkflowStarted();
         setIsGenerating(false);
@@ -117,18 +99,11 @@ const ProjectBuilder = () => {
 
         try {
             // Prepare the request data
-            const requestData = {
-                prompt,
-                ...(uploadedImage && { hasImage: true }),
-            };
-
             // Start project generation with your backend
             // const response = await impactVibeAPI.startProjectGeneration(
             //     requestData
             // );
-
             // setSessionId(response.session_id);
-
             // // Subscribe to real-time updates
             // impactVibeAPI.subscribeToProgress(
             //     response.session_id,
@@ -144,36 +119,36 @@ const ProjectBuilder = () => {
         }
     };
 
-    const handleAgentUpdate = (update: AgentUpdate) => {
-        console.log("Agent update received:", update);
-        setAgents((prev) => {
-            const existingIndex = prev.findIndex(
-                (agent) => agent.name === update.agent_name
-            );
-            if (existingIndex >= 0) {
-                const updated = [...prev];
-                updated[existingIndex] = {
-                    name: update.agent_name,
-                    status: update.status,
-                    currentTask: update.current_task,
-                    progress: update.progress,
-                };
-                return updated;
-            } else {
-                return [
-                    ...prev,
-                    {
-                        name: update.agent_name,
-                        status: update.status,
-                        currentTask: update.current_task,
-                        progress: update.progress,
-                    },
-                ];
-            }
-        });
-    };
+    // const handleAgentUpdate = (update: AgentUpdate) => {
+    //     console.log("Agent update received:", update);
+    //     setAgents((prev) => {
+    //         const existingIndex = prev.findIndex(
+    //             (agent) => agent.name === update.agent_name
+    //         );
+    //         if (existingIndex >= 0) {
+    //             const updated = [...prev];
+    //             updated[existingIndex] = {
+    //                 name: update.agent_name,
+    //                 status: update.status,
+    //                 currentTask: update.current_task,
+    //                 progress: update.progress,
+    //             };
+    //             return updated;
+    //         } else {
+    //             return [
+    //                 ...prev,
+    //                 {
+    //                     name: update.agent_name,
+    //                     status: update.status,
+    //                     currentTask: update.current_task,
+    //                     progress: update.progress,
+    //                 },
+    //             ];
+    //         }
+    //     });
+    // };
 
-    const handleFileUpdate = (update: FileUpdate) => {
+    /* const handleFileUpdate = (update: FileUpdate) => {
         console.log("File update received:", update);
         setFiles((prev) => {
             const existingIndex = prev.findIndex(
@@ -202,18 +177,7 @@ const ProjectBuilder = () => {
                 ];
             }
         });
-    };
-
-    const handleGenerationComplete = () => {
-        console.log("Project generation completed");
-        setIsGenerating(false);
-    };
-
-    const handleGenerationError = (error: string) => {
-        console.error("Project generation error:", error);
-        setIsGenerating(false);
-        // You might want to show an error toast here
-    };
+    }; */
 
     return (
         <section className="w-full px-6 pb-16">
@@ -237,18 +201,16 @@ const ProjectBuilder = () => {
 
                 {currentStep === "building" && (
                     <FileProgress
-                        files={files}
                         prompt={prompt}
                         isGenerating={isGenerating}
-                        agents={agents}
                         sessionId={sessionId}
                     />
                 )}
 
                 {agentWorking && (
-                    <div className="fixed flex gap-2 items-center top-4 right-4 bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 px-4 py-2 shadow-2xl text-white z-50 text-xs">
+                    <div className="fixed flex gap-2 items-center top-4 right-4 bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 px-4 py-2 shadow-2xl text-white z-50 text-xs pointer-events-none capitalize">
                         <span className="inline-block w-5 aspect-square rounded-full border-2 border-transparent border-r-white animate-spin"></span>
-                        {agentWorking} Responding
+                        {getAgentName(agentWorking)} Working
                     </div>
                 )}
             </div>

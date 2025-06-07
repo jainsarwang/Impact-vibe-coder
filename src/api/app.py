@@ -95,10 +95,9 @@ async def chat_endpoint(request: ProjectGenerationRequest, session_id: str, req:
     Returns:
         The streamed response
     """
-    global new_session_id
-    if new_session_id != session_id:
-        SessionManager.set(session_id)# Set the new session ID
-    new_session_id = session_id
+
+    await SessionManager.set(session_id)
+    
     logger.info(f"Session id of request: {session_id}")
     try:
         # Convert Pydantic models to dictionaries and normalize content format
@@ -131,6 +130,7 @@ async def chat_endpoint(request: ProjectGenerationRequest, session_id: str, req:
                     request.debug,
                     request.deep_thinking_mode,
                     request.search_before_planning,
+                    session_id,
                 ):
                     # Check if client is still connected
                     if await req.is_disconnected():

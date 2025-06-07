@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useStore } from "@/hooks/useStore";
 import Header from "../components/Header";
 import HeroSection from "../components/HeroSection";
 import ProjectBuilder from "../components/ProjectBuilder";
-import { useNavigate, useParams } from "react-router-dom";
-import { useStore } from "@/hooks/useStore";
 
 const Index = () => {
     const params = useParams();

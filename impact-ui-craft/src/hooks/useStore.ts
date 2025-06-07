@@ -1,4 +1,4 @@
-import { Message } from "@/lib/types";
+import { Message, AgentStatus, FileStatus } from "@/lib/types";
 import { create } from "zustand";
 
 interface State {
@@ -6,18 +6,26 @@ interface State {
     messages: Message[];
     responding: boolean;
     directory_structure: Object;
-    files: { path: string; name: string; isGenerated: boolean; code: string }[];
+
+    files: Record<string, FileStatus>;
     agentWorking: string;
+    architectAgents: Record<string, AgentStatus>;
     workflowStarted?: string;
     setState: (newState: Partial<State>) => void;
     addMessage: (message: Message) => void;
+    addArchitectAgent: (agent: AgentStatus) => void;
+    updateArchitectAgent: (
+        agent: Partial<AgentStatus> & { name: string }
+    ) => void;
+    clearArchitectAgents: () => void;
     setAgentWorking: (agentName: string) => void;
     setResponding: (responding: boolean) => void;
     updateMessage: (message: Partial<Message> & { id: string }) => void;
     setDirectoryStructure: (structure: Object) => void;
-    setFiles: (files: State["files"]) => void;
-    addFile: (file: State["files"][0]) => void;
-    removeFile: (path: string) => void;
+    setFiles: (files: Record<string, FileStatus>) => void;
+    addFile: (file: FileStatus) => void;
+    updateFile: (file: Partial<FileStatus> & { name: string }) => void;
+    removeFile: (name: string) => void;
     clearMessages: () => void;
     clearFiles: () => void;
     clearDirectoryStructure: () => void;
@@ -31,7 +39,8 @@ export const useStore = create<State>(() => ({
     messages: [],
     responding: false,
     directory_structure: {},
-    files: [],
+    files: {},
+    architectAgents: {},
     agentWorking: null,
     workflowStarted: undefined,
     setState: (newState: Partial<State>) =>
@@ -40,6 +49,24 @@ export const useStore = create<State>(() => ({
         useStore.setState((state) => ({
             messages: [...state.messages, message],
         })),
+    addArchitectAgent: (agent: AgentStatus) =>
+        useStore.setState((state) => ({
+            architectAgents: {
+                ...state.architectAgents,
+                [agent.name]: agent,
+            },
+        })),
+    updateArchitectAgent: (agent: Partial<AgentStatus> & { name: string }) =>
+        useStore.setState((state) => ({
+            architectAgents: {
+                ...state.architectAgents,
+                [agent.name]: {
+                    ...state.architectAgents[agent.name],
+                    ...agent,
+                },
+            },
+        })),
+    clearArchitectAgents: () => useStore.setState({ architectAgents: {} }),
     setAgentWorking: (agentName: string) =>
         useStore.setState((state) => ({ agentWorking: agentName })),
     setResponding: (responding: boolean) =>
@@ -61,18 +88,27 @@ export const useStore = create<State>(() => ({
         }),
     setDirectoryStructure: (structure: Object) =>
         useStore.setState((state) => ({ directory_structure: structure })),
-    setFiles: (files: State["files"]) =>
+    setFiles: (files: Record<string, FileStatus>) =>
         useStore.setState((state) => ({ files: files })),
-    addFile: (file: State["files"][0]) =>
+    addFile: (file: FileStatus) =>
         useStore.setState((state) => ({
-            files: [...state.files, file],
+            files: { ...state.files, [file.name]: file },
         })),
-    removeFile: (path: string) =>
+    updateFile: (file: Partial<FileStatus> & { name: string }) =>
         useStore.setState((state) => ({
-            files: state.files.filter((file) => file.path !== path),
+            files: {
+                ...state.files,
+                [file.name]: { ...state.files[file.name], ...file },
+            },
+        })),
+    removeFile: (name: string) =>
+        useStore.setState((state) => ({
+            files: Object.fromEntries(
+                Object.entries(state.files).filter(([key]) => key !== name)
+            ),
         })),
     clearMessages: () => useStore.setState({ messages: [] }),
-    clearFiles: () => useStore.setState({ files: [] }),
+    clearFiles: () => useStore.setState({ files: {} }),
     clearDirectoryStructure: () =>
         useStore.setState({ directory_structure: {} }),
     clearAgentWorking: () => useStore.setState({ agentWorking: null }),

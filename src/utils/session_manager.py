@@ -6,20 +6,24 @@ session_db = db["session"]
 
 class SessionManager:
     @staticmethod
-    def set(session_id: str):
+    async def set(session_id: str):
         """
         Set the session ID in the database.
 
         Args:
             session_id (str): The session ID to set.
         """
-        session_data = {
-            "session_id": session_id,
-            "created_at": datetime.now(),
-            "checklist": []
-        }
-        logging.info(f"Setting session ID: {session_id}")
-        session_db.insert_one(session_data)
+
+        session = await session_db.find_one({"session_id": session_id})
+        logging.info(f"Session: {session}")
+        if not session:
+            session_data = {
+                "session_id": session_id,
+                "created_at": datetime.now(),
+                "checklist": []
+            }
+            logging.info(f"Setting session ID: {session_id}")
+            session_db.insert_one(session_data)
 
     @staticmethod
     def get():

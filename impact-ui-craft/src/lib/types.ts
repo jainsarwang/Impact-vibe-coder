@@ -1,6 +1,7 @@
 export interface Message {
     id: string;
     role: "assistant" | "user";
+    type?: "text" | "workflow";
     content: string;
 }
 
@@ -34,7 +35,10 @@ export interface StartOfAgentEvent
     > {}
 
 export interface EndOfAgentEvent
-    extends GenericChatEvent<"end_of_agent", { agent_id: string }> {}
+    extends GenericChatEvent<
+        "end_of_agent",
+        { agent_id: string; agent_name: string }
+    > {}
 
 export interface ToolCallEvent
     extends GenericChatEvent<
@@ -79,3 +83,19 @@ export type ChatEvent =
     | StartOfLLMEvent
     | EndOfLLMEvent
     | MessageEvent;
+
+// used in File progress for maintaining agent status
+export interface AgentStatus {
+    name: string;
+    status: "idle" | "working" | "completed";
+    currentTask?: string;
+    progress?: number;
+}
+
+export interface FileStatus {
+    name: string;
+    status: "pending" | "generating" | "completed";
+    content?: string;
+    agent?: string;
+    task?: string;
+}
