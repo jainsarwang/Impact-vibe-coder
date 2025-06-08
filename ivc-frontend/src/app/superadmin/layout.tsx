@@ -2,13 +2,13 @@
 
 import "./page.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ivc/ui/toaster";
-import { Toaster as Sonner } from "@/components/ivc/ui/sonner";
-import { TooltipProvider } from "@/components/ivc/ui/tooltip";
+import { Toaster } from "@/components/superadmin/ui/toaster";
+import { Toaster as Sonner } from "@/components/superadmin/ui/sonner";
+import { TooltipProvider } from "@/components/superadmin/ui/tooltip";
 
 const queryClient = new QueryClient();
 
-export default function SessionLayout({
+export default function SuperAdminLayout({
     children,
 }: {
     children: React.ReactNode;
