@@ -4,10 +4,10 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-} from "@/components/superadmin/ui/dialog";
-import { Button } from "@/components/superadmin/ui/button";
-import { Input } from "@/components/superadmin/ui/input";
-import { Label } from "@/components/superadmin/ui/label";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Copy, Check, Eye, EyeOff, AlertTriangle, Shield } from "lucide-react";
 import { useToast } from "@/hooks/superadmin/use-toast";
 

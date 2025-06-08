@@ -7,8 +7,8 @@ import {
     MessageSquare,
     Image,
 } from "lucide-react";
-import { Button } from "@/components/ivc/ui/button";
-import { Toggle } from "@/components/ivc/ui/toggle";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
 import ImageUpload from "./ImageUpload";
 import { useStore } from "@/hooks/ivc/useStore";
 

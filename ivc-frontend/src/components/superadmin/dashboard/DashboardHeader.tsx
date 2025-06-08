@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Button } from '@/components/superadmin/ui/button';
+import { Button } from '@/components/ui/button';
 import { LogOut, Shield } from 'lucide-react';
 
 interface DashboardHeaderProps {

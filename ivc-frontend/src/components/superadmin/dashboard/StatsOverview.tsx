@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, CardContent } from "@/components/superadmin/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Users, Building2, UserCheck, Activity } from "lucide-react";
 
 interface StatsOverviewProps {

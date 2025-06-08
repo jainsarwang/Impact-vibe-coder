@@ -1,10 +1,9 @@
 /* global.css */
-
 @import "tailwindcss";
 
-@tailwind base;
+@tailwind base
 @tailwind components;
-@tailwind utilities;
+@tailwind utilities
 
 @layer base {
 	:root {

@@ -3,9 +3,9 @@
 import { useEffect } from "react";
 import { redirect } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ivc/ui/toaster";
-import { Toaster as Sonner } from "@/components/ivc/ui/sonner";
-import { TooltipProvider } from "@/components/ivc/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "@/pages/ivc/Index";
 
 const queryClient = new QueryClient();

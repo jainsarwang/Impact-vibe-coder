@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Upload, Image as ImageIcon, Sparkles, Loader2 } from "lucide-react";
-import { Button } from "@/components/ivc/ui/button";
+import { Button } from "@/components/ui/button";
 
 interface ImageUploadProps {
     onGenerate: (prompt?: string, imageFile?: File) => void;

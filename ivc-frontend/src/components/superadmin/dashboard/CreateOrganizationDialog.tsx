@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/superadmin/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/superadmin/ui/dialog';
-import { Input } from '@/components/superadmin/ui/input';
-import { Label } from '@/components/superadmin/ui/label';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Plus, Building2 } from 'lucide-react';
 import { useOrganizationCreation } from '@/hooks/superadmin/useOrganizationCreation';
 

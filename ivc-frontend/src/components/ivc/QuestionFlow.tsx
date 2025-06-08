@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Send, Bot, User, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ivc/ui/button";
+import { Button } from "@/components/ui/button";
 import { fetchStream } from "@/lib/ivc/fetch-stream";
 import { Message } from "@/lib/ivc/types";
 import { useStore } from "@/hooks/ivc/useStore";
