@@ -92,3 +92,21 @@
 		--sidebar-ring: 217.2 91.2% 59.8%;
 	}
 }
+
+/* customize scrollbar */
+::-webkit-scrollbar {
+	@apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+	@apply bg-white/10;
+}
+
+::-webkit-scrollbar-thumb {
+	@apply bg-white cursor-grab;
+	border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:active {
+	@apply cursor-grabbing
+}

@@ -20,8 +20,11 @@ const ProjectBuilder: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [currentInput, setCurrentInput] = useState<string>("");
     const [sessionId, setSessionId] = useState<string>("");
+    const [deepThinkingMode, setDeepThinkingMode] = useState(false);
+    const [searchBeforePlanning, setSearchBeforePlanning] = useState(false);
     const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
+    const addMessage = useStore((state) => state.addMessage);
     const clearArchitectAgents = useStore(
         (state) => state.clearArchitectAgents
     );
@@ -38,6 +41,13 @@ const ProjectBuilder: React.FC = () => {
         if (workflowStarted) handleReqGatheringComplete();
     }, [workflowStarted]);
 
+    useEffect(() => {
+        // sending initial prompt
+        if (currentInput) {
+            handleFormSubmit();
+        }
+    }, [prompt]);
+
     const handlePromptSubmit = async (
         userPrompt: string = "",
         imageFile?: File
@@ -48,6 +58,8 @@ const ProjectBuilder: React.FC = () => {
         setPrompt(userPrompt);
         setCurrentInput(userPrompt);
         setUploadedImage(imageFile || null);
+
+        handleFormSubmit(undefined, userPrompt);
 
         setCurrentStep("requirementGathering");
         setIsGenerating(false);
@@ -69,6 +81,25 @@ const ProjectBuilder: React.FC = () => {
         } catch (error) {
             console.error("Error sending message:", error);
         }
+    };
+
+    const handleFormSubmit = async (e?: React.FormEvent, message?: string) => {
+        e?.preventDefault();
+
+        let messageToSend = message || currentInput;
+
+        const userMessage: Message = {
+            id: crypto.randomUUID(),
+            role: "user",
+            content: messageToSend.trim(),
+        };
+        addMessage(userMessage);
+        setCurrentInput("");
+
+        await sendMessage(messageToSend, {
+            deepThinkingMode,
+            searchBeforePlanning,
+        });
     };
 
     const handleReqGatheringComplete = async (): Promise<void> => {
@@ -189,7 +220,7 @@ const ProjectBuilder: React.FC = () => {
                         currentInput={currentInput}
                         setCurrentInput={setCurrentInput}
                         onBack={handleBackToPrompt}
-                        sendMessage={sendMessage}
+                        handleFormSubmit={handleFormSubmit}
                     />
                 )}
 

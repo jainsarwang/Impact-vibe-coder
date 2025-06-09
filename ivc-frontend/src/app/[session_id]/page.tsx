@@ -1,17 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 
 import { useStore } from "@/hooks/ivc/useStore";
 import Header from "@/components/ivc/Header";
 import HeroSection from "@/components/ivc/HeroSection";
 import ProjectBuilder from "@/components/ivc/ProjectBuilder";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-
-const queryClient = new QueryClient();
 
 export default function SessionPage({
     params,
