@@ -763,7 +763,8 @@ def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
         
     current_generated_files = state.get('generated_files', [])
     state['generated_files'] = current_generated_files + [parsed_instruction.get("file", "")]
-
+    state.get('checklist_manager').mark_file_created(parsed_instruction.get("file", ""))
+    
     return Command(
         update={
             "messages": [
