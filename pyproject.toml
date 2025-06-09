@@ -39,7 +39,7 @@ dependencies = [
     "python-multipart>=0.0.20",
     "crypto>=1.4.1",
     "pip>=25.1.1",
-    "tornado[gen]>=6.5.1",
+    "tornado[gen,process]>=6.5.1",
     "python-jose>=3.5.0",
 ]
 

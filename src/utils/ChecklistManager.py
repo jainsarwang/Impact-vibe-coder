@@ -30,13 +30,14 @@ session_db = db["session"]
 
 class ChecklistManager:
     """Manages the checklist for tracking file generation progress."""
-    def __init__(self, checklist_file: str = "checklist.json", project_prefix: str = None):
+    def __init__(self, state,checklist_file: str = "checklist.json", project_prefix: str = None):
         self.session_id = ""
         self.checklist_file = checklist_file
         self.checklist: List[Dict] = []
         self._normalize_paths = True
         # Store the project prefix to handle paths consistently
         self.project_prefix = project_prefix
+        self.state = state
         
     def _normalize_path(self, path: str) -> str:
         """
@@ -82,7 +83,7 @@ class ChecklistManager:
     def initialize_from_directory(self, directory_structure: Dict) -> List[Dict]:
         """Initialize checklist from directory structure."""
         try:
-            self.session_id = SessionManager.get()
+            self.session_id = self.state.get("session_id")
             if isinstance(directory_structure, str):
                 directory_structure = json.loads(directory_structure)
             self.checklist = []

@@ -1,7 +1,7 @@
 import os
 import subprocess
 import json
-import google.generativeai as genai
+from google import genai
 from pathlib import Path
 from typing import Dict, List, Tuple
 import logging
@@ -26,14 +26,13 @@ class ReadmeExecutor:
             'backend': [],
             'test': []
         }
-        
+       
         # Configure Gemini
         GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
         if not GEMINI_API_KEY:
             logger.error("GEMINI_API_KEY environment variable not set.")
             raise ValueError("GEMINI_API_KEY environment variable not set.")
-        genai.configure(api_key=GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.client = genai.Client(api_key=GEMINI_API_KEY)
 
     def extract_commands_with_gemini(self) -> Dict[str, List[str]]:
         """Use Gemini to intelligently extract commands from README.md"""
@@ -41,12 +40,12 @@ class ReadmeExecutor:
             if not self.readme_path.exists():
                 logger.error(f"README.md not found at {self.readme_path}")
                 return self.commands
-                
+               
             with open(self.readme_path, 'r', encoding='utf-8') as f:
                 readme_content = f.read()
-            
+           
             prompt = f"""
-            Analyze this README.md content and extract all commands that need to be executed 
+            Analyze this README.md content and extract all commands that need to be executed
             to setup and run the project. Categorize them into:
             1. Setup commands (installation, environment setup)
             2. Frontend commands (client-side execution)
@@ -74,14 +73,16 @@ class ReadmeExecutor:
             README.md content:
             {readme_content}
             """
-            
-            response = self.model.generate_content(prompt)
+            response = self.client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=[{"parts": [{"text": prompt}]}],
+            )
             return self._parse_gemini_response(response.text)
-            
+                       
         except Exception as e:
             logger.error(f"Error extracting commands with Gemini: {e}")
             return self.commands
-    
+   
     def _parse_gemini_response(self, response: str) -> Dict[str, List[str]]:
         """Parse Gemini's response into command categories"""
         try:
@@ -93,17 +94,17 @@ class ReadmeExecutor:
         except Exception as e:
             logger.error(f"Error parsing Gemini response: {e}")
             return self.commands
-    
+   
     def execute_commands(self) -> bool:
         """Execute extracted commands in proper order"""
         if not self.readme_path.exists():
             logger.error(f"README.md not found at {self.readme_path}")
             return False
-        
+       
         self.commands = self.extract_commands_with_gemini()
         logger.info("Extracted commands:")
         logger.info(json.dumps(self.commands, indent=2))
-        
+       
         # Execute commands in sequence
         try:
             # 1. Setup commands
@@ -111,36 +112,36 @@ class ReadmeExecutor:
                 logger.info("\n=== RUNNING SETUP COMMANDS ===")
                 for cmd in self.commands['setup']:
                     self._run_command(cmd)
-            
+           
             # 2. Backend commands
             if self.commands['backend']:
                 logger.info("\n=== RUNNING BACKEND COMMANDS ===")
                 for cmd in self.commands['backend']:
                     self._run_command(cmd, new_terminal=True)
-            
+           
             # 3. Frontend commands
             if self.commands['frontend']:
                 logger.info("\n=== RUNNING FRONTEND COMMANDS ===")
                 for cmd in self.commands['frontend']:
                     self._run_command(cmd, new_terminal=True)
-            
+           
             # 4. Test commands
             if self.commands['test']:
                 logger.info("\n=== RUNNING TEST COMMANDS ===")
                 for cmd in self.commands['test']:
                     self._run_command(cmd)
-            
+           
             return True
-        
+       
         except Exception as e:
             logger.error(f"Execution failed: {e}")
             return False
-    
+   
     def _run_command(self, command: str, new_terminal: bool = False) -> bool:
         """Execute a single command"""
         try:
             logger.info(f"Executing: {command}")
-            
+           
             if new_terminal and os.name == 'nt':  # Windows
                 subprocess.Popen(
                     f'start cmd /k "{command} && pause"',
@@ -167,7 +168,7 @@ class ReadmeExecutor:
                     logger.info(result.stdout)
                 if result.stderr:
                     logger.error(result.stderr)
-            
+           
             return True
         except subprocess.CalledProcessError as e:
             logger.error(f"Command failed: {e.stderr}")

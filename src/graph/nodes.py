@@ -86,7 +86,6 @@ def extract_and_save_json(response_text: str, output_file: str = 'project_requir
         raise ValueError(f"Could not extract valid JSON: {str(e)}")
 
 RESPONSE_FORMAT = "Response from {}:\n\n<response>\n{}\n</response>\n\n*Please execute the next step.*"
-checklist_manager = ChecklistManager()
 
 def research_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the researcher agent that performs research tasks."""
@@ -115,6 +114,8 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the directory generator agent that generator directory structure."""
     logger.info("Directory Generator agent starting task")
     result = directory_generator_agent.invoke(state)
+    print(state.get("session_id"))
+    checklist_manager = ChecklistManager(state)  # Reset checklist manager for new task
     logger.info("Directory Generator agent completed task")
     token_count.set_token_count(token_count.token_count(result["messages"][-1].content))
     logger.info("Token count after directory generator: %s", token_count.get_token_count())
@@ -136,6 +137,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
                 )
             ],
             "directory_structure": response_content,
+            "checklist_manager": checklist_manager
         },
         goto="supervisor",
     )
@@ -208,7 +210,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
             json.dump(repaired_response, f, indent=2, ensure_ascii=False)
 
         # Update checklist from the plan
-        checklist_manager.update_from_plan(repaired_response)
+        state.get("checklist_manager").update_from_plan(repaired_response)
     except json.JSONDecodeError:
         logger.warning("Code Planner response is not a valid JSON")
         goto = "__end__"
@@ -357,7 +359,7 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
                 raise ValueError("Invalid code plan format")
 
         # Update checklist with the plan
-        checklist_manager.update_from_plan(code_plan)
+        state.get("checklist_manager").update_from_plan(code_plan)
     except (json.JSONDecodeError, ValueError) as e:
         logger.error(f"Failed to parse or process code_plan JSON string: {e}")
         return Command(goto='__end__', update={
@@ -367,7 +369,7 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         })
 
     # Get the next file to process from the checklist
-    next_file_info = checklist_manager.get_next_file_to_process()
+    next_file_info = state.get("checklist_manager").get_next_file_to_process()
 
     if next_file_info:
         file_path_to_process = next_file_info['file_path']
@@ -392,7 +394,7 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         found_plan_item = None
         
         for item in code_plan:
-            if "file" in item and checklist_manager._normalize_path(item["file"]) == checklist_manager._normalize_path(file_path_to_process):
+            if "file" in item and state.get("checklist_manager")._normalize_path(item["file"]) == state.get("checklist_manager")._normalize_path(file_path_to_process):
                 instruction_content = json.dumps(item, indent=2)
                 found_plan_item = item
                 break
@@ -422,7 +424,7 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
     else:
         logger.info("Checklist indicates no more planned files need processing.")
 
-        unplanned_created = checklist_manager.get_unplanned_files()
+        unplanned_created = state.get("checklist_manager").get_unplanned_files()
         completion_message = "Coding phase completed. All planned files have been processed."
         if unplanned_created:
             completion_message += f"\nNote: {len(unplanned_created)} files were created but were not in the original plan."
@@ -536,9 +538,9 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
             newly_generated_this_run.append(file_path)
             
             # Update checklist
-            checklist_manager.mark_file_created(file_path)
+            state.get("checklist_manager").mark_file_created(file_path)
             if description:
-                checklist_manager.update_file_description(file_path, description)
+                state.get("checklist_manager").update_file_description(file_path, description)
                 logger.info(f"Updated description for file '{file_path}': {description}")
 
         except Exception as e:
@@ -1170,7 +1172,7 @@ def terraform_planner_node(state: State) -> Command[Literal["supervisor"]]:
             json.dump(repaired_response, f, indent=2, ensure_ascii=False)
 
         # Update checklist from the plan
-        checklist_manager.update_from_plan(repaired_response)
+        state.get("checklist_manager").update_from_plan(repaired_response)
     except json.JSONDecodeError:
         logger.warning("Code Planner response is not a valid JSON")
         goto = "__end__"
