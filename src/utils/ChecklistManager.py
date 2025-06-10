@@ -108,7 +108,6 @@ class ChecklistManager:
                     elif isinstance(value, dict):
                         new_path = os.path.join(current_path, key)
                         process_structure(value, new_path)
-            
             process_structure(directory_structure.get("directory_structure", {}))
             self._save_checklist()
             logging.info(f"Initialized checklist with {len(self.checklist)} items from directory structure")
@@ -301,3 +300,11 @@ class ChecklistManager:
             self._save_checklist()
             
         return self.checklist
+    
+    def update_tokens(self, tokens) -> None:
+        logging.info(f"tokens: {tokens}")
+        if tokens >=0: 
+            session_db.update_one({"session_id": self.session_id}, {"$set": {"tokens": tokens}})
+        else:
+            raise Exception("tokens are invalid")
+        
