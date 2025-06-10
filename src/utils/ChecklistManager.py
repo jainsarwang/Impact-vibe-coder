@@ -29,8 +29,8 @@ except Exception as e:
 session_db = db["session"]
 
 class ChecklistManager:
-    """Manages the checklist for tracking file generation progress."""
-    def __init__(self, state,checklist_file: str = "checklist.json", project_prefix: str = None):
+    """Manages the checklist for tracking file generation and validation progress."""
+    def __init__(self, state, checklist_file: str = "checklist.json", project_prefix: str = None):
         self.session_id = ""
         self.checklist_file = checklist_file
         self.checklist: List[Dict] = []
@@ -80,8 +80,25 @@ class ChecklistManager:
                 return entry
         return None
     
+    def _create_checklist_entry(self, file_path: str, **kwargs) -> Dict:
+        """Create a new checklist entry with default validation fields."""
+        entry = {
+            "file_path": self._normalize_path(file_path),
+            "plan_created": kwargs.get("plan_created", False),
+            "file_created": kwargs.get("file_created", False),
+            "coder": kwargs.get("coder", None),
+            "description": kwargs.get("description", ""),
+            # Validation fields
+            "validated": kwargs.get("validated", False),
+            "validation_passed": kwargs.get("validation_passed", False),
+            "validation_in_progress": kwargs.get("validation_in_progress", False),
+            "validation_date": kwargs.get("validation_date", None),
+            "validation_failed_count": kwargs.get("validation_failed_count", 0)
+        }
+        return entry
+    
     def initialize_from_directory(self, directory_structure: Dict) -> List[Dict]:
-        """Initialize checklist from directory structure."""
+        """Initialize checklist from directory structure with validation fields."""
         try:
             self.session_id = self.state.get("session_id")
             if isinstance(directory_structure, str):
@@ -97,13 +114,8 @@ class ChecklistManager:
                     if key == "files":
                         for file in value:
                             file_path = self._normalize_path(os.path.join(current_path, file))
-                            self.checklist.append({
-                                "file_path": file_path,
-                                "plan_created": False,
-                                "file_created": False,
-                                "coder": None,
-                                "description": ""
-                            })
+                            entry = self._create_checklist_entry(file_path)
+                            self.checklist.append(entry)
                             logging.debug(f"Added directory file to checklist: {file_path}")
                     elif isinstance(value, dict):
                         new_path = os.path.join(current_path, key)
@@ -140,14 +152,14 @@ class ChecklistManager:
                             entry["description"] = item.get("description")
                         logging.debug(f"Updated existing file in checklist: {file_path}")
                     else:
-                        # Add new entry
-                        self.checklist.append({
-                            "file_path": file_path,
-                            "plan_created": True,
-                            "file_created": False,
-                            "coder": item.get("coder"),
-                            "description": item.get("description", "")
-                        })
+                        # Add new entry with validation fields
+                        new_entry = self._create_checklist_entry(
+                            file_path,
+                            plan_created=True,
+                            coder=item.get("coder"),
+                            description=item.get("description", "")
+                        )
+                        self.checklist.append(new_entry)
                         logging.debug(f"Added new planned file to checklist: {file_path}")
             
             self._save_checklist()
@@ -163,20 +175,24 @@ class ChecklistManager:
         
         if entry:
             entry["file_created"] = True
+            # Reset validation status when file is recreated
+            entry["validated"] = False
+            entry["validation_passed"] = False
+            entry["validation_in_progress"] = False
+            entry["validation_date"] = None
+            entry["validation_failed_count"] = 0
             self._save_checklist()
             logging.debug(f"Marked file as created in checklist: {file_path}")
         else:
-            # If file wasn't in checklist but was created, add it
-            normalized_path = self._normalize_path(file_path)
-            self.checklist.append({
-                "file_path": normalized_path,
-                "plan_created": False,  # Wasn't planned but exists
-                "file_created": True,
-                "coder": None,
-                "description": ""
-            })
+            # If file wasn't in checklist but was created, add it with validation fields
+            new_entry = self._create_checklist_entry(
+                file_path,
+                plan_created=False,  # Wasn't planned but exists
+                file_created=True
+            )
+            self.checklist.append(new_entry)
             self._save_checklist()
-            logging.warning(f"File {normalized_path} was created but wasn't in checklist. Added to checklist.")
+            logging.warning(f"File {file_path} was created but wasn't in checklist. Added to checklist.")
 
     def update_file_description(self, file_path: str, description: str) -> None:
         """Update the description of a file in the checklist."""
@@ -201,6 +217,132 @@ class ChecklistManager:
                 }
         logging.debug("No files left to process in checklist")
         return None
+    
+    def next_file_to_validate(self) -> Optional[Dict]:
+        """Get the next file that needs to be validated."""
+        for entry in self.checklist:
+            # Only validate files that have been created but not yet validated
+            if (entry["file_created"] and 
+                not entry.get("validated", False) and 
+                not entry.get("validation_in_progress", False)):
+                
+                # Mark as validation in progress to avoid duplicate processing
+                entry["validation_in_progress"] = True
+                self._save_checklist()
+                
+                logging.debug(f"Found next file to validate: {entry['file_path']}")
+                return {
+                    "file_path": entry["file_path"],
+                    "coder": entry.get("coder"),
+                    "description": entry.get("description", ""),
+                    "plan_created": entry.get("plan_created", False)
+                }
+        
+        logging.debug("No files left to validate in checklist")
+        return None
+    
+    def mark_file_validated(self, file_path: str, validation_passed: bool = True) -> None:
+        """Mark a file as validated in the checklist."""
+        entry = self._find_checklist_entry(file_path)
+        
+        if entry:
+            entry["validated"] = True
+            entry["validation_passed"] = validation_passed
+            entry["validation_in_progress"] = False  # Clear the in-progress flag
+            entry["validation_date"] = datetime.now().isoformat()
+            
+            if not validation_passed:
+                entry["validation_failed_count"] = entry.get("validation_failed_count", 0) + 1
+                logging.warning(f"File {file_path} failed validation (attempt #{entry['validation_failed_count']})")
+            else:
+                entry["validation_failed_count"] = 0  # Reset failed count on success
+                logging.info(f"File {file_path} passed validation")
+            
+            self._save_checklist()
+            logging.debug(f"Marked file validation status in checklist: {file_path} - {'Passed' if validation_passed else 'Failed'}")
+        else:
+            logging.warning(f"Attempted to mark validation for file not in checklist: {file_path}")
+    
+    def get_validation_summary(self) -> Dict:
+        """Get a summary of validation status for all files."""
+        total_files = len([entry for entry in self.checklist if entry["file_created"]])
+        validated_files = len([entry for entry in self.checklist 
+                              if entry.get("validated", False) and entry.get("validation_passed", False)])
+        failed_files = len([entry for entry in self.checklist 
+                           if entry.get("validated", False) and not entry.get("validation_passed", False)])
+        pending_files = len([entry for entry in self.checklist 
+                            if entry["file_created"] and not entry.get("validated", False)])
+        
+        summary = {
+            "total_files": total_files,
+            "validated_files": validated_files,
+            "failed_files": failed_files,
+            "pending_files": pending_files,
+            "validation_complete": pending_files == 0
+        }
+        
+        logging.debug(f"Validation summary: {summary}")
+        return summary
+    
+    def get_file_description(self, file_path: str) -> Optional[str]:
+        """Get the description of a file from the checklist."""
+        entry = self._find_checklist_entry(file_path)
+        if entry:
+            return entry.get("description", "")
+        return None
+    
+    def get_failed_validation_files(self) -> List[Dict]:
+        """Get all files that failed validation."""
+        failed_files = []
+        for entry in self.checklist:
+            if (entry.get("validated", False) and 
+                not entry.get("validation_passed", False)):
+                failed_files.append({
+                    "file_path": entry["file_path"],
+                    "description": entry.get("description", ""),
+                    "failed_count": entry.get("validation_failed_count", 0),
+                    "validation_date": entry.get("validation_date")
+                })
+        
+        logging.debug(f"Found {len(failed_files)} files that failed validation")
+        return failed_files
+    
+    def reset_validation_status(self, file_path: str = None) -> None:
+        """Reset validation status for a specific file or all files."""
+        if file_path:
+            # Reset specific file
+            entry = self._find_checklist_entry(file_path)
+            if entry:
+                entry["validated"] = False
+                entry["validation_passed"] = False
+                entry["validation_in_progress"] = False
+                entry["validation_date"] = None
+                entry["validation_failed_count"] = 0
+                logging.info(f"Reset validation status for file: {file_path}")
+        else:
+            # Reset all files
+            for entry in self.checklist:
+                entry["validated"] = False
+                entry["validation_passed"] = False
+                entry["validation_in_progress"] = False
+                entry["validation_date"] = None
+                entry["validation_failed_count"] = 0
+            logging.info("Reset validation status for all files")
+        
+        self._save_checklist()
+    
+    def is_validation_complete(self) -> bool:
+        """Check if all created files have been validated successfully."""
+        for entry in self.checklist:
+            if entry["file_created"]:
+                if not entry.get("validated", False):
+                    return False
+                if not entry.get("validation_passed", False):
+                    return False
+        
+        validation_complete = True
+        logging.debug(f"Validation completion status: {validation_complete}")
+        return validation_complete
     
     def get_unplanned_files(self) -> List[str]:
         """Get files that exist in directory but have no plan."""
@@ -229,6 +371,43 @@ class ChecklistManager:
         logging.debug(f"Checklist completion status: {complete}")
         return complete
     
+    def get_checklist_status(self) -> Dict:
+        """Get comprehensive status of the entire checklist including validation."""
+        total_planned = len([e for e in self.checklist if e["plan_created"]])
+        total_created = len([e for e in self.checklist if e["file_created"]])
+        total_validated = len([e for e in self.checklist if e.get("validated", False)])
+        total_validation_passed = len([e for e in self.checklist 
+                                     if e.get("validated", False) and e.get("validation_passed", False)])
+        
+        status = {
+            "total_entries": len(self.checklist),
+            "planned_files": total_planned,
+            "created_files": total_created,
+            "validated_files": total_validated,
+            "validation_passed": total_validation_passed,
+            "coding_complete": self.is_complete(),
+            "validation_complete": self.is_validation_complete(),
+            "overall_complete": self.is_complete() and self.is_validation_complete()
+        }
+        
+        return status
+    
+    def _migrate_existing_entries(self) -> None:
+        """Migrate existing checklist entries to include validation fields."""
+        migrated_count = 0
+        for entry in self.checklist:
+            if "validated" not in entry:
+                entry["validated"] = False
+                entry["validation_passed"] = False
+                entry["validation_in_progress"] = False
+                entry["validation_date"] = None
+                entry["validation_failed_count"] = 0
+                migrated_count += 1
+        
+        if migrated_count > 0:
+            logging.info(f"Migrated {migrated_count} checklist entries to include validation fields")
+            self._save_checklist()
+    
     def _save_checklist(self) -> None:
         """Save checklist to database with schema validation."""
         try:            
@@ -256,11 +435,13 @@ class ChecklistManager:
         
     
     def load_checklist(self) -> List[Dict]:
-        """Load checklist from database."""
+        """Load checklist from database and migrate if necessary."""
         try:
             session_data = session_db.find_one({"session_id": self.session_id})
             if session_data and "checklist" in session_data:
                 self.checklist = session_data["checklist"]
+                # Migrate existing entries to include validation fields
+                self._migrate_existing_entries()
                 logging.info(f"Loaded checklist with {len(self.checklist)} items from session")
             else:
                 self.checklist = []
@@ -288,6 +469,23 @@ class ChecklistManager:
                 existing = path_map[norm_path]
                 existing["plan_created"] |= entry["plan_created"]
                 existing["file_created"] |= entry["file_created"]
+                
+                # Merge validation fields (keep the most advanced state)
+                existing["validated"] = existing.get("validated", False) or entry.get("validated", False)
+                existing["validation_passed"] = (existing.get("validation_passed", False) or 
+                                               entry.get("validation_passed", False))
+                existing["validation_in_progress"] = (existing.get("validation_in_progress", False) or 
+                                                    entry.get("validation_in_progress", False))
+                
+                # Keep the latest validation date
+                if entry.get("validation_date") and existing.get("validation_date"):
+                    existing["validation_date"] = max(existing["validation_date"], entry["validation_date"])
+                elif entry.get("validation_date"):
+                    existing["validation_date"] = entry["validation_date"]
+                
+                # Sum failed counts
+                existing["validation_failed_count"] = (existing.get("validation_failed_count", 0) + entry.get("validation_failed_count", 0))
+                
                 if entry["coder"] is not None:
                     existing["coder"] = entry["coder"]
                 if entry.get("description"):

@@ -1,19 +1,19 @@
 from datetime import datetime
 import logging
 from ..service.database import db
-
+ 
 session_db = db["session"]
-
+ 
 class SessionManager:
     @staticmethod
     async def set(session_id: str):
         """
         Set the session ID in the database.
-
+ 
         Args:
             session_id (str): The session ID to set.
         """
-
+ 
         session = await session_db.find_one({"session_id": session_id})
         logging.info(f"Session: {session}")
         if not session:
@@ -24,7 +24,7 @@ class SessionManager:
             }
             logging.info(f"Setting session ID: {session_id}")
             session_db.insert_one(session_data)
-
+ 
     @staticmethod
     def get():
         """get the current session ID from the database.

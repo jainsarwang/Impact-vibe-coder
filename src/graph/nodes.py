@@ -33,7 +33,8 @@ from src.agents import  (
     browser_agent,
     import_export_agent,
     version_agent,
-    figma_coder_agent
+    figma_coder_agent,
+    validator_agent
 )
 from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS, CODER_AGENTS, AGENT_LLM_MAP
@@ -1183,4 +1184,238 @@ def terraform_planner_node(state: State) -> Command[Literal["supervisor"]]:
             "code_plan": full_response,
         },
         goto=goto,
+    )
+
+def validator_master_node(state: State) -> Command[Literal["validator", "supervisor"]]:
+    """
+    Validator Master node that decides which files need validation based on the checklist.
+    It reads the checklist, finds the next file that needs validation, delegates to the
+    validator agent, and transitions back to supervisor when all files are validated.
+    """
+    logger.info("Validator master evaluating next action based on checklist")
+
+    generated_files = state.get('generated_files', [])
+    
+    if not generated_files:
+        logger.warning("No generated files found in state. Going back to supervisor.")
+        return Command(goto='supervisor', update={
+            "messages": state["messages"] + [
+                HumanMessage(
+                    content="Validator master cannot proceed: No generated files to validate.",
+                    name="validator_master",
+                )
+            ]
+        })
+
+    # Get the next file to validate from the checklist
+    next_file_info = state.get("checklist_manager").next_file_to_validate()
+
+    if next_file_info:
+        file_path_to_validate = next_file_info['file_path']
+        
+        logger.info(f"Next file to validate from checklist: {file_path_to_validate}")
+
+        # Check if file exists
+        if not os.path.exists(f"projects/{file_path_to_validate}"):
+            logger.error(f"File to validate does not exist: {file_path_to_validate}")
+            return Command(goto='supervisor', update={
+                "messages": state["messages"] + [
+                    HumanMessage(
+                        content=f"Validation error: File '{file_path_to_validate}' does not exist.",
+                        name="validator_master",
+                    )
+                ]
+            })
+
+        # Read the file content
+        try:
+            file_path_to_validate = f"projects/{file_path_to_validate}"
+            with open(file_path_to_validate, 'r', encoding='utf-8') as f:
+                file_content = f.read()
+        except Exception as e:
+            logger.error(f"Error reading file {file_path_to_validate}: {str(e)}")
+            return Command(goto='supervisor', update={
+                "messages": state["messages"] + [
+                    HumanMessage(
+                        content=f"Error reading file '{file_path_to_validate}': {str(e)}",
+                        name="validator_master",
+                    )
+                ]
+            })
+
+        # Get file description from checklist
+        file_description = state.get("checklist_manager").get_file_description(file_path_to_validate)
+        
+        # Prepare validation instruction
+        validation_instruction = {
+            "file_path": file_path_to_validate,
+            "file_content": file_content,
+            "description": file_description or "No description available",
+            "directory_structure": state.get('directory_structure', ''),
+            "generated_files": generated_files
+        }
+
+        logger.info(f"Delegating to validator agent for file: {file_path_to_validate}")
+
+        validator_master_message = f"Delegating file `{file_path_to_validate}` for validation."
+
+        return Command(
+            goto="validator",
+            update={
+                "messages": state["messages"] + [HumanMessage(content=validator_master_message, name="validator_master")],
+                "validation_instruction": json.dumps(validation_instruction, indent=2),
+                "current_file_validating": file_path_to_validate,
+            }
+        )
+
+    else:
+        logger.info("Checklist indicates no more files need validation.")
+        
+        # Check validation summary
+        validation_summary = state.get("checklist_manager").get_validation_summary()
+        
+        completion_message = "Validation phase completed. All generated files have been validated."
+        if validation_summary:
+            total_files = validation_summary.get('total_files', 0)
+            validated_files = validation_summary.get('validated_files', 0)
+            failed_files = validation_summary.get('failed_files', 0)
+            
+            completion_message += f"\nValidation Summary: {validated_files}/{total_files} files passed validation."
+            if failed_files > 0:
+                completion_message += f" {failed_files} files failed validation and were updated."
+
+        updated_state = deepcopy(state)
+        updated_state["validation_instruction"] = None
+        updated_state["current_file_validating"] = None
+        updated_state["messages"].append(HumanMessage(content=completion_message, name="validator_master"))
+
+        return Command(
+            goto='supervisor',
+            update=updated_state
+        )
+
+
+def validator_node(state: State) -> Command[Literal["validator_master"]]:
+    """
+    Validator node that invokes the validator agent, parses its JSON response
+    to check if validation passed, and updates files if validation failed.
+    """
+    logger.info("Validator node starting validation task")
+    logger.debug(f"Validation instruction: {state.get('validation_instruction')}")
+
+    try:
+        result = validator_agent.invoke(state)
+        logger.info(f"validator response:{result}")
+    except Exception as e:
+        logger.error(f"Error invoking validator agent: {str(e)}", exc_info=True)
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Error during validator agent execution: {str(e)}",
+                        name="validator",
+                    )
+                ]
+            },
+            goto="validator_master",
+        )
+
+    logger.info("Validator agent completed invocation")
+
+    response_content_raw = result["messages"][-1].content
+    token_count.set_token_count(token_count.token_count(response_content_raw))
+    logger.info("Token count after validator agent: %s", token_count.get_token_count())
+    
+    # Try to repair possible JSON output
+    response_content_repaired = repair_json_output(response_content_raw)
+
+    try:
+        parsed_response = json.loads(response_content_repaired)
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse JSON response from validator: {e}")
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Error parsing JSON response from validator: {str(e)}",
+                        name="validator",
+                    )
+                ],
+            },
+            goto="validator_master",
+        )
+
+    logger.info(f"Parsed validation response: {parsed_response}")
+
+    # Extract validation results
+    file_path = parsed_response.get("FILE")
+    programming_language = parsed_response.get("programming_language", "unknown")
+    is_validated = parsed_response.get("validated", False)
+    updated_code = parsed_response.get("updated_code")
+
+    current_file_validating = state.get("current_file_validating")
+    
+    if not file_path:
+        file_path = current_file_validating
+
+    if not file_path:
+        logger.error("No file path found in validation response")
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content="Validation error: No file path specified in response",
+                        name="validator",
+                    )
+                ],
+            },
+            goto="validator_master",
+        )
+
+    try:
+        # If validation failed and updated code is provided, write the updated code
+        if not is_validated and updated_code:
+            logger.info(f"Validation failed for {file_path}, updating with corrected code")
+            
+            # Create directory if it doesn't exist
+            dir_path = os.path.dirname(file_path)
+            if dir_path:
+                os.makedirs(dir_path, exist_ok=True)
+            
+            # Write updated code to file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(updated_code)
+            
+            logger.info(f"Updated file {file_path} with corrected code")
+
+        # Mark file as validated in checklist
+        state.get("checklist_manager").mark_file_validated(file_path, is_validated)
+        
+        validation_status = "passed" if is_validated else "failed and updated"
+        logger.info(f"File {file_path} validation {validation_status}")
+
+    except Exception as e:
+        logger.error(f"Error processing validation results for {file_path}: {str(e)}", exc_info=True)
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Error processing validation results: {str(e)}",
+                        name="validator",
+                    )
+                ],
+            },
+            goto="validator_master",
+        )
+
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content_repaired,
+                    name="validator",
+                )
+            ],
+        },
+        goto="validator_master",
     )

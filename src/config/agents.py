@@ -29,5 +29,6 @@ AGENT_LLM_MAP: dict[str, LLMType] = {
     "browser": "vision",  # 浏览器操作使用vision llm
     "reporter": "reasoning",  # 编写报告使用basic llm
     "version_resolver": "version_llm",
-    "terraform_planner": "basic"
+    "terraform_planner": "basic",
+    "validator":"basic"
 }

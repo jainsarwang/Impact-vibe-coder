@@ -38,7 +38,8 @@ TEAM_MEMBERS = [
     "code_planner",
     "coder_master",
     "version_resolver",
-    "diagram"
+    "diagram",
+    "validator"
 ]
 
 CODER_AGENTS = [

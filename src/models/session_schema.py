@@ -2,9 +2,9 @@ session_schema = {
     '$jsonSchema': {
         'bsonType': 'object',
         'required': ['session_id', 'created_at', 'checklist'],
-        'additionalProperties': False,  # Still reject other unexpected fields
+        'additionalProperties': False,
         'properties': {
-            '_id': {  # Explicitly allow the _id field
+            '_id': {
                 'bsonType': 'objectId'
             },
             'session_id': {
@@ -24,7 +24,7 @@ session_schema = {
                 'items': {
                     'bsonType': 'object',
                     'additionalProperties': False,
-                    'required': ['file_path', 'plan_created', 'coder', 'file_created', 'description'],
+                    'required': ['file_path', 'plan_created', 'file_created', 'validated'],
                     'properties': {
                         'file_path': {
                             'bsonType': 'string',
@@ -40,11 +40,31 @@ session_schema = {
                         },
                         'coder': {
                             'bsonType': ['string', 'null'],
-                            'description': 'must be a string when provided'
+                            'description': 'must be a string or null'
                         },
                         'description': {
                             'bsonType': ['string', 'null'],
-                            'description': 'must be a string when provided'
+                            'description': 'must be a string or null'
+                        },
+                        'validated': {
+                            'bsonType': 'bool',
+                            'description': 'must be a boolean and is required'
+                        },
+                        'validation_passed': {
+                            'bsonType': 'bool',
+                            'description': 'must be a boolean'
+                        },
+                        'validation_in_progress': {
+                            'bsonType': 'bool',
+                            'description': 'must be a boolean'
+                        },
+                        'validation_date': {
+                            'bsonType': ['string', 'null'],
+                            'description': 'must be a string (ISO date) or null'
+                        },
+                        'validation_failed_count': {
+                            'bsonType': 'int',
+                            'description': 'must be an integer'
                         }
                     }
                 }
