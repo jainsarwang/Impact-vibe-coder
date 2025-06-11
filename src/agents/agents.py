@@ -18,13 +18,13 @@ from ..utils import get_response_schema
 
 # Create agents using configured LLM types
 research_agent = create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP["researcher"], get_response_schema("researcher")),
+    get_llm_by_type(AGENT_LLM_MAP["researcher"], get_response_schema("researcher"), temperature=0.6),
     tools=[tavily_tool, crawl_tool],
     prompt=lambda state: apply_prompt_template("researcher", state),
 )
 
 directory_generator_agent = create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP['directory_generator'], get_response_schema("directory_generator")),
+    get_llm_by_type(AGENT_LLM_MAP['directory_generator'], get_response_schema("directory_generator"), temperature=0.6),
     tools=[],
     prompt=lambda state: apply_prompt_template("directory_generator", state),
 )
@@ -48,53 +48,54 @@ import_export_agent = create_react_agent(
 )
 
 model_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP['model_coder'], get_response_schema("model_coder")),
+    get_llm_by_type(AGENT_LLM_MAP['model_coder'], get_response_schema("model_coder"), temperature=0.8),
     tools=[python_repl_tool, read_file_tool],
     prompt=lambda state: apply_prompt_template_for_coder("model_coder", app_state),
 ))
 controller_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP['controller_coder'], get_response_schema("controller_coder")),
+    get_llm_by_type(AGENT_LLM_MAP['controller_coder'], get_response_schema("controller_coder"), temperature=0.8),
     tools=[python_repl_tool, read_file_tool],
     prompt=lambda state: apply_prompt_template_for_coder("controller_coder", app_state),
 ))
 route_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP['route_coder'], get_response_schema("route_coder")),
+    get_llm_by_type(AGENT_LLM_MAP['route_coder'], get_response_schema("route_coder"), temperature=0.8),
     tools=[python_repl_tool, read_file_tool],
     prompt=lambda state: apply_prompt_template_for_coder("route_coder", app_state),
 ))
 service_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP['service_coder'], get_response_schema("service_coder")),
+    get_llm_by_type(AGENT_LLM_MAP['service_coder'], get_response_schema("service_coder"), temperature=0.8),
     tools=[python_repl_tool, read_file_tool],
     prompt=lambda state: apply_prompt_template_for_coder("service_coder", app_state),
 ))
 utility_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP['utility_coder'], get_response_schema("utility_coder")),
+    get_llm_by_type(AGENT_LLM_MAP['utility_coder'], get_response_schema("utility_coder"), temperature=0.8),
     tools=[python_repl_tool, read_file_tool],
     prompt=lambda state: apply_prompt_template_for_coder("utility_coder", app_state),
 ))
 config_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP['config_coder'], get_response_schema("config_coder")),
+    get_llm_by_type(AGENT_LLM_MAP['config_coder'], get_response_schema("config_coder"), temperature=0.8),
     tools=[python_repl_tool, read_file_tool],
     prompt=lambda state: apply_prompt_template_for_coder("config_coder", app_state),
 ))
 test_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP['test_coder'], get_response_schema("test_coder")),
+    get_llm_by_type(AGENT_LLM_MAP['test_coder'], get_response_schema("test_coder"), temperature=0.8),
     tools=[python_repl_tool, read_file_tool],
     prompt=lambda state: apply_prompt_template_for_coder("test_coder", app_state),
 ))
 frontend_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP['frontend_coder'], get_response_schema("frontend_coder")),
+    get_llm_by_type(AGENT_LLM_MAP['frontend_coder'], get_response_schema("frontend_coder"), temperature=0.8),
     tools=[python_repl_tool, read_file_tool],
     prompt=lambda state: apply_prompt_template_for_coder("frontend_coder", app_state),
 ))
 
 db_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP['db_coder'], get_response_schema("db_coder")),
+    get_llm_by_type(AGENT_LLM_MAP['db_coder'], get_response_schema("db_coder"), temperature=0.8),
     tools=[python_repl_tool, read_file_tool],
     prompt=lambda state: apply_prompt_template_for_coder("db_coder", app_state),
 ))
 figma_coder_agent = lambda app_state: generate_image_with_gemini(
-    prompt=app_state['coder_instruction']
+    prompt=app_state['coder_instruction'],
+    temperature=0.8
 )
 
 # coder_agent = create_react_agent(
@@ -122,7 +123,7 @@ browser_agent = create_react_agent(
 )
 
 version_agent =  create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP["version_resolver"], get_response_schema("version_resolver")),
+    get_llm_by_type(AGENT_LLM_MAP["version_resolver"], get_response_schema("version_resolver"), temperature=0.6),
     tools=[bash_tool], 
     prompt=lambda state: apply_prompt_template("version_resolver", state),
 )

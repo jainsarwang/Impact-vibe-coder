@@ -11,22 +11,17 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 from jose import JWTError, jwt
 from pymongo.errors import PyMongoError
-from passlib.context import CryptContext
-import secrets
-import string
-import motor.motor_asyncio
 
 from fastapi import Depends, FastAPI, HTTPException, Header, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from sse_starlette.sse import EventSourceResponse
 import asyncio
-from pydantic import BaseModel, EmailStr, Field
-from dotenv import load_dotenv
 
 from src.graph import build_graph
 from src.config import BROWSER_HISTORY_DIR
+from src.image_to_code import Image2CodeRouter
 from ..service.workflow_service import run_agent_workflow
 from .types.api import ProjectGenerationRequest, User, Token, AdminCreateRequest, AdminCreateResponse, UserCreateRequest, UserCreateResponse, Project, ChatMessage, ChatMessageOut, UpdateToken
 from src.utils.session_manager import SessionManager
@@ -82,6 +77,7 @@ app.add_middleware(
 # Create the graph
 graph = build_graph()
 
+app.include_router(Image2CodeRouter, prefix = "/api/generate-frontend-code")
 
 @app.post("/api/chat/stream")
 async def chat_endpoint(request: ProjectGenerationRequest, session_id: str, req: Request):
