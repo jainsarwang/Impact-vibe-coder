@@ -105,9 +105,9 @@ const Login = () => {
                 <div className="text-center mb-8">
                     <div className="flex items-center justify-center mb-6">
                         <img
-                            src="/lovable-uploads/91162cee-1851-4344-a4c0-97d49c0debca.png"
+                            src="/logo.png"
                             alt="Impact Vibe Coder"
-                            className="h-16 w-auto filter drop-shadow-2xl"
+                            className="h-16 w-auto filter drop-shadow-2xl rounded"
                         />
                     </div>
                     <div className="space-y-3">

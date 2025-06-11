@@ -58,12 +58,13 @@ const FileProgress = ({
 
     const getStatusColor = (status: FileStatus["status"]) => {
         switch (status) {
-            case "pending":
-                return "text-slate-400 border-slate-500/50 bg-slate-800/30";
             case "generating":
                 return "text-blue-300 border-blue-400/50 bg-blue-500/20 shadow-lg shadow-blue-500/25";
             case "completed":
                 return "text-green-300 border-green-400/50 bg-green-500/20 shadow-lg shadow-green-500/25";
+            case "pending":
+            default:
+                return "text-slate-400 border-slate-500/50 bg-slate-800/30";
         }
     };
 
