@@ -545,17 +545,35 @@ async def update_organization_status(
 ):
     """
     Update the status of an organization (e.g., active, inactive).
-    Requires admin or superadmin role.
+    Requires superadmin role.
     """
+    if not await verify_role(current_user, "superadmin"):
+        raise HTTPException(status_code=400, detail="Superadmin can only update orgnaization's status")
     organization= await organizations_collection.find_one({"organization_name": organization_name})
     if not organization:
         raise HTTPException(status_code=400, detail="Organization not found")
     if status:
         organization['is_active']  = True
         await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": True}})
+        #Update the status of thr
+        await users_collection.update_one({"organization_id": organization.get("organization_id"), "is_primary_admin":True}, {"$set": {"is_active": True}})
+        # set all users of that orgsnization is_active to True.
+        users_cursor= users_collection.find({"organization_id": organization.get("organization_id")})
+        users = await users_cursor.to_list()
+        if users:
+            for user in users:
+                await users_collection.update_one({"user_id": user.get("user_id")}, {"$set": {"is_active": True}})       
     else:
         organization['is_active']  = False
         await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": False}})
+        await users_collection.update_one({"organization_id": organization.get("organization_id"), "is_primary_admin":True}, {"$set": {"is_active": False}})
+        # set all users of that organization is_active to False.
+        users_cursor= users_collection.find({"organization_id": organization.get("organization_id")})
+        users = await users_cursor.to_list()
+        if users:
+            for user in users:
+                await users_collection.update_one({"user_id": user.get("user_id")}, {"$set": {"is_active": False}})       
+
     organization= await organizations_collection.find_one({"organization_name": organization_name})
     return {
         "organization_id": organization['organization_id'],

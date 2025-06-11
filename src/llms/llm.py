@@ -38,7 +38,7 @@ def create_gemini_llm(model: str, response_schema = None, temperature: float = 0
     
     llm = ChatGemini(
         model=model,
-        temperature=0,
+        temperature=0.0,
         max_tokens=None,
         timeout=None,
         max_retries=2,

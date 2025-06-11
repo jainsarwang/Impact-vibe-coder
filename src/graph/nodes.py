@@ -97,6 +97,7 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
     response_content = result["messages"][-1].content
 
     logger.debug(f"Research agent response: {response_content}")
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
         update={
             "messages": [
@@ -105,7 +106,8 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
                     name="researcher",
                 )
             ],
-            "researched_content" : response_content
+            "researched_content" : response_content,
+            "tokens": token_count.get_token_count()
         },
         goto="supervisor",
     )
@@ -118,6 +120,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     checklist_manager = ChecklistManager(state)  # Reset checklist manager for new task
     logger.info("Directory Generator agent completed task")
     token_count.set_token_count(token_count.token_count(result["messages"][-1].content))
+
     checklist_manager.update_tokens(token_count.get_token_count())
     logger.info("Token count after directory generator: %s", token_count.get_token_count())
     response_content = result["messages"][-1].content
@@ -128,7 +131,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     checklist_manager.initialize_from_directory(response_content)
 
     logger.debug(f"Directory Generator agent response: {response_content}")
-    
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
         update={
             "messages": [
@@ -138,7 +141,8 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
                 )
             ],
             "directory_structure": response_content,
-            "checklist_manager": checklist_manager
+            "checklist_manager": checklist_manager,
+            "tokens": token_count.get_token_count()
         },
         goto="supervisor",
     )
@@ -156,7 +160,8 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     directory_structure = state.get('directory_structure')
     if not directory_structure:
         logging.warning("No Directory Object in State, Going back to supervisor")
-        return Command(goto='supervisor')
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+        return Command(goto='supervisor', update={"tokens": token_count.get_token_count()})
 
     # Prepare all variables for the prompt
     prompt_vars = {
@@ -216,11 +221,12 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     except json.JSONDecodeError:
         logger.warning("Code Planner response is not a valid JSON")
         goto = "__end__"
-
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
         update={
             "messages": [HumanMessage(content=full_response, name="code_planner")],
             "code_plan": full_response,
+            "tokens": token_count.get_token_count()
         },
         goto=goto,
     )
@@ -234,7 +240,8 @@ def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end_
     directory_structure = state.get('directory_structure')
     if not directory_structure:
         logger.warning("No Directory Object in State, Going back to supervisor")
-        return Command(goto='supervisor')
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+        return Command(goto='supervisor', update={"tokens": token_count.get_token_count()})
 
     # Parse directory_structure if it's a string
     if isinstance(directory_structure, str):
@@ -242,7 +249,8 @@ def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end_
             directory_structure = json.loads(directory_structure)
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse directory_structure: {e}")
-            return Command(goto='supervisor')
+            logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+            return Command(goto='supervisor', update={"tokens": token_count.get_token_count()})
 
     # Initialize dependencies_values safely
     dependencies_values = {}
@@ -252,7 +260,8 @@ def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end_
             dependencies_values = json.loads(dependencies_values)
     except (json.JSONDecodeError, AttributeError) as e:
         logger.error(f"Failed to parse dependencies: {e}")
-        return Command(goto='supervisor')
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+        return Command(goto='supervisor', update={"token": token_count.get_token_count()})
 
     # Prepare prompt variables
     prompt_vars = {
@@ -290,7 +299,8 @@ def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end_
         json_response = repair_json_output(full_response)
     except Exception as e:
         logger.error(f"LLM invocation failed: {e}")
-        return Command(goto='supervisor')
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+        return Command(goto='supervisor', update = {"token": token_count.get_token_count()})
 
     logger.debug(f"Current state messages: {state.get('messages', [])}")
     logger.info(f"Version Resolver response: {json_response}")
@@ -309,11 +319,13 @@ def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end_
         directory_structure['dependencies'] = parsed_response
     except (json.JSONDecodeError, ValueError, TypeError) as e:
         logger.error(f"Failed to process LLM response: {e}")
-        return Command(goto='supervisor')
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+        return Command(goto='supervisor', update = {"tokens": token_count.get_token_count()})
 
     logger.info("Version Resolver work done")
     logger.debug(f"Updated dependencies: {directory_structure['dependencies']}")
     logger.info(directory_structure)
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
         update={
             "messages": [
@@ -323,6 +335,7 @@ def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end_
                 )
             ],
             "directory_structure": str(directory_structure),
+            "tokens": token_count.get_token_count()
         },
         
         goto="supervisor",
@@ -343,13 +356,15 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
 
     if not directory_structure or not code_plan_str:
         logging.warning("No Directory Structure or code plan in State. Going back to supervisor.")
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
         return Command(goto='supervisor', update={
             "messages": state["messages"] + [
                 HumanMessage(
                     content="Coder master cannot proceed: Missing directory structure or code plan.",
                     name="coder_master",
-                )
-            ]
+                ),
+            ],
+            "tokens": token_count.get_token_count()
         })
 
     # Load the code plan from the JSON string
@@ -365,10 +380,12 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         state.get("checklist_manager").update_from_plan(code_plan)
     except (json.JSONDecodeError, ValueError) as e:
         logger.error(f"Failed to parse or process code_plan JSON string: {e}")
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
         return Command(goto='__end__', update={
             "messages": state["messages"] + [
                 HumanMessage(content=f"Error parsing code plan: {e}", name="coder_master")
-            ]
+            ],
+            "tokens": token_count.get_token_count()
         })
 
     # Get the next file to process from the checklist
@@ -383,13 +400,15 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
 
         if assigned_coder_name not in CODER_AGENTS:
             logger.error(f"Checklist assigned an invalid coder '{assigned_coder_name}' for file '{file_path_to_process}'.")
+            logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
             return Command(goto='supervisor', update={
                 "messages": state["messages"] + [
                     HumanMessage(
                         content=f"Checklist error: Invalid coder '{assigned_coder_name}' for file '{file_path_to_process}'.",
                         name="coder_master",
                     )
-                ]
+                ],
+                "tokens": token_count.get_token_count()
             })
 
         # Find the specific instruction for this file in the code plan
@@ -413,14 +432,15 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         logger.info(f"Delegating to agent: {assigned_coder_name} for file: {file_path_to_process}")
 
         coder_master_message = f"Delegating file `{file_path_to_process}` to `{assigned_coder_name}` agent."
-
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
         return Command(
             goto=assigned_coder_name,
             update={
                 "messages": state["messages"] + [HumanMessage(content=coder_master_message, name="coder_master")],
                 "coder_instruction": instruction_content,
                 "current_file_processing": file_path_to_process,
-                "generated_files": generated_files
+                "generated_files": generated_files,
+                "tokens": token_count.get_token_count()
             }
         )
 
@@ -436,10 +456,9 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
         updated_state["coder_instruction"] = None
         updated_state["current_file_processing"] = None
         updated_state["messages"].append(HumanMessage(content=completion_message, name="coder_master"))
-
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
         return Command(
-            goto='supervisor',
-            update=updated_state
+            goto='supervisor',            
         )
 
 def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_master"]]:
@@ -454,6 +473,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
         result = agent(state)
     except Exception as e:
         logger.error(f"Error invoking agent '{prompt_name}': {str(e)}", exc_info=True)
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
         return Command(
             update={
                 "messages": [
@@ -461,7 +481,8 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
                         content=f"Error during agent '{prompt_name}' execution: {str(e)}",
                         name=prompt_name,
                     )
-                ]
+                ],
+                "tokens": token_count.get_token_count()
             },
             goto="coder_master",
         )
@@ -478,6 +499,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
         parsed_response = json.loads(response_content_repaired)
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse JSON response from '{prompt_name}': {e}")
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
         return Command(
             update={
                 "messages": [
@@ -486,6 +508,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
                         name=prompt_name,
                     )
                 ],
+                "tokens": token_count.get_token_count()
             },
             goto="coder_master",
         )
@@ -551,7 +574,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
             logger.error(f"Error writing file {file_path}: {str(e)}", exc_info=True)
 
     updated_generated_files = list(set(current_generated_files + newly_generated_this_run))
-
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
         update={
             "messages": [
@@ -561,6 +584,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
                 )
             ],
             "generated_files": updated_generated_files,
+            "tokens": token_count.get_token_count()
         },
         goto="coder_master",
     )
@@ -578,7 +602,8 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
     directory_structure = state.get('directory_structure')
     if not directory_structure:
         logging.warning("No Directory Object in State, Going back to supervisor")
-        return Command(goto='supervisor')
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+        return Command(goto='supervisor', update={"tokens": token_count.get_token_count()})
 
     prompt_vars = {
         "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
@@ -624,7 +649,7 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
 
     except json.JSONDecodeError:
         logger.warning("Import Export response is not a valid JSON")
-
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
         update={
             "messages": [
@@ -634,6 +659,7 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
                 )
             ],
             "directory_structure": (full_response),
+            "tokens": token_count.get_token_count()
         },
         goto=goto,
     )   
@@ -724,6 +750,7 @@ def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
         parsed_instruction = json.loads(state.get('coder_instruction', '{}'))
     except json.JSONDecodeError as e:
         logger.error(f"Error parsing 'coder_instruction' for 'figma_coder': {str(e)}", exc_info=True)
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
         return Command(
             update={
                 "messages": [
@@ -731,7 +758,8 @@ def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
                         content=f"Error parsing 'coder_instruction' for 'figma_coder': {str(e)}",
                         name='figma_coder',
                     )
-                ]
+                ],
+                "tokens": token_count.get_token_count()
             },
             goto="coder_master",
         )
@@ -740,6 +768,7 @@ def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
         response_parts = figma_coder_agent(state)
     except Exception as e:
         logger.error(f"Error invoking agent 'figma_coder': {str(e)}", exc_info=True)
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
         return Command(
             update={
                 "messages": [
@@ -747,7 +776,8 @@ def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
                         content=f"Error during agent 'figma_coder' execution: {str(e)}",
                         name='figma_coder',
                     )
-                ]
+                ],
+                "tokens": token_count.get_token_count()
             },
             goto="coder_master",
         )
@@ -768,7 +798,7 @@ def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
         
     current_generated_files = state.get('generated_files', [])
     state['generated_files'] = current_generated_files + [parsed_instruction.get("file", "")]
-
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
         update={
             "messages": [
@@ -776,7 +806,8 @@ def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
                     content="Image generated Successfully",
                     name='figma_coder',
                 )
-            ]
+            ],
+            "tokens": token_count.get_token_count()
         },
         goto="coder_master",
     )
@@ -854,6 +885,7 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
     state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after browser agent: %d", token_count.get_token_count())
     logger.debug(f"Browser agent response: {response_content}")
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
         update={
             "messages": [
@@ -862,6 +894,7 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
                     name="browser",
                 )
             ],
+            "tokens": token_count.get_token_count()
         },
         goto="supervisor",
     )
@@ -936,8 +969,8 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     else:
         logger.warning(f"Supervisor returned invalid next step: {goto}. Ending workflow.")
         goto = "__end__"
-
-    return Command(goto=goto, update={"next": goto})
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+    return Command(goto=goto, update={"next": goto, "tokens": token_count.get_token_count()})
 
 def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     """Planner node that generate the full plan."""
@@ -975,11 +1008,12 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     except json.JSONDecodeError:
         logger.warning("Planner response is not a valid JSON")
         goto = "__end__"
-
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
         update={
             "messages": [HumanMessage(content=full_response, name="planner")],
             "full_plan": full_response,
+            "tokens": token_count.get_token_count()
         },
         goto=goto,
     )
@@ -992,16 +1026,15 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     messages = apply_prompt_template("coordinator", state)
     response = get_llm_by_type(AGENT_LLM_MAP["coordinator"], schema=get_response_schema('coordinator')).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
-    
     # Keep original response
     response_content_raw = response.content
     token_count.set_token_count(token_count.token_count(response_content_raw))
     # state.get("checklist_manager").update_tokens(token_count.get_token_count())
+
     logger.info("token count after coordinator: %d", token_count.get_token_count())
     # Process JSON for internal use
     response_content_repaired = repair_json_output(response_content_raw)
     logger.debug(f"Coordinator full response: {response_content_raw}")
-    
     # Extract non-JSON context to show user
     user_display_content = extract_user_content(response_content_raw)
     
@@ -1013,8 +1046,8 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     if "handoff_to_planner()" in response_content_raw:
         # extract_and_save_json(response_content_raw)
         goto = "planner"
-    
-    return Command(goto=goto)
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+    return Command(goto=goto,update={"tokens": token_count.get_token_count()})
 
 def extract_user_content(full_content: str) -> str:
     """Extracts non-JSON parts of the response for user display."""
@@ -1043,7 +1076,7 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     # Todo: Add report to state
 
     logger.debug(f"reporter response: {response_content}")
-
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
         update={
             "messages": [
@@ -1052,6 +1085,7 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
                     name="reporter",
                 )
             ],
+            "tokens": token_count.get_token_count()
         },
         goto="supervisor",
     )
@@ -1089,6 +1123,7 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Token count after diagram generation: %d", token_count.get_token_count())
     logger.debug(f"Diagram agent response: {response}")
     logger.info("Diagram agent completed task")
+    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
         update={
             "messages": [
@@ -1098,6 +1133,7 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
                 )
             ],
             "component_diagram": response.content,
+            "tokens": token_count.get_token_count()
         },
         goto="supervisor",
     )
@@ -1195,6 +1231,7 @@ def terraform_planner_node(state: State) -> Command[Literal["supervisor"]]:
         update={
             "messages": [HumanMessage(content=full_response, name="code_planner")],
             "code_plan": full_response,
+            "tokens": token_count.get_token_count()
         },
         goto=goto,
     )
