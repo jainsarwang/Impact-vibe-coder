@@ -118,6 +118,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     checklist_manager = ChecklistManager(state)  # Reset checklist manager for new task
     logger.info("Directory Generator agent completed task")
     token_count.set_token_count(token_count.token_count(result["messages"][-1].content))
+    checklist_manager.update_tokens(token_count.get_token_count())
     logger.info("Token count after directory generator: %s", token_count.get_token_count())
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
@@ -186,6 +187,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     llm = get_llm_by_type("basic", schema=get_response_schema("code_planner"))
     response = llm.invoke(messages)
     token_count.set_token_count(token_count.token_count(response.content))
+    state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after code planner: %s", token_count.get_token_count())
     full_response = response.content
     # extract_and_save_json(full_response)
@@ -283,6 +285,7 @@ def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end_
         response = llm.invoke(messages)
         full_response = response.content
         token_count.set_token_count(token_count.token_count(response.content))      
+        state.get("checklist_manager").update_tokens(token_count.get_token_count())
         logger.info("Token count after version resolver: %s", token_count.get_token_count())    
         json_response = repair_json_output(full_response)
     except Exception as e:
@@ -467,6 +470,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
 
     response_content_raw = result["messages"][-1].content
     token_count.set_token_count(token_count.token_count(response_content_raw))
+    state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after coder agent '%s': %s", prompt_name, token_count.get_token_count())
     response_content_repaired = repair_json_output(response_content_raw)
 
@@ -605,6 +609,7 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
         response = llm.invoke(messages)
         full_response = response.content
         token_count.set_token_count(token_count.token_count(response.content))
+        state.get("checklist_manager").update_tokens(token_count.get_token_count())
         logger.info("token count after import-export agent: %s", token_count.get_token_count())
         logger.debug(f"Current state messages: {state['messages']}")
         logger.info(f"Import Export Response: {full_response}")
@@ -847,6 +852,7 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
     # 尝试修复可能的JSON输出
     response_content = repair_json_output(response_content)
     token_count.set_token_count(token_count.token_count(response_content))
+    state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after browser agent: %d", token_count.get_token_count())
     logger.debug(f"Browser agent response: {response_content}")
     return Command(
@@ -882,6 +888,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
             if response.startswith('```json') and response.endswith('```'):
                 response = response[7:-3].strip()  # Remove ```json and ```
                 token_count.set_token_count(token_count.token_count(response))
+                state.get("checklist_manager").update_tokens(token_count.get_token_count())                
                 logger.info("Token count after supervisor: %d", token_count.get_token_count())
             parsed_response = json.loads(response)
         elif hasattr(response, 'content'):
@@ -902,7 +909,10 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     logger.debug(f"Supervisor parsed response: {goto=}")
 
     if goto == "FINISH":
+        state.get("checklist_manager").update_tokens(token_count.get_token_count())
         print(token_count.get_token_count())
+        token_count.set_token_count(0)
+        print(f"After making tokens to '0', count is: {token_count.get_token_count()}")
         with open("project_requirements.json") as f:
             project_requirement = json.load(f)
 
@@ -959,6 +969,7 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
         repaired_response = json_repair.loads(full_response)
         full_response = json.dumps(repaired_response)
         token_count.set_token_count(token_count.token_count(full_response))
+        # state.get("checklist_manager").update_tokens(token_count.get_token_count())
         logger.info("Token count after planner: %d", token_count.get_token_count())
         with open("project_requirements.json", "w", encoding="utf-8") as f:
             json.dump(repaired_response, f, indent=2, ensure_ascii=False)
@@ -986,6 +997,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     # Keep original response
     response_content_raw = response.content
     token_count.set_token_count(token_count.token_count(response_content_raw))
+    # state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("token count after coordinator: %d", token_count.get_token_count())
     # Process JSON for internal use
     response_content_repaired = repair_json_output(response_content_raw)
@@ -1025,6 +1037,7 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     logger.debug(f"Current state messages: {state['messages']}")
     response_content = response.content
     token_count.set_token_count(token_count.token_count(response_content))
+    state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after reporter: %d", token_count.get_token_count())
     response_content = repair_json_output(response_content)
 
@@ -1073,6 +1086,7 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
     llm = get_llm_by_type("basic", schema=get_response_schema("diagram_generator"), temperature=0.8)
     response = llm.invoke(messages)
     token_count.set_token_count(token_count.token_count(response.content))
+    # state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after diagram generation: %d", token_count.get_token_count())
     logger.debug(f"Diagram agent response: {response}")
     logger.info("Diagram agent completed task")
