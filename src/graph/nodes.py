@@ -980,7 +980,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     """Coordinator node that communicates with customers, showing only non-JSON context."""
     logger.info("Coordinator talking.")
     messages = apply_prompt_template("coordinator", state)
-    response = get_llm_by_type(AGENT_LLM_MAP["coordinator"], schema=get_response_schema('coordinator')).invoke(messages)
+    response = get_llm_by_type(AGENT_LLM_MAP["coordinator"], schema=get_response_schema('coordinator'), temperature=0.6).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
     
     # Keep original response
@@ -1021,7 +1021,7 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     """Reporter node that write a final report."""
     logger.info("Reporter write final report")
     messages = apply_prompt_template("reporter", state)
-    response = get_llm_by_type(AGENT_LLM_MAP["reporter"], schema=get_response_schema('reporter')).invoke(messages)
+    response = get_llm_by_type(AGENT_LLM_MAP["reporter"], schema=get_response_schema('reporter'), temperature=0.6).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
     response_content = response.content
     token_count.set_token_count(token_count.token_count(response_content))
@@ -1070,7 +1070,7 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
         }
     ]
 
-    llm = get_llm_by_type("basic", schema=get_response_schema("diagram_generator"))
+    llm = get_llm_by_type("basic", schema=get_response_schema("diagram_generator"), temperature=0.8)
     response = llm.invoke(messages)
     token_count.set_token_count(token_count.token_count(response.content))
     logger.info("Token count after diagram generation: %d", token_count.get_token_count())
