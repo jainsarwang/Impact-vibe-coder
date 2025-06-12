@@ -38,6 +38,7 @@ class State(MessagesState):
     previous_file_path: str # previously generated file path
     previous_file_content: str # previously generated file content
     session_id: str # session id of the current session
+    tokens: int # tokens used in a session
     validation_instruction : dict
     current_file_validating : str
 

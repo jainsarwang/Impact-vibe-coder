@@ -37,6 +37,17 @@ const PromptInput = ({ onGenerate, isGenerating }: PromptInputProps) => {
         }
     };
 
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            const form = e.target as HTMLElement;
+            form.closest("form")?.dispatchEvent(
+                new Event("submit", { bubbles: true })
+            );
+            // handleSubmit();
+        }
+    };
+
     const examplePrompts = [
         "Create a modern e-commerce website with React and TypeScript",
         "Build a task management app with drag and drop functionality",
@@ -102,6 +113,7 @@ const PromptInput = ({ onGenerate, isGenerating }: PromptInputProps) => {
                                 <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl opacity-30 group-focus-within:opacity-60 transition duration-300"></div>
                                 <textarea
                                     value={prompt}
+                                    onKeyDown={handleKeyPress}
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder="Enter your project description here... (e.g., Create a modern todo app with React, TypeScript, and Tailwind CSS)"
                                     className="relative w-full h-40 px-6 py-4 bg-black/30 border border-white/30 rounded-2xl text-white placeholder-slate-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 font-medium"

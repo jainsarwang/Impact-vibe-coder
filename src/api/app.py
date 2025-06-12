@@ -11,22 +11,17 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 from jose import JWTError, jwt
 from pymongo.errors import PyMongoError
-from passlib.context import CryptContext
-import secrets
-import string
-import motor.motor_asyncio
 
 from fastapi import Depends, FastAPI, HTTPException, Header, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from sse_starlette.sse import EventSourceResponse
 import asyncio
-from pydantic import BaseModel, EmailStr, Field
-from dotenv import load_dotenv
 
 from src.graph import build_graph
 from src.config import BROWSER_HISTORY_DIR
+from src.image_to_code import Image2CodeRouter
 from ..service.workflow_service import run_agent_workflow
 from .types.api import ProjectGenerationRequest, User, Token, AdminCreateRequest, AdminCreateResponse, UserCreateRequest, UserCreateResponse, Project, ChatMessage, ChatMessageOut, UpdateToken
 from src.utils.session_manager import SessionManager
@@ -82,6 +77,7 @@ app.add_middleware(
 # Create the graph
 graph = build_graph()
 
+app.include_router(Image2CodeRouter, prefix = "/api/generate-frontend-code")
 
 @app.post("/api/chat/stream")
 async def chat_endpoint(request: ProjectGenerationRequest, session_id: str, req: Request):
@@ -545,17 +541,35 @@ async def update_organization_status(
 ):
     """
     Update the status of an organization (e.g., active, inactive).
-    Requires admin or superadmin role.
+    Requires superadmin role.
     """
+    if not await verify_role(current_user, "superadmin"):
+        raise HTTPException(status_code=400, detail="Superadmin can only update orgnaization's status")
     organization= await organizations_collection.find_one({"organization_name": organization_name})
     if not organization:
         raise HTTPException(status_code=400, detail="Organization not found")
     if status:
         organization['is_active']  = True
         await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": True}})
+        #Update the status of thr
+        await users_collection.update_one({"organization_id": organization.get("organization_id"), "is_primary_admin":True}, {"$set": {"is_active": True}})
+        # set all users of that orgsnization is_active to True.
+        users_cursor= users_collection.find({"organization_id": organization.get("organization_id")})
+        users = await users_cursor.to_list()
+        if users:
+            for user in users:
+                await users_collection.update_one({"user_id": user.get("user_id")}, {"$set": {"is_active": True}})       
     else:
         organization['is_active']  = False
         await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"is_active": False}})
+        await users_collection.update_one({"organization_id": organization.get("organization_id"), "is_primary_admin":True}, {"$set": {"is_active": False}})
+        # set all users of that organization is_active to False.
+        users_cursor= users_collection.find({"organization_id": organization.get("organization_id")})
+        users = await users_cursor.to_list()
+        if users:
+            for user in users:
+                await users_collection.update_one({"user_id": user.get("user_id")}, {"$set": {"is_active": False}})       
+
     organization= await organizations_collection.find_one({"organization_name": organization_name})
     return {
         "organization_id": organization['organization_id'],

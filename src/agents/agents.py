@@ -18,13 +18,13 @@ from ..utils import get_response_schema
 
 # Create agents using configured LLM types
 research_agent = create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP["researcher"], get_response_schema("researcher")),
+    get_llm_by_type(AGENT_LLM_MAP["researcher"], get_response_schema("researcher"), temperature=0.6),
     tools=[tavily_tool, crawl_tool],
     prompt=lambda state: apply_prompt_template("researcher", state),
 )
 
 directory_generator_agent = create_react_agent(
-    get_llm_by_type(AGENT_LLM_MAP['directory_generator'], get_response_schema("directory_generator")),
+    get_llm_by_type(AGENT_LLM_MAP['directory_generator'], get_response_schema("directory_generator"), temperature=0.6),
     tools=[],
     prompt=lambda state: apply_prompt_template("directory_generator", state),
 )
@@ -95,7 +95,8 @@ db_coder_agent = coder_wrapper(lambda app_state: create_react_agent(
     prompt=lambda state: apply_prompt_template_for_coder("db_coder", app_state),
 ))
 figma_coder_agent = lambda app_state: generate_image_with_gemini(
-    prompt=app_state['coder_instruction']
+    prompt=app_state['coder_instruction'],
+    temperature=0.8
 )
 
 # coder_agent = create_react_agent(
