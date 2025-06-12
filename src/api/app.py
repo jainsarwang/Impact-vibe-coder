@@ -604,7 +604,7 @@ async def add_tokens_to_organization(
     organization['total_tokens'] += tokens_to_be_added
     organization['tokens_remaining'] += tokens_to_be_added
     
-    user = await users_collection.find_one({"organization_id": organization['organization_id']})
+    user = await users_collection.find_one({"organization_id": organization['organization_id'], "is_primary_admin": True})
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tokens cannot be added, user not found in organization")
     
@@ -614,8 +614,8 @@ async def add_tokens_to_organization(
     if user.get("is_primary_admin", False) is False:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens cannot be added to a user who is not a primary admin")
     
-    user["tokens_allowed"] = user.get("tokens_allowed", 0) + tokens_to_be_added
-    await users_collection.update_one({"user_id": user["user_id"]}, {"$set": {"tokens_allowed": user.get("tokens_allowed", 0) + tokens_to_be_added}})
+    user["tokens_allowed"] = user.get("tokens_allowed") + tokens_to_be_added
+    await users_collection.update_one({"user_id": user["user_id"]}, {"$set": {"tokens_allowed": user.get("tokens_allowed", 0)}})
     
     primary_admin = await users_collection.find_one({
         "organization_id": organization.get("organization_id"),
@@ -624,7 +624,7 @@ async def add_tokens_to_organization(
     if not primary_admin:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Primary admin not found for this organization")
     
-    await users_collection.update_one({"user_id": primary_admin.get("user_id")}, {"$set": {"tokens_allowed":( primary_admin.get("tokens_allowed") + tokens_to_be_added)}})
+    # await users_collection.update_one({"user_id": primary_admin.get("user_id")}, {"$set": {"tokens_allowed":( primary_admin.get("tokens_allowed") + tokens_to_be_added)}})
     await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"total_tokens": organization['total_tokens'], "tokens_remaining": organization['tokens_remaining']}})
         
     return {
@@ -689,7 +689,7 @@ async def update_user_tokens(
     updateData: UpdateToken,
     current_user: User = Depends(get_current_active_user)
 ):
-    tokens = updateData['tokens']
+    tokens = updateData.tokens
     if tokens < 0:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens must be non-negative.")
     
