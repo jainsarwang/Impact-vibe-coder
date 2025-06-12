@@ -370,7 +370,7 @@ async def superadmin_create_admin_with_org(
             "email": request.email,
             "password": get_password_hash(password), # Store hashed password
             "is_active": True,
-            "tokens_allowed": 0,
+            "tokens_allowed": current_user.get("total_tokens"),
             "is_primary_admin": True, # Admin created by superadmin is a primary admin
             "created_at": datetime.now(timezone.utc), 
             "updated_at": datetime.now(timezone.utc),
