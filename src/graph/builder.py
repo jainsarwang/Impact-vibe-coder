@@ -28,7 +28,8 @@ from .nodes import (
     import_export_node,
     version_resolver_node,
     terraform_planner_node,
-    validator_master_node
+    validator_master_node,
+    validator_node
 )
 
 
@@ -43,6 +44,7 @@ def build_graph():
     builder.add_node("directory_generator", directory_generator_node)
     builder.add_node("code_planner", code_planner_node)
     builder.add_node("coder_master", coder_master_node)
+    builder.add_node("validator_master",validator_master_node)
     builder.add_node("model_coder", model_coder_node)
     builder.add_node("controller_coder", controller_coder_node)
     builder.add_node("route_coder", route_coder_node)
@@ -58,7 +60,7 @@ def build_graph():
     builder.add_node("reporter", reporter_node)
     builder.add_node("import-export", import_export_node)
     builder.add_node("diagram",diagram_node)
-    builder.add_node("validator",validator_master_node)
+    builder.add_node("validator",validator_node)
 
     # Terraform
     builder.add_node("terraform_planner", terraform_planner_node)

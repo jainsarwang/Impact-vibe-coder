@@ -5,7 +5,7 @@ from .search import tavily_tool
 from .bash_tool import bash_tool
 from .browser import browser_tool
 from .create_zip import project_zip_tool
-from .read_file import read_file_tool
+from .read_file import tool_parent as read_file_tool
 
 __all__ = [
     "bash_tool",

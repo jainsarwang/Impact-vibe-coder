@@ -38,7 +38,7 @@ from src.agents import  (
 )
 from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS, CODER_AGENTS, AGENT_LLM_MAP
-from src.prompts.template import apply_prompt_template, apply_prompt_template_for_coder, apply_prompt_template_planner, get_prompt_template
+from src.prompts.template import apply_prompt_template, apply_prompt_template_for_coder, apply_prompt_template_planner, get_prompt_template,apply_prompt_template_for_validator
 from src.tools import tavily_tool, bash_tool
 from src.utils import ReadmeExecutor,  repair_json_output, ensure_directory_exists, ChecklistManager, token_count, get_response_schema
 from .types import State
@@ -769,6 +769,8 @@ def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
         
     current_generated_files = state.get('generated_files', [])
     state['generated_files'] = current_generated_files + [parsed_instruction.get("file", "")]
+    state.get("checklist_manager")._normalize_path(file_name)
+    state.get("checklist_manager").mark_file_created(file_name)
 
     return Command(
         update={
@@ -1268,6 +1270,7 @@ def validator_master_node(state: State) -> Command[Literal["validator", "supervi
             "directory_structure": state.get('directory_structure', ''),
             "generated_files": generated_files
         }
+        logger.info(f"validation Instruction:{validation_instruction}")
 
         logger.info(f"Delegating to validator agent for file: {file_path_to_validate}")
 
@@ -1277,7 +1280,7 @@ def validator_master_node(state: State) -> Command[Literal["validator", "supervi
             goto="validator",
             update={
                 "messages": state["messages"] + [HumanMessage(content=validator_master_message, name="validator_master")],
-                "validation_instruction": json.dumps(validation_instruction, indent=2),
+                "validation_instruction": validation_instruction,
                 "current_file_validating": file_path_to_validate,
             }
         )
@@ -1287,6 +1290,7 @@ def validator_master_node(state: State) -> Command[Literal["validator", "supervi
         
         # Check validation summary
         validation_summary = state.get("checklist_manager").get_validation_summary()
+        print(validation_summary)
         
         completion_message = "Validation phase completed. All generated files have been validated."
         if validation_summary:
@@ -1315,11 +1319,10 @@ def validator_node(state: State) -> Command[Literal["validator_master"]]:
     to check if validation passed, and updates files if validation failed.
     """
     logger.info("Validator node starting validation task")
-    logger.debug(f"Validation instruction: {state.get('validation_instruction')}")
+    logger.debug(f"Validation instruction: {state.get("validation_instruction")}")
 
     try:
-        result = validator_agent.invoke(state)
-        logger.info(f"validator response:{result}")
+        result = validator_agent(state)
     except Exception as e:
         logger.error(f"Error invoking validator agent: {str(e)}", exc_info=True)
         return Command(
@@ -1342,6 +1345,7 @@ def validator_node(state: State) -> Command[Literal["validator_master"]]:
     
     # Try to repair possible JSON output
     response_content_repaired = repair_json_output(response_content_raw)
+    logger.info(f"Validator node response: {response_content_repaired}")
 
     try:
         parsed_response = json.loads(response_content_repaired)

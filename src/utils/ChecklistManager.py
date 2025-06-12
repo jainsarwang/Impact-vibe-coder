@@ -199,6 +199,7 @@ class ChecklistManager:
         
         if entry:
             entry["description"] = description
+            logging.info(f"description: {description}")
             self._save_checklist()
             logging.debug(f"Updated description for file in checklist: {file_path}")
         else:

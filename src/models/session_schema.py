@@ -52,7 +52,7 @@ session_schema = {
                         },
                         'validated': {
                             'bsonType': 'bool',
-                            'description': 'must be a boolean and is required'
+                            'description': 'must be a boolean and is required',
                         },
                         'validation_passed': {
                             'bsonType': 'bool',

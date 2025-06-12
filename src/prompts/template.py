@@ -27,6 +27,14 @@ def apply_prompt_template(prompt_name: str, state: AgentState) -> list:
     logging.info("token_count_value: %d for prompt_name: %s", token_count.get_token_count(), prompt_name)
     return [{"role": "system", "content": system_prompt}] + state["messages"]
 
+def apply_prompt_template_for_validator(prompt_name: str, state: State)->list:
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME"],
+        template=get_prompt_template(prompt_name),
+    ).format(CURRENT_TIME = datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),**state)
+    validation_instruction = state.get("validation_instruction")
+    return [{"role": "system", "content": system_prompt + validation_instruction}]
+
 def apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
     system_prompt = PromptTemplate(
         input_variables=["CURRENT_TIME"],
