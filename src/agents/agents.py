@@ -140,6 +140,6 @@ validator_agent = coder_wrapper(lambda app_state: create_react_agent(
     tools=[read_file_tool(app_state)],
     prompt=lambda state: apply_prompt_template_for_validator(
         "validator", 
-        state,
+        app_state,
     ),
 ))

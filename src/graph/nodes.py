@@ -1334,10 +1334,13 @@ def validator_master_node(state: State) -> Command[Literal["validator", "supervi
             total_files = validation_summary.get('total_files', 0)
             validated_files = validation_summary.get('validated_files', 0)
             failed_files = validation_summary.get('failed_files', 0)
+            validation_complete = validation_summary.get('validation_complete',True)
             
             completion_message += f"\nValidation Summary: {validated_files}/{total_files} files passed validation."
+            goto = "supervisor"
             if failed_files > 0:
                 completion_message += f" {failed_files} files failed validation and were updated."
+                goto = "validator_master"
 
         updated_state = deepcopy(state)
         updated_state["validation_instruction"] = None
@@ -1345,10 +1348,9 @@ def validator_master_node(state: State) -> Command[Literal["validator", "supervi
         updated_state["messages"].append(HumanMessage(content=completion_message, name="validator_master"))
 
         return Command(
-            goto='supervisor',
+            goto=goto ,
             update=updated_state
         )
-
 
 def validator_node(state: State) -> Command[Literal["validator_master"]]:
     """
@@ -1356,7 +1358,7 @@ def validator_node(state: State) -> Command[Literal["validator_master"]]:
     to check if validation passed, and updates files if validation failed.
     """
     logger.info("Validator node starting validation task")
-    logger.debug(f"Validation instruction: {state.get("validation_instruction")}")
+    logger.info(f"Validation instruction: {state.get('validation_instruction')}")
 
     try:
         result = validator_agent(state)
@@ -1369,33 +1371,56 @@ def validator_node(state: State) -> Command[Literal["validator_master"]]:
                         content=f"Error during validator agent execution: {str(e)}",
                         name="validator",
                     )
-                ]
+                ],
+                "tokens" : token_count.get_token_count()
             },
             goto="validator_master",
         )
 
     logger.info("Validator agent completed invocation")
 
-    response_content_raw = result["messages"][-1].content
-    token_count.set_token_count(token_count.token_count(response_content_raw))
-    logger.info("Token count after validator agent: %s", token_count.get_token_count())
-    
-    # Try to repair possible JSON output
-    response_content_repaired = repair_json_output(response_content_raw)
-    logger.info(f"Validator node response: {response_content_repaired}")
-
-    try:
-        parsed_response = json.loads(response_content_repaired)
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse JSON response from validator: {e}")
+    # Get the last message content
+    if not result.get("messages"):
+        logger.error("No messages in validator agent response")
         return Command(
             update={
                 "messages": [
                     HumanMessage(
-                        content=f"Error parsing JSON response from validator: {str(e)}",
+                        content="Validator agent returned no messages",
                         name="validator",
                     )
-                ],
+                ]
+            },
+            goto="validator_master",
+        )
+
+    response_content = result["messages"][-1].content
+    token_count.set_token_count(token_count.token_count(response_content))
+    logger.info("Token count after validator agent: %s", token_count.get_token_count())
+    
+    # Handle different response formats
+    parsed_response = {}
+    if isinstance(response_content, str):
+        try:
+            # Try to repair possible JSON output
+            response_content_repaired = repair_json_output(response_content)
+            logger.info(f"Validator node response: {response_content_repaired}")
+            parsed_response = json.loads(response_content_repaired)
+        except json.JSONDecodeError:
+            # If not JSON, treat as plain text response
+            parsed_response = {"message": response_content}
+    elif isinstance(response_content, dict):
+        parsed_response = response_content
+    else:
+        logger.error(f"Unexpected response type: {type(response_content)}")
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Unexpected response type from validator: {type(response_content)}",
+                        name="validator",
+                    )
+                ]
             },
             goto="validator_master",
         )
@@ -1403,9 +1428,10 @@ def validator_node(state: State) -> Command[Literal["validator_master"]]:
     logger.info(f"Parsed validation response: {parsed_response}")
 
     # Extract validation results
-    file_path = parsed_response.get("FILE")
+    file_path = parsed_response.get("FILE") or parsed_response.get("file_path")
     programming_language = parsed_response.get("programming_language", "unknown")
     is_validated = parsed_response.get("validated", False)
+    reason = parsed_response.get("reason","")
     updated_code = parsed_response.get("updated_code")
 
     current_file_validating = state.get("current_file_validating")
@@ -1417,12 +1443,12 @@ def validator_node(state: State) -> Command[Literal["validator_master"]]:
         logger.error("No file path found in validation response")
         return Command(
             update={
-                "messages": [
+                "messages": state["messages"] + [
                     HumanMessage(
                         content="Validation error: No file path specified in response",
                         name="validator",
                     )
-                ],
+                ]
             },
             goto="validator_master",
         )
@@ -1444,7 +1470,7 @@ def validator_node(state: State) -> Command[Literal["validator_master"]]:
             logger.info(f"Updated file {file_path} with corrected code")
 
         # Mark file as validated in checklist
-        state.get("checklist_manager").mark_file_validated(file_path, is_validated)
+        state.get("checklist_manager").mark_file_validated(file_path, is_validated,reason)
         
         validation_status = "passed" if is_validated else "failed and updated"
         logger.info(f"File {file_path} validation {validation_status}")
@@ -1458,19 +1484,26 @@ def validator_node(state: State) -> Command[Literal["validator_master"]]:
                         content=f"Error processing validation results: {str(e)}",
                         name="validator",
                     )
-                ],
+                ]
             },
             goto="validator_master",
         )
+
+    # Prepare the message to return
+    if isinstance(response_content, str):
+        message_content = response_content
+    else:
+        message_content = json.dumps(parsed_response, indent=2)
 
     return Command(
         update={
             "messages": [
                 HumanMessage(
-                    content=response_content_repaired,
+                    content=message_content,
                     name="validator",
                 )
             ],
+            "tokens": token_count.get_token_count()
         },
         goto="validator_master",
     )

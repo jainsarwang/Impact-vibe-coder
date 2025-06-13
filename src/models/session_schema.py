@@ -69,6 +69,10 @@ session_schema = {
                         'validation_failed_count': {
                             'bsonType': 'int',
                             'description': 'must be an integer'
+                        },
+                        'reason':{
+                            'bsonType':'string',
+                            'description':'must be string',
                         }
                     }
                 }

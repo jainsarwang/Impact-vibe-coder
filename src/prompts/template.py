@@ -32,8 +32,9 @@ def apply_prompt_template_for_validator(prompt_name: str, state: State)->list:
         input_variables=["CURRENT_TIME"],
         template=get_prompt_template(prompt_name),
     ).format(CURRENT_TIME = datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),**state)
-    validation_instruction = state.get("validation_instruction")
-    return [{"role": "system", "content": system_prompt + validation_instruction}]
+    validation_instruction = str(state.get("validation_instruction"))
+    
+    return [{"role": "system", "content": system_prompt}] + [{"role":"user","content": validation_instruction}]
 
 def apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
     system_prompt = PromptTemplate(

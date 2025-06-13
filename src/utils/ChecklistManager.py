@@ -93,7 +93,8 @@ class ChecklistManager:
             "validation_passed": kwargs.get("validation_passed", False),
             "validation_in_progress": kwargs.get("validation_in_progress", False),
             "validation_date": kwargs.get("validation_date", None),
-            "validation_failed_count": kwargs.get("validation_failed_count", 0)
+            "validation_failed_count": kwargs.get("validation_failed_count", 0),
+            "reason": kwargs.get("reason","")
         }
         return entry
     
@@ -241,7 +242,7 @@ class ChecklistManager:
         logging.debug("No files left to validate in checklist")
         return None
     
-    def mark_file_validated(self, file_path: str, validation_passed: bool = True) -> None:
+    def mark_file_validated(self, file_path: str, reason,validation_passed: bool = True) -> None:
         """Mark a file as validated in the checklist."""
         entry = self._find_checklist_entry(file_path)
         
@@ -253,9 +254,11 @@ class ChecklistManager:
             
             if not validation_passed:
                 entry["validation_failed_count"] = entry.get("validation_failed_count", 0) + 1
+                entry["reason"] = reason
                 logging.warning(f"File {file_path} failed validation (attempt #{entry['validation_failed_count']})")
             else:
                 entry["validation_failed_count"] = 0  # Reset failed count on success
+                entry["reason"] = reason
                 logging.info(f"File {file_path} passed validation")
             
             self._save_checklist()
