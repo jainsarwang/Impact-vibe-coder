@@ -65,7 +65,7 @@ class CodePlannerResponse(RootModel):
 
 # Base Coder Response Schema
 class CoderResponse(BaseModel):
-    FILE: List[str]
+    FILE: str
     programming_language: str
     code: str
 
