@@ -10,26 +10,17 @@ interface QuestionFlowProps {
     currentInput: string;
     setCurrentInput: React.Dispatch<React.SetStateAction<string>>;
     onBack: () => void;
-    sendMessage: (
-        msg: string,
-        params: {
-            deepThinkingMode: boolean;
-            searchBeforePlanning: boolean;
-        }
-    ) => Promise<void>;
+    handleFormSubmit: (e?: React.FormEvent) => Promise<void>;
 }
 
 const QuestionFlow = ({
     currentInput,
     setCurrentInput,
     onBack,
-    sendMessage,
+    handleFormSubmit,
 }: QuestionFlowProps) => {
     const form = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isTyping, setIsTyping] = useState(false);
-    const [deepThinkingMode, setDeepThinkingMode] = useState(false);
-    const [searchBeforePlanning, setSearchBeforePlanning] = useState(false);
     const messages = useStore((state) => state.messages);
     const responding = useStore((state) => state.responding);
     const addMessage = useStore((state) => state.addMessage);
@@ -52,9 +43,7 @@ const QuestionFlow = ({
         setIsLoading(false);
     }, []); // Empty dependency array since this is only for initialization
 
-    const handleFormSubmit = async (e?: React.FormEvent) => {
-        e?.preventDefault();
-
+    useEffect(() => {
         const scrollToBottom = () => {
             const chatContainer = document.querySelector(
                 "#chat_window"
@@ -63,26 +52,25 @@ const QuestionFlow = ({
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }
         };
-
-        const userMessage: Message = {
-            id: crypto.randomUUID(),
-            role: "user",
-            content: currentInput.trim(),
-        };
-        addMessage(userMessage);
-        setIsTyping(true);
-        setCurrentInput("");
         scrollToBottom();
+    }, [messages]);
 
-        await sendMessage(currentInput, {
-            deepThinkingMode,
-            searchBeforePlanning,
-        });
+    // const handleFormSubmit = async (e?: React.FormEvent) => {
+    //     e?.preventDefault();
 
-        // when new message is sent, scroll to bottom
-        setIsTyping(false);
-        scrollToBottom();
-    };
+    //     const userMessage: Message = {
+    //         id: crypto.randomUUID(),
+    //         role: "user",
+    //         content: currentInput.trim(),
+    //     };
+    //     addMessage(userMessage);
+    //     setCurrentInput("");
+
+    //     await sendMessage(currentInput, {
+    //         deepThinkingMode,
+    //         searchBeforePlanning,
+    //     });
+    // };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -92,6 +80,7 @@ const QuestionFlow = ({
             handleFormSubmit();
         }
     };
+
     if (isLoading) {
         return (
             <div className="w-full max-w-4xl mx-auto">
@@ -123,8 +112,6 @@ const QuestionFlow = ({
             </div>
         );
     }
-
-    console.log("typing", isTyping);
 
     return (
         <div className="w-full max-w-4xl mx-auto">

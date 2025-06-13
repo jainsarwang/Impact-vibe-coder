@@ -7,6 +7,10 @@ session_schema = {
             '_id': {  # Explicitly allow the _id field
                 'bsonType': 'objectId'
             },
+            'tokens':{
+                'bsonType':['long', 'number'],
+                'description': 'long or number required'
+            },
             'session_id': {
                 'bsonType': 'string',
                 'description': 'must be a string and is required'
