@@ -370,7 +370,7 @@ async def superadmin_create_admin_with_org(
             "email": request.email,
             "password": get_password_hash(password), # Store hashed password
             "is_active": True,
-            "tokens_allowed": 0,
+            "tokens_allowed": request.total_tokens,
             "is_primary_admin": True, # Admin created by superadmin is a primary admin
             "created_at": datetime.now(timezone.utc), 
             "updated_at": datetime.now(timezone.utc),
@@ -604,7 +604,7 @@ async def add_tokens_to_organization(
     organization['total_tokens'] += tokens_to_be_added
     organization['tokens_remaining'] += tokens_to_be_added
     
-    user = await users_collection.find_one({"organization_id": organization['organization_id']})
+    user = await users_collection.find_one({"organization_id": organization['organization_id'], "is_primary_admin": True})
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tokens cannot be added, user not found in organization")
     
@@ -614,8 +614,8 @@ async def add_tokens_to_organization(
     if user.get("is_primary_admin", False) is False:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens cannot be added to a user who is not a primary admin")
     
-    user["tokens_allowed"] = user.get("tokens_allowed", 0) + tokens_to_be_added
-    await users_collection.update_one({"user_id": user["user_id"]}, {"$set": {"tokens_allowed": user.get("tokens_allowed", 0) + tokens_to_be_added}})
+    user["tokens_allowed"] = user.get("tokens_allowed") + tokens_to_be_added
+    await users_collection.update_one({"user_id": user["user_id"]}, {"$set": {"tokens_allowed": user.get("tokens_allowed", 0)}})
     
     primary_admin = await users_collection.find_one({
         "organization_id": organization.get("organization_id"),
@@ -624,7 +624,7 @@ async def add_tokens_to_organization(
     if not primary_admin:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Primary admin not found for this organization")
     
-    await users_collection.update_one({"user_id": primary_admin.get("user_id")}, {"$set": {"tokens_allowed":( primary_admin.get("tokens_allowed") + tokens_to_be_added)}})
+    # await users_collection.update_one({"user_id": primary_admin.get("user_id")}, {"$set": {"tokens_allowed":( primary_admin.get("tokens_allowed") + tokens_to_be_added)}})
     await organizations_collection.update_one({"organization_name": organization_name}, {"$set": {"total_tokens": organization['total_tokens'], "tokens_remaining": organization['tokens_remaining']}})
         
     return {
@@ -689,7 +689,7 @@ async def update_user_tokens(
     updateData: UpdateToken,
     current_user: User = Depends(get_current_active_user)
 ):
-    tokens = updateData['tokens']
+    tokens = updateData.tokens
     if tokens < 0:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tokens must be non-negative.")
     
@@ -815,11 +815,13 @@ async def toggle_user_status(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can toggle user status.")
     if await verify_role(current_user, "superadmin"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Superadmin cannot toggle organization's user status, Only admins can toggle user status.")
-
+    if current_user.get("user_id") == user_id: 
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot toggle self status.")
     user_doc = await users_collection.find_one({"user_id": user_id})
     if not user_doc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cnnot toggle status, User not found.")
-
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cannot toggle status, User not found.")
+    if user_doc["is_primary_admin"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot toggle primary admin status directly.")
     # Toggle the user's active status
     new_status = not user_doc["is_active"]
     await users_collection.update_one(
