@@ -370,7 +370,7 @@ async def superadmin_create_admin_with_org(
             "email": request.email,
             "password": get_password_hash(password), # Store hashed password
             "is_active": True,
-            "tokens_allowed": current_user.get("total_tokens"),
+            "tokens_allowed": request.total_tokens,
             "is_primary_admin": True, # Admin created by superadmin is a primary admin
             "created_at": datetime.now(timezone.utc), 
             "updated_at": datetime.now(timezone.utc),
@@ -815,11 +815,13 @@ async def toggle_user_status(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can toggle user status.")
     if await verify_role(current_user, "superadmin"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Superadmin cannot toggle organization's user status, Only admins can toggle user status.")
-
+    if current_user.get("user_id") == user_id: 
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot toggle self status.")
     user_doc = await users_collection.find_one({"user_id": user_id})
     if not user_doc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cnnot toggle status, User not found.")
-
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cannot toggle status, User not found.")
+    if user_doc["is_primary_admin"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot toggle primary admin status directly.")
     # Toggle the user's active status
     new_status = not user_doc["is_active"]
     await users_collection.update_one(

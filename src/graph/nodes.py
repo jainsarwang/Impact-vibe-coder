@@ -115,8 +115,9 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
 def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the directory generator agent that generator directory structure."""
     logger.info("Directory Generator agent starting task")
+    logger.debug(f"Request sent to directory generator: {state}")
     result = directory_generator_agent.invoke(state)
-    
+    logger.debug(f"Result response from directory generator: {result}")
     checklist_manager = ChecklistManager(state)  # Reset checklist manager for new task
     logger.info("Directory Generator agent completed task")
     token_count.set_token_count(token_count.token_count(result["messages"][-1].content))
