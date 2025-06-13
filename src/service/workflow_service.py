@@ -32,6 +32,7 @@ async def run_agent_workflow(
     debug: bool = False,
     deep_thinking_mode: bool = False,
     search_before_planning: bool = False,
+    session_id: str = None,
 ):
     """Run the agent workflow with the given user input.
 
@@ -70,9 +71,11 @@ async def run_agent_workflow(
             "messages": user_input_messages,
             "deep_thinking_mode": deep_thinking_mode,
             "search_before_planning": search_before_planning,
+            "session_id": session_id,
         },{"recurison_limit": 100},
         version="v2",
     ):
+        logging.info(f"Stream Data: {event}")
         kind = event.get("event")
         data = event.get("data")
         name = event.get("name")

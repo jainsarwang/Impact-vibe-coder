@@ -1,0 +1,27 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+
+	body {
+		@apply bg-background text-foreground;
+	}
+
+	/* Remove black outlines from input fields */
+	input:focus,
+	textarea:focus,
+	select:focus {
+		outline: none !important;
+		box-shadow: none !important;
+	}
+
+	/* Custom focus styles for better UX */
+	.focus-custom:focus {
+		@apply ring-2 ring-blue-500 ring-offset-2;
+	}
+}

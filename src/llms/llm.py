@@ -32,39 +32,42 @@ def create_groq_llm(model: str, temperature: float = 0.0) -> ChatOpenAI:
         temperature=temperature,
     )
 
-def create_gemini_llm(model: str, temperature: float = 0.0) -> ChatGemini:
+def create_gemini_llm(model: str, response_schema = None, temperature: float = 0.0) -> ChatGemini:
     if not GOOGLE_API_KEY:
         raise ValueError("GOOGLE_API_KEY environment variable not set")
     
-    return ChatGemini(
-    model= model,
-    temperature=0,
-    max_tokens=None,
-    timeout=None,
-    max_retries=2,
-    # other params...
-)
+    llm = ChatGemini(
+        model=model,
+        temperature=temperature,
+        max_tokens=None,
+        timeout=None,
+        max_retries=2,
+    )
 
-def get_llm_by_type(llm_type: LLMType) -> ChatOpenAI | genai.Client:
+    if response_schema:
+        # Simply pass the schema to guide the response format
+        llm.with_structured_output(schema=response_schema)
+
+    return llm
+
+def get_llm_by_type(llm_type: LLMType, schema = None, temperature = 0.0) -> ChatOpenAI | genai.Client:
     """Get LLM instance by type. Returns cached instance if available."""
 
     if llm_type == "basic":
-        llm = create_gemini_llm(model="gemini-2.5-flash-preview-04-17")
-            # Or "gemini-pro-vision" if needed
+        llm = create_gemini_llm(model="gemini-2.5-flash-preview-04-17", response_schema=schema, temperature=temperature)
     elif llm_type == "reasoning":
-        llm = create_gemini_llm(model="gemini-2.0-flash")
-            # llm = create_groq_llm(BASIC_MODEL_GROQ)
+        llm = create_gemini_llm(model="gemini-2.0-flash", response_schema=schema, temperature=temperature)
     elif llm_type == "vision":
-        llm = create_gemini_llm(model="gemini-2.0-flash")
+        llm = create_gemini_llm(model="gemini-2.0-flash", response_schema=schema, temperature=temperature)
     elif llm_type == "version_llm":
-        llm = create_groq_llm(BASIC_MODEL_GROQ)
+        llm = create_groq_llm(BASIC_MODEL_GROQ, temperature=temperature)
     else:
         raise ValueError(f"Unknown LLM type: {llm_type}")
 
     _llm_cache[llm_type] = llm
     return llm
 
-def generate_image_with_gemini(prompt: str) -> Optional[str]:
+def generate_image_with_gemini(prompt: str, temperature) -> Optional[str]:
     """Generate an image using Gemini's image generation capabilities."""
     if GOOGLE_API_KEY is None:
         raise ValueError("GOOGLE_API_KEY environment variable not set")
@@ -73,7 +76,8 @@ def generate_image_with_gemini(prompt: str) -> Optional[str]:
         client = genai.Client()
 
         generation_config = types.GenerateContentConfig(
-            response_modalities=['TEXT', 'IMAGE']
+            response_modalities=['TEXT', 'IMAGE'],
+            temperature=temperature,
         )
         response = client.models.generate_content(
             model="gemini-2.0-flash-preview-image-generation",

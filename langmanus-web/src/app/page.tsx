@@ -1,7 +1,7 @@
 "use client";
 
 import { nanoid } from "nanoid";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { sendMessage, useStore } from "~/core/store";
 import { cn } from "~/core/utils";
@@ -35,6 +35,17 @@ export default function HomePage() {
     },
     [],
   );
+
+  useEffect(() => {
+    // Fix this line
+    const sessionId = crypto.randomUUID();
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("sessionId", sessionId);
+    window.history.replaceState({}, "", url);
+    useStore.setState({ sessionId });
+  }, []);
+
   return (
     <div className="flex w-full flex-col items-center justify-center">
       <div className="flex min-h-screen w-full flex-col items-center">
