@@ -42,6 +42,7 @@ from src.prompts.template import apply_prompt_template, apply_prompt_template_fo
 from src.tools import tavily_tool, bash_tool
 from src.utils import ReadmeExecutor,  repair_json_output, ensure_directory_exists, ChecklistManager, token_count, get_response_schema
 from .types import State
+from ..terraform_generator.src import terraform_generator_main
 import re
 import json
 
@@ -982,7 +983,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
 
                 # then go to terraform generator
                 goto = 'terraform_generator'
-           
+
         logger.info("Workflow completed")
     elif goto in TEAM_MEMBERS:
         logger.info(f"Supervisor delegating to: {goto}")
@@ -1165,6 +1166,7 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
         },
         goto="supervisor",
     )
+
 """
 ##### Terraform Generation
 
@@ -1270,7 +1272,10 @@ def terraform_generator_node(state: State) -> Command[Literal["supervisor"]]:
             logger.debug(f"Deployment command output: {output}")
 
         logger.info("Terraform Generator completed task successfully")
-        return Command(goto="supervisor")
+
+        return Command(goto="supervisor", update={
+            "is_terraform_generated": True,
+        })
 
     except Exception as e:
         logger.error(f"Error in terraform_generator_node: {str(e)}", exc_info=True)
