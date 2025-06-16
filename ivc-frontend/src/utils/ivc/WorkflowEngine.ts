@@ -234,7 +234,7 @@ export class WorkflowEngine {
                     // extract file name from textMessage.content if the agent is a coder, and the textMessage.content will not be complete json it will be like this: ```json\n{\n \"FILE\": [\n  \"projects\\\\animated_portfolio\\\\js\\\\script.js\"\n ],\n \"programming
                     //  fix this regex for extracting file name
                     // ```json\n{\n \"FILE\": [\n  \"projects\\\\animated_portfolio\\\\js\\\\script.js\"\n ],\n \"programming
-                    const fileRegexMultiline = /"FILE":\s*\[\s*"([^"]+)"\s*\]/;
+                    const fileRegexMultiline = /"FILE":\s*\s*"([^"]+)"\s*/;
                     const fileMatch =
                         textMessage.content.match(fileRegexMultiline);
 
