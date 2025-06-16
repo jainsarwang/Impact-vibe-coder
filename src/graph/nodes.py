@@ -1028,6 +1028,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     logger.info("Coordinator talking.")
     messages = apply_prompt_template("coordinator", state)
     response = get_llm_by_type(AGENT_LLM_MAP["coordinator"], schema=get_response_schema('coordinator'), temperature=0.6).invoke(messages)
+    
     logger.debug(f"Current state messages: {state['messages']}")
     # Keep original response
     response_content_raw = response.content
@@ -1050,7 +1051,13 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
         # extract_and_save_json(response_content_raw)
         goto = "planner"
     logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
-    return Command(goto=goto,update={"tokens": token_count.get_token_count()})
+    return Command(goto=goto,update={"messages": [
+                HumanMessage(
+                    content=response_content_raw,
+                    name="reporter",
+                )
+            ],
+            "tokens": token_count.get_token_count()})
 
 def extract_user_content(full_content: str) -> str:
     """Extracts non-JSON parts of the response for user display."""
