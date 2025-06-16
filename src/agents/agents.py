@@ -17,6 +17,7 @@ from ..graph.types import State
 from ..utils import get_response_schema
 
 # Create agents using configured LLM types
+
 research_agent = create_react_agent(
     get_llm_by_type(AGENT_LLM_MAP["researcher"], get_response_schema("researcher"), temperature=0.6),
     tools=[tavily_tool, crawl_tool],
