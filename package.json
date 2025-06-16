@@ -1,16 +1,6 @@
 {
-  "scripts": {
-    "backend": "uv run server.py",
-    "frontend": "cd langmanus-web && npm run dev"
-  },
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@mui/icons-material": "^7.0.2",
-    "@mui/material": "^7.0.2",
-    "axios": "^1.9.0",
-    "react-big-calendar": "^1.18.0",
-    "react-router-dom": "^7.6.0",
-    "react-scripts": "^5.0.1"
-  }
+    "scripts": {
+        "backend": "uv run server.py",
+        "frontend": "cd langmanus-web && npm run dev"
+    }
 }
