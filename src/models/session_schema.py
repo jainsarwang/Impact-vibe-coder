@@ -71,7 +71,7 @@ session_schema = {
                             'description': 'must be an integer'
                         },
                         'reason':{
-                            'bsonType':'string',
+                            'bsonType':['string','null'],
                             'description':'must be string',
                         }
                     }

@@ -225,6 +225,7 @@ class ChecklistManager:
             # Only validate files that have been created but not yet validated
             if (entry["file_created"] and 
                 not entry.get("validated", False) and 
+                not entry.get("validation_passed", False) and
                 not entry.get("validation_in_progress", False)):
                 
                 # Mark as validation in progress to avoid duplicate processing
@@ -242,7 +243,7 @@ class ChecklistManager:
         logging.debug("No files left to validate in checklist")
         return None
     
-    def mark_file_validated(self, file_path: str, reason,validation_passed: bool = True) -> None:
+    def mark_file_validated(self, file_path: str, reason: str ,validation_passed: bool = True) -> None:
         """Mark a file as validated in the checklist."""
         entry = self._find_checklist_entry(file_path)
         

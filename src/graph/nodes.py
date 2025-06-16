@@ -432,6 +432,7 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
             }, indent=2)
 
         logger.info(f"Delegating to agent: {assigned_coder_name} for file: {file_path_to_process}")
+        logger.info(f"instruction_content: {instruction_content}")
 
         coder_master_message = f"Delegating file `{file_path_to_process}` to `{assigned_coder_name}` agent."
         logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
@@ -1247,6 +1248,8 @@ def terraform_planner_node(state: State) -> Command[Literal["supervisor"]]:
         goto=goto,
     )
 
+max_retries = 0 
+
 def validator_master_node(state: State) -> Command[Literal["validator", "supervisor"]]:
     """
     Validator Master node that decides which files need validation based on the checklist.
@@ -1254,6 +1257,7 @@ def validator_master_node(state: State) -> Command[Literal["validator", "supervi
     validator agent, and transitions back to supervisor when all files are validated.
     """
     logger.info("Validator master evaluating next action based on checklist")
+    global max_retries
 
     generated_files = state.get('generated_files', [])
     
@@ -1270,6 +1274,14 @@ def validator_master_node(state: State) -> Command[Literal["validator", "supervi
 
     # Get the next file to validate from the checklist
     next_file_info = state.get("checklist_manager").next_file_to_validate()
+
+    code_plan = state.get("code_plan")
+    instruction_content = ""
+
+    for item in code_plan:
+            if "file" in item and state.get("checklist_manager")._normalize_path(item["file"]) == state.get("checklist_manager")._normalize_path(next_file_info["file_path",""]):
+                instruction_content = json.dumps(item, indent=2)
+                break
 
     if next_file_info:
         file_path_to_validate = next_file_info['file_path']
@@ -1313,7 +1325,8 @@ def validator_master_node(state: State) -> Command[Literal["validator", "supervi
             "file_content": file_content,
             "description": file_description or "No description available",
             "directory_structure": state.get('directory_structure', ''),
-            "generated_files": generated_files
+            "generated_files": generated_files,
+            "instruction_content":instruction_content
         }
         logger.info(f"validation Instruction:{validation_instruction}")
 
@@ -1346,9 +1359,10 @@ def validator_master_node(state: State) -> Command[Literal["validator", "supervi
             
             completion_message += f"\nValidation Summary: {validated_files}/{total_files} files passed validation."
             goto = "supervisor"
-            if failed_files > 0:
+            if failed_files > 0 and max_retries !=3:
                 completion_message += f" {failed_files} files failed validation and were updated."
                 goto = "validator_master"
+                max_retries += 1
 
         updated_state = deepcopy(state)
         updated_state["validation_instruction"] = None
@@ -1478,7 +1492,7 @@ def validator_node(state: State) -> Command[Literal["validator_master"]]:
             logger.info(f"Updated file {file_path} with corrected code")
 
         # Mark file as validated in checklist
-        state.get("checklist_manager").mark_file_validated(file_path, is_validated,reason)
+        state.get("checklist_manager").mark_file_validated(file_path = file_path, validation_passed=is_validated,reason=reason)
         
         validation_status = "passed" if is_validated else "failed and updated"
         logger.info(f"File {file_path} validation {validation_status}")
