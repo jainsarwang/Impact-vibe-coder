@@ -68,6 +68,7 @@ class CoderResponse(BaseModel):
     FILE: str
     programming_language: str
     code: str
+    description: str
 
 # Version Resolver Response Schema
 class VersionResolverResponse(BaseModel):
