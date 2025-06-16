@@ -518,7 +518,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
     newly_generated_this_run: List[str] = []
     processed_file_specs: List[Dict[str, str]] = []
     if isinstance(parsed_response, list):
-        parsed_response = dict(parsed_response)
+        parsed_response = dict(parsed_response[0])
     elif isinstance(parsed_response, str):
         parsed_response = dict(parsed_response)
     else:
