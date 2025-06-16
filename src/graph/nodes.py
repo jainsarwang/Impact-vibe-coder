@@ -126,7 +126,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Token count after directory generator: %s", token_count.get_token_count())
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "directory_structure.json")
+    # extract_and_save_json(response_content, "directory_structure.json")
 
     # Initialize checklist from directory structure
     checklist_manager.initialize_from_directory(response_content)
@@ -948,11 +948,11 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         print(token_count.get_token_count())
         token_count.set_token_count(0)
         print(f"After making tokens to '0', count is: {token_count.get_token_count()}")
-        with open("project_requirements.json") as f:
-            project_requirement = json.load(f)
+        
+        project_requirement = state.get("requirements")
 
         if project_requirement:
-            project_name = project_requirement['project_name']
+            project_name = project_requirement.get('project_name', f"ivc-project-{state.get('session_id')}")
 
             # check if `projects/{project_name} exits`
             if not os.path.exists(f"projects/{project_name}"):
@@ -1006,8 +1006,7 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
         token_count.set_token_count(token_count.token_count(full_response))
         # state.get("checklist_manager").update_tokens(token_count.get_token_count())
         logger.info("Token count after planner: %d", token_count.get_token_count())
-        with open("project_requirements.json", "w", encoding="utf-8") as f:
-            json.dump(repaired_response, f, indent=2, ensure_ascii=False)
+        
     except json.JSONDecodeError:
         logger.warning("Planner response is not a valid JSON")
         goto = "__end__"
@@ -1047,17 +1046,32 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     
     # Handle planner handoff
     goto = "__end__"
-    if "handoff_to_planner()" in response_content_raw:
+    additional_update = {}
+
+    if "handoff_to_planner()" in response_content_raw or "handofftoplanner()" in response_content_raw:
         # extract_and_save_json(response_content_raw)
-        goto = "planner"
+        try:
+            requirements = json.loads(response_content_repaired)
+            additional_update["requirements"] = requirements
+            goto = "planner"
+        except json.JSONDecodeError:
+            logger.error(f"Error parsing requirements: {response_content_raw}")
+            goto = "__end__"
+
     logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
-    return Command(goto=goto,update={"messages": [
+    return Command(
+        goto=goto,
+        update={
+            "messages": [
                 HumanMessage(
                     content=response_content_raw,
                     name="reporter",
                 )
             ],
-            "tokens": token_count.get_token_count()})
+            "tokens": token_count.get_token_count(),
+            **additional_update
+        }
+    )
 
 def extract_user_content(full_content: str) -> str:
     """Extracts non-JSON parts of the response for user display."""
