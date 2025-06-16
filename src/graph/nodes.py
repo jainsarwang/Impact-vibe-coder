@@ -214,9 +214,6 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
         repaired_response = json_repair.loads(full_response)
         full_response = json.dumps(repaired_response)
 
-        with open("code_planner.json", "w", encoding="utf-8") as f:
-            json.dump(repaired_response, f, indent=2, ensure_ascii=False)
-
         # Update checklist from the plan
         state.get("checklist_manager").update_from_plan(repaired_response)
     except json.JSONDecodeError:
