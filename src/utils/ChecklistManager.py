@@ -256,6 +256,7 @@ class ChecklistManager:
             if not validation_passed:
                 entry["validation_failed_count"] = entry.get("validation_failed_count", 0) + 1
                 entry["reason"] = reason
+                entry["validated"] = False
                 logging.warning(f"File {file_path} failed validation (attempt #{entry['validation_failed_count']})")
             else:
                 entry["validation_failed_count"] = 0  # Reset failed count on success

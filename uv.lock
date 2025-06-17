@@ -679,6 +679,18 @@ wheels = [
 ]
 
 [[package]]
+name = "google"
+version = "3.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "beautifulsoup4" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/89/97/b49c69893cddea912c7a660a4b6102c6b02cd268f8c7162dd70b7c16f753/google-3.0.0.tar.gz", hash = "sha256:143530122ee5130509ad5e989f0512f7cb218b2d4eddbafbad40fd10e8d8ccbe", size = 44978 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ac/35/17c9141c4ae21e9a29a43acdfd848e3e468a810517f862cad07977bf8fe9/google-3.0.0-py2.py3-none-any.whl", hash = "sha256:889cf695f84e4ae2c55fbc0cfdaf4c1e729417fa52ab1db0485202ba173e4935", size = 45258 },
+]
+
+[[package]]
 name = "google-ai-generativelanguage"
 version = "0.6.18"
 source = { registry = "https://pypi.org/simple" }
@@ -727,6 +739,24 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/94/a5/38c21d0e731bb716cffcf987bd9a3555cb95877ab4b616cfb96939933f20/google_auth-2.40.1.tar.gz", hash = "sha256:58f0e8416a9814c1d86c9b7f6acf6816b51aba167b2c76821965271bac275540", size = 280975 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a1/b1/1272c6e80847ba5349f5ccb7574596393d1e222543f5003cb810865c3575/google_auth-2.40.1-py2.py3-none-any.whl", hash = "sha256:ed4cae4f5c46b41bae1d19c036e06f6c371926e97b19e816fc854eff811974ee", size = 216101 },
+]
+
+[[package]]
+name = "google-genai"
+version = "1.20.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "google-auth" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "requests" },
+    { name = "typing-extensions" },
+    { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/19/12/ad9f08be2ca85122ca50ac69ae70454f18a3c7d840bcc4ed43f517ab47be/google_genai-1.20.0.tar.gz", hash = "sha256:dccca78f765233844b1bd4f1f7a2237d9a76fe6038cf9aa72c0cd991e3c107b5", size = 201550 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b9/b4/08f3ea414060a7e7d4436c08bb22d03dabef74cc05ef13ef8cd846156d5b/google_genai-1.20.0-py3-none-any.whl", hash = "sha256:ccd61d6ebcb14f5c778b817b8010e3955ae4f6ddfeaabf65f42f6d5e3e5a8125", size = 203039 },
 ]
 
 [[package]]
@@ -1095,6 +1125,8 @@ dependencies = [
     { name = "browser-use" },
     { name = "crypto" },
     { name = "fastapi" },
+    { name = "google" },
+    { name = "google-genai" },
     { name = "httpx" },
     { name = "json-repair" },
     { name = "jsonschema" },
@@ -1141,6 +1173,8 @@ requires-dist = [
     { name = "browser-use", specifier = ">=0.1.0" },
     { name = "crypto", specifier = ">=1.4.1" },
     { name = "fastapi", specifier = ">=0.110.0" },
+    { name = "google", specifier = ">=3.0.0" },
+    { name = "google-genai", specifier = ">=1.20.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "json-repair", specifier = ">=0.7.0" },
     { name = "jsonschema", specifier = ">=4.23.0" },
