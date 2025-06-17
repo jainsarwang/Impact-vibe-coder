@@ -41,4 +41,5 @@ class State(MessagesState):
     session_id: str # session id of the current session
     tokens: int # tokens used in a session
 
-    # Todo: add report to state
+    report: str # report of the current application
+    is_terraform_generated: bool # if terraform is generated or not

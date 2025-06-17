@@ -69,6 +69,7 @@ def bash_tool(
             result = subprocess.run(
                 cmd, shell=True, check=True, text=True, capture_output=True
             )
+            print(result)
             # Return stdout on success
             output = result.stdout
             # Optionally log stderr even on success if present (e.g., warnings)
