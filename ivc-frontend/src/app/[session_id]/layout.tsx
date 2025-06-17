@@ -18,7 +18,7 @@ export default function SessionLayout({
     return (
         <QueryClientProvider client={queryClient}>
             <TooltipProvider>
-                <div className="h-screen flex relative overflow-hidden">
+                <div className="min-h-screen flex relative overflow-hidden">
                     <div
                         className={`absolute h-screen w-72 bg-slate-900/50 backdrop-blur-xl border-r border-slate-700/30 p-6 flex flex-col gap-6 z-[100] shadow-[0_8px_32px_rgba(31,41,55,0.4)] transition-transform duration-300 ${
                             isOpen ? "translate-x-0" : "-translate-x-full"
