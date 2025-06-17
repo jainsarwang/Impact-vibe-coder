@@ -61,7 +61,45 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
             raise credentials_exception
         
         # Fetch user from database
-        user_doc = await users_collection.find_one({"user_id": user_id, "username": username})
+        user_doc = await users_collection.aggregate([
+            {
+                "$match": {
+                    "user_id": user_id,
+                    "username": username
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "roles",
+                    "localField": "role_id",
+                    "foreignField": "role_id",
+                    "as": "role"
+                }
+            },
+            {
+                "$unwind": "$role"
+            },
+            {
+                "$project": {
+                    "user_id": 1,
+                    "username": 1,
+                    "role_id": 1,
+                    "role_name": "$role.role_name",
+                    "organization_id": 1,
+                    "name": 1,
+                    "email": 1,
+                    "is_active": 1,
+                    "is_primary_admin": 1,
+                    "tokens_allowed": 1,
+                    "created_at": 1,
+                    "updated_at": 1
+                }
+            }
+        ]).to_list(length=1)
+        if user_doc:
+            user_doc = user_doc[0]
+        # user_doc = await users_collection.find_one({"user_id": user_id, "username": username})
+        
         if user_doc is None:
             logging.warning(f"User '{username}' (ID: {user_id}) from token not found in database")
             raise credentials_exception

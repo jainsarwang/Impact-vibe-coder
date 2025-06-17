@@ -25,6 +25,7 @@ class State(MessagesState):
     checklist_manager: ChecklistManager
 
     # Runtime Variables
+    requirements: dict # requirements of the application
     next: str # Information about the next agent
     full_plan: str # Full plan of the current application
     deep_thinking_mode: bool #Deep thinking mode enabled

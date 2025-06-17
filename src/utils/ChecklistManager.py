@@ -29,10 +29,9 @@ except Exception as e:
 session_db = db["session"]
 
 class ChecklistManager:
-    """Manages the checklist for tracking file generation and validation progress."""
-    def __init__(self, state, checklist_file: str = "checklist.json", project_prefix: str = None):
+    """Manages the checklist for tracking file generation progress."""
+    def __init__(self, state, project_prefix: str = None):
         self.session_id = ""
-        self.checklist_file = checklist_file
         self.checklist: List[Dict] = []
         self._normalize_paths = True
         # Store the project prefix to handle paths consistently
