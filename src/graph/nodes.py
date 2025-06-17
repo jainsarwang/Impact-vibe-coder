@@ -949,7 +949,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         token_count.set_token_count(0)
         print(f"After making tokens to '0', count is: {token_count.get_token_count()}")
         
-        project_requirement = state.get("requirements")
+        project_requirement = state.get("full_plan")
 
         if project_requirement:
             project_name = project_requirement.get('project_name', f"ivc-project-{state.get('session_id')}")
