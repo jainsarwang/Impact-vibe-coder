@@ -75,7 +75,7 @@ async def run_agent_workflow(
         },{"recurison_limit": 100},
         version="v2",
     ):
-        logging.info(f"Stream Data: {event}")
+        logging.debug(f"Stream Data: {event}")
         kind = event.get("event")
         data = event.get("data")
         name = event.get("name")

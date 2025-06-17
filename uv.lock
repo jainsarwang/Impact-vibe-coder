@@ -730,6 +730,24 @@ wheels = [
 ]
 
 [[package]]
+name = "google-genai"
+version = "1.20.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "google-auth" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "requests" },
+    { name = "typing-extensions" },
+    { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/19/12/ad9f08be2ca85122ca50ac69ae70454f18a3c7d840bcc4ed43f517ab47be/google_genai-1.20.0.tar.gz", hash = "sha256:dccca78f765233844b1bd4f1f7a2237d9a76fe6038cf9aa72c0cd991e3c107b5", size = 201550 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b9/b4/08f3ea414060a7e7d4436c08bb22d03dabef74cc05ef13ef8cd846156d5b/google_genai-1.20.0-py3-none-any.whl", hash = "sha256:ccd61d6ebcb14f5c778b817b8010e3955ae4f6ddfeaabf65f42f6d5e3e5a8125", size = 203039 },
+]
+
+[[package]]
 name = "googleapis-common-protos"
 version = "1.70.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1095,6 +1113,7 @@ dependencies = [
     { name = "browser-use" },
     { name = "crypto" },
     { name = "fastapi" },
+    { name = "google-genai" },
     { name = "httpx" },
     { name = "json-repair" },
     { name = "jsonschema" },
@@ -1141,6 +1160,7 @@ requires-dist = [
     { name = "browser-use", specifier = ">=0.1.0" },
     { name = "crypto", specifier = ">=1.4.1" },
     { name = "fastapi", specifier = ">=0.110.0" },
+    { name = "google-genai", specifier = ">=1.20.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "json-repair", specifier = ">=0.7.0" },
     { name = "jsonschema", specifier = ">=4.23.0" },

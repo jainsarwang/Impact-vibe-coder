@@ -69,6 +69,9 @@ class CoderResponse(BaseModel):
     programming_language: str
     code: str
 
+class HydeCoderResponse(BaseModel):
+    detailed_prompt: str
+
 # Version Resolver Response Schema
 class VersionResolverResponse(BaseModel):
     dependencies: Dict
@@ -96,6 +99,7 @@ response_schema = {
     "test_coder": CoderResponse,
     "backend_coder": CoderResponse,
     "coder": CoderResponse,
+    "hyde_coder": HydeCoderResponse
 }
 
 def get_response_schema(agent_name: str):

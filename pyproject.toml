@@ -41,6 +41,7 @@ dependencies = [
     "pip>=25.1.1",
     "tornado[gen,process]>=6.5.1",
     "python-jose>=3.5.0",
+    "google-genai>=1.20.0",
 ]
 
 [project.optional-dependencies]

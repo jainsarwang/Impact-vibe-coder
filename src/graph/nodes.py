@@ -980,6 +980,7 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     logger.info("Planner generating full plan")
     messages = apply_prompt_template_planner("planner", state)
     # whether to enable deep thinking mode
+    logger.debug(f"Current state messages: {state['messages']}")
     llm = get_llm_by_type("basic", schema=get_response_schema("planner"))
     if state.get("deep_thinking_mode"):
         llm = get_llm_by_type("reasoning", schema=get_response_schema("planner"))
@@ -1045,6 +1046,53 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     # Set the user-visible content
     response.content = user_display_content
     
+    #Hyde Coder Part
+    #--------------------------------------------------------
+    hyde_detailed_prompt = ""
+    
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        **state
+    }
+
+    # Get and format the prompt template
+    template = get_prompt_template('hyde_coder')
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME"],
+        template=template,
+    ).format(**prompt_vars)
+
+    # Prepare messages for LLM
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": response_content_raw
+        }
+    ]
+
+    # Get LLM response
+    llm = get_llm_by_type("basic", schema=get_response_schema("hyde_coder"))
+    try:
+        response = llm.invoke(messages)
+        hyde_detailed_prompt = str(response.content)
+        token_count.set_token_count(token_count.token_count(response.content))      
+        logger.info("Token count after Hyde Coder: %s", token_count.get_token_count())
+        logger.info(f"Hyder Response: {hyde_detailed_prompt}")
+        logger.info(f"State Message after Hyde Coder Execution: {state["messages"]}")    
+    except Exception as e:
+        logger.error(f"LLM invocation failed: {e}")
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+        goto = "__end__"
+        
+    logger.debug(f"Current state messages: {state.get('messages', [])}")
+    logger.info(f"User Prompt: {state['messages']}")
+    logger.info(f"Hyde Coder Response: {hyde_detailed_prompt}")
+    
+    #---------------------------------------------------------
     # Handle planner handoff
     goto = "__end__"
     if "handoff_to_planner()" in response_content_raw:
@@ -1053,8 +1101,8 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(goto=goto,update={"messages": [
                 HumanMessage(
-                    content=response_content_raw,
-                    name="reporter",
+                    content=hyde_detailed_prompt,
+                    name="coordinator",
                 )
             ],
             "tokens": token_count.get_token_count()})
