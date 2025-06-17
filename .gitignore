@@ -12,8 +12,6 @@ node_modules/
 
 __pycache__
 
-projects
-
 checklist.json
 code_planner.json
 directory_structure.json
@@ -27,3 +25,5 @@ project_structure.html
 project_analysis.json
 project_structure.png
 project_requirements.json
+projects/
+ivc-frontend/.next/
