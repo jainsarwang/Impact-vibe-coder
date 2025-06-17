@@ -22,13 +22,14 @@ import asyncio
 from src.graph import build_graph
 from src.config import BROWSER_HISTORY_DIR
 from src.image_to_code import Image2CodeRouter
+from .routes import email_router
 from ..service.workflow_service import run_agent_workflow
 from .types.api import ProjectGenerationRequest, User, Token, AdminCreateRequest, AdminCreateResponse, UserCreateRequest, UserCreateResponse, Project, ChatMessage, ChatMessageOut, UpdateToken
 from src.utils.session_manager import SessionManager
 from .controllers.user import authenticate_user, check_permission, get_current_active_user, get_current_user, get_role_name_by_id, seed_initial_data, verify_role, check_email_exists, check_username_exists, generate_password, generate_username, get_password_hash
+from .controllers.email_controller import get_email_credential
 from ..service.database import client, setup_database, organizations_collection, users_collection, roles_collection, projects_collection, chats_collection, chat_history_collection
-from .utils.account import JWT_SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, create_access_token
-from .utils.error_handlers import mongodb_error_handler, generic_error_handler
+from .utils import Mailer, JWT_SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, create_access_token, mongodb_error_handler, generic_error_handler
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -78,6 +79,8 @@ app.add_middleware(
 graph = build_graph()
 
 app.include_router(Image2CodeRouter, prefix = "/api/generate-frontend-code")
+
+app.include_router(email_router, prefix = "/api/email")
 
 @app.post("/api/chat/stream")
 async def chat_endpoint(request: ProjectGenerationRequest, session_id: str, req: Request):
@@ -328,7 +331,8 @@ async def get_my_info(current_user: User = Depends(get_current_active_user)):
 @app.post("/superadmin/create_admin_org", response_model=AdminCreateResponse)
 async def superadmin_create_admin_with_org(
     request: AdminCreateRequest,
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
+    email_credential = Depends(get_email_credential)
 ):
     if not await verify_role(current_user, "superadmin"):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Only superadmin can create new organizations and primary admins.")
@@ -378,6 +382,39 @@ async def superadmin_create_admin_with_org(
         await users_collection.insert_one(user_data)
         logger.info(f"Primary Admin '{username}' (ID: {user_id}) created by superadmin '{current_user.username}' for organization '{organization_id}'.")
         
+        # send email to the admin
+        if not email_credential or not email_credential.get('data'):
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Email credential not found")
+        
+        try:
+            with open(os.path.join(os.path.dirname(__file__), "templates", "new_admin_template.html"), "r") as file:
+                template_content = file.read()
+
+            mailer = Mailer(
+                host=email_credential.get("data").get("host"),
+                port=email_credential.get("data").get("port"),
+                username=email_credential.get("data").get("email"),
+                password=email_credential.get("data").get("password"),
+            )
+            mailer.send_mail(
+                to_emails=user_data.get("email"),
+                subject="New Admin Created",
+                template_content=template_content,
+                template_data={
+                    "name": user_data.get("name"),
+                    "organization_name": org_data.get("organization_name"),
+                    "username": user_data.get("username"),
+                    "password": password
+                },
+            )
+
+            # email sent successfully
+        except Exception as e:
+            logger.error(f"Error in superadmin_create_admin_with_org: {e}", exc_info=True)
+            await users_collection.delete_one({"user_id": user_id})
+            await organizations_collection.delete_one({"organization_id": organization_id})
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to send email to the admin")
+
         return {"username": username, "password": password, "organization_id": organization_id, "user_id": user_id}
     except HTTPException:
         # If an HTTPException was raised (e.g., email exists), re-raise it
@@ -434,7 +471,8 @@ async def get_all_organizations(current_user: User = Depends(get_current_active_
 @app.post("/admin/create_user", response_model=UserCreateResponse)
 async def admin_create_regular_user(
     request: UserCreateRequest,
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
+    email_credential = Depends(get_email_credential)
 ):
     # Admins and Superadmins can create regular users
     is_admin_or_superadmin = await verify_role(current_user, "admin") or await verify_role(current_user, "superadmin")
@@ -472,7 +510,39 @@ async def admin_create_regular_user(
             "tokens_allowed": request.tokens # Default tokens for new user
         }
         await users_collection.insert_one(user_data)
-        
+
+        # send email to the user
+        if not email_credential or not email_credential.get('data'):
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Email credential not found")
+
+        try:
+            with open(os.path.join(os.path.dirname(__file__), "templates", "new_user_template.html"), "r") as file:
+                template_content = file.read()
+
+            mailer = Mailer(
+                host=email_credential.get("data").get("host"),
+                port=email_credential.get("data").get("port"),
+                username=email_credential.get("data").get("email"),
+                password=email_credential.get("data").get("password"),
+            )
+            mailer.send_mail(
+                to_emails=user_data.get("email"),
+                subject="New User Created",
+                template_content=template_content,
+                template_data={
+                    "name": user_data.get("name"),
+                    "organization_name": user_data.get("organization_name", "Organisation Name not found"),
+                    "username": user_data.get("username"),
+                    "password": password
+                },
+            )
+
+            # email sent successfully
+        except Exception as e:
+            logger.error(f"Error in admin_create_regular_user: {e}", exc_info=True)
+            await users_collection.delete_one({"user_id": user_id})
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to send email to the user")
+
         logger.info(f"User '{username}' (ID: {user_id}) created by '{current_user.username}' for organization '{current_user.organization_id}'.")
         return {"username": username, "password": password, "user_id": user_id}
     except HTTPException:
@@ -484,7 +554,8 @@ async def admin_create_regular_user(
 @app.post("/admin/create_admin", response_model=UserCreateResponse)
 async def admin_create_another_admin(
     request: UserCreateRequest,
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
+    email_credential = Depends(get_email_credential)
 ):
     # Rule: Only primary admins (created by superadmin) or superadmins can create other admins.
     is_caller_superadmin = await verify_role(current_user, "superadmin")
@@ -521,10 +592,42 @@ async def admin_create_another_admin(
             "password": get_password_hash(password), "is_active": True,
             "is_primary_admin": False, # Admins created by other admins are NOT primary admins
             "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc),
-            "tokens": 0 # Default tokens for new admin user
+            "allow": 0 # Default tokens for new admin user
         }
         await users_collection.insert_one(user_data)
-        
+
+        # send email to the user
+        if not email_credential or not email_credential.get('data'):
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Email credential not found")
+
+        try:
+            with open(os.path.join(os.path.dirname(__file__), "templates", "new_admin_template.html"), "r") as file:
+                template_content = file.read()
+
+            mailer = Mailer(
+                host=email_credential.get("data").get("host"),
+                port=email_credential.get("data").get("port"),
+                username=email_credential.get("data").get("email"),
+                password=email_credential.get("data").get("password"),
+            )
+            mailer.send_mail(
+                to_emails=user_data.get("email"),
+                subject="New Admin Created",
+                template_content=template_content,
+                template_data={
+                    "name": user_data.get("name"),
+                    "organization_name": current_user.organization_name,
+                    "username": user_data.get("username"),
+                    "password": password
+                },
+            )
+
+            # email sent successfully
+        except Exception as e:
+            logger.error(f"Error in admin_create_another_admin: {e}", exc_info=True)
+            await users_collection.delete_one({"user_id": user_id})
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to send email to the user")
+
         logger.info(f"Admin '{username}' (ID: {user_id}) created by '{current_user.username}' for organization '{current_user.organization_id}'. This admin is NOT a primary admin.")
         return {"username": username, "password": password, "user_id": user_id}
     except HTTPException:

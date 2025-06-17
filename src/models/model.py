@@ -1,3 +1,5 @@
+from datetime import datetime
+
 organization_schema = {
     '$jsonSchema': {
         'bsonType': 'object',
@@ -207,6 +209,12 @@ users_schema = {
             'updated_at': {
                 'bsonType': 'date',
                 'description': 'Last update timestamp'
+            },
+            'role': {
+                'bsonType': 'object',
+                'description': 'Role assigned to the user',
+                'virtual': True,
+                'dependencies': {'role_id': ['role_name']}
             }
         }
     }
@@ -414,6 +422,45 @@ permissions_flags_schema = {
             'updated_at': {
                 'bsonType': 'date',
                 'description': 'Last update timestamp'
+            }
+        }
+    }
+}
+
+email_credential_schema = {
+    '$jsonSchema': {
+        'bsonType': 'object',
+        'required': ['user_id', 'host', 'port', 'email', 'password', 'created_at', 'updated_at'],
+        'properties': {
+            'user_id': {
+                'bsonType': 'string',
+                'description': 'User who created the email credential'
+            },
+            'host': {
+                'bsonType': 'string',
+                'description': 'Host of the email credential'
+            },
+            'port': {
+                'bsonType': 'number',
+                'description': 'Port of the email credential'
+            },
+            'email': {
+                'bsonType': 'string',
+                'description': 'Name of the email credential'
+            },
+            'password': {
+                'bsonType': 'string',
+                'description': 'Password of the email credential'
+            },
+            'created_at': {
+                'bsonType': 'date',
+                'description': 'Creation timestamp',
+                # 'default': datetime.now()
+            },
+            'updated_at': {
+                'bsonType': 'date',
+                'description': 'Last update timestamp',
+                # 'default': datetime.now()
             }
         }
     }

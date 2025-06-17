@@ -65,9 +65,10 @@ class CodePlannerResponse(RootModel):
 
 # Base Coder Response Schema
 class CoderResponse(BaseModel):
-    FILE: List[str]
+    FILE: str
     programming_language: str
     code: str
+    description: str
 
 class HydeCoderResponse(BaseModel):
     detailed_prompt: str
