@@ -1,29 +1,26 @@
-# Node modules
+# Ignore Python virtual environments
+.venv/
+env/
+
+# Ignore build directories
+__pycache__/
+*.pyc
+dist/
+build/
+
+# Ignore Node.js modules
 node_modules/
-/backend/node_modules
 
-# Environment variables
+# Ignore environment files
 .env
+.env.local
+.env.*
 
-# Frontend build output
-/frontend/dist
+# Ignore editor-specific files
+.vscode/
+.idea/
 
-.venv
-
-__pycache__
-
-projects
-
-checklist.json
-code_planner.json
-directory_structure.json
-project_structure.json
-import-export.json
-code_planner.json
-checklist.json
-app.log
-.dependency_graph.png
-project_structure.html
-project_analysis.json
-project_structure.png
-project_requirements.json
+# Ignore logs and temporary files
+*.log
+*.tmp
+projects/
