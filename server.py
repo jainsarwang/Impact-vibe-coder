@@ -3,8 +3,12 @@ Server script for running the LangManus API.
 """
 
 import logging
+from dotenv import load_dotenv
 import uvicorn
 import sys
+
+load_dotenv()
+
 
 # Configure logging
 logging.basicConfig(
@@ -14,10 +18,12 @@ logging.basicConfig(
     filemode='a'
 )
 
+# from src.service.mongodb import con
+
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    logger.info("Starting LangManus API server")
+    logger.info("Starting IVC API server")
     reload = True
     if sys.platform.startswith("win"):
         reload = False

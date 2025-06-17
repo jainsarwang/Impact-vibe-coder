@@ -97,7 +97,7 @@ Provide files created in json with and only in json with the following format to
 
 ```json
 {
-    "FILE": ["List of file paths for all files created"],
+    "FILE": "List of file paths for all files created",
     "programming_language": "programmin_language",
     "code": "The code to be written in file",
     "description": """

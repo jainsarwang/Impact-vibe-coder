@@ -1,4 +1,14 @@
-# Node modules
+# Ignore Python virtual environments
+.venv/
+env/
+
+# Ignore build directories
+__pycache__/
+*.pyc
+dist/
+build/
+
+# Ignore Node.js modules
 node_modules/
 /backend/node_modules
 
@@ -25,5 +35,10 @@ project_structure.html
 project_analysis.json
 project_structure.png
 project_requirements.json
+
+# Terraform excluded
+terraform_output
+report.json
+credentials
+
 projects/
-ivc-frontend/.next/

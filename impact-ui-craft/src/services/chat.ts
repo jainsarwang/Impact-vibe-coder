@@ -1,6 +1,7 @@
 import { useStore } from "@/hooks/useStore";
 import { fetchStream } from "@/lib/fetch-stream";
 import { ChatEvent, Message } from "@/lib/types";
+import { WorkflowEngine } from "@/utils/WorkflowEngine";
 
 export const sendChat = async (
     userMessage: Message,
@@ -9,6 +10,7 @@ export const sendChat = async (
     options: { abortSignal?: AbortSignal } = {}
 ) => {
     const {
+        session_id,
         setAgentWorking,
         clearAgentWorking,
         addMessage,
@@ -21,7 +23,9 @@ export const sendChat = async (
     setResponding(true);
 
     const stream = fetchStream<ChatEvent>(
-        import.meta.env.VITE_BACKEND_URL + "/chat/stream",
+        `${
+            import.meta.env.VITE_BACKEND_URL
+        }/chat/stream?session_id=${session_id}`,
         {
             body: JSON.stringify({
                 messages: [...messages, userMessage],
@@ -71,25 +75,22 @@ export const sendChat = async (
                     setWorkflowStarted(event.data.workflow_id);
                     const workflowEngine = new WorkflowEngine();
                     const workflow = workflowEngine.start(event);
-                    const workflowMessage: WorkflowMessage = {
-                        id: event.data.workflow_id,
-                        role: "assistant",
-                        type: "workflow",
-                        content: { workflow: workflow },
-                    };
-                    addMessage(workflowMessage);
+                    // const workflowMessage: Message = {
+                    //     id: event.data.workflow_id,
+                    //     role: "assistant",
+                    //     type: "workflow",
+                    //     content: { workflow: [] },
+                    // };
+                    // addMessage(workflowMessage);
 
                     for await (const updatedWorkflow of workflowEngine.run(
                         stream
                     )) {
-                        updateMessage({
-                            id: workflowMessage.id,
-                            content: { workflow: updatedWorkflow },
-                        });
+                        // updateMessage({
+                        //     id: workflowMessage.id,
+                        //     content: { workflow: updatedWorkflow },
+                        // });
                     }
-                    _setState({
-                        messages: workflow.finalState?.messages ?? [],
-                    });
                     break;
                 default:
                     break;

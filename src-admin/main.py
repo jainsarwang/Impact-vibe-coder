@@ -809,8 +809,8 @@ async def update_organization_status(
 
 @app.post("/superadmin/organizations/token_addition")
 async def add_tokens_to_organization(
-    tokens_to_be_added: int,
-    organization_name: str,
+    tokens_to_be_added: int = Field(..., gt=0, description="Number of tokens to add to the organization"),
+    organization_name: str = Field(..., min_length=1, max_length=100),
     current_user: User = Depends(get_current_active_user)
 ):
     """

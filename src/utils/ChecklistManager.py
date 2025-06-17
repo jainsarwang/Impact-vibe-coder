@@ -2,13 +2,10 @@ import json
 import logging
 import os
 from typing import Dict, List, Optional
-from pymongo import MongoClient
 from datetime import datetime
 from ..utils.session_manager import SessionManager
-from ..model.session_schema import session_schema 
-
-client = MongoClient("mongodb://localhost:27017")
-db = client["impact_vibe_coder"]
+from ..models.session_schema import session_schema 
+from ..service.database import db
 
 # Create collection with strict schema validation
 try:
@@ -29,17 +26,17 @@ except Exception as e:
         'validationAction': 'error'
     })
     
-    session_db = db["session"]
+session_db = db["session"]
 
 class ChecklistManager:
     """Manages the checklist for tracking file generation progress."""
-    def __init__(self, checklist_file: str = "checklist.json", project_prefix: str = None):
+    def __init__(self, state, project_prefix: str = None):
         self.session_id = ""
-        self.checklist_file = checklist_file
         self.checklist: List[Dict] = []
         self._normalize_paths = True
         # Store the project prefix to handle paths consistently
         self.project_prefix = project_prefix
+        self.state = state
         
     def _normalize_path(self, path: str) -> str:
         """
@@ -85,7 +82,7 @@ class ChecklistManager:
     def initialize_from_directory(self, directory_structure: Dict) -> List[Dict]:
         """Initialize checklist from directory structure."""
         try:
-            self.session_id = SessionManager.get()
+            self.session_id = self.state.get("session_id")
             if isinstance(directory_structure, str):
                 directory_structure = json.loads(directory_structure)
             self.checklist = []
@@ -110,7 +107,6 @@ class ChecklistManager:
                     elif isinstance(value, dict):
                         new_path = os.path.join(current_path, key)
                         process_structure(value, new_path)
-            
             process_structure(directory_structure.get("directory_structure", {}))
             self._save_checklist()
             logging.info(f"Initialized checklist with {len(self.checklist)} items from directory structure")
@@ -303,3 +299,11 @@ class ChecklistManager:
             self._save_checklist()
             
         return self.checklist
+    
+    def update_tokens(self, tokens) -> None:
+        logging.info(f"tokens: {tokens}")
+        if tokens >=0: 
+            session_db.update_one({"session_id": self.session_id}, {"$set": {"tokens": tokens}})
+        else:
+            raise Exception("tokens are invalid")
+        
