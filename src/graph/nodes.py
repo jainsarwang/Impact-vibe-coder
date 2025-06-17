@@ -549,6 +549,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
         file_path = file_spec.get("path")
         file_content = file_spec.get("content", "")
         description = parsed_response.get("description", "")
+        print(description)
 
         if not file_path:
             continue
@@ -1031,7 +1032,6 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     # Keep original response
     response_content_raw = response.content
     token_count.set_token_count(token_count.token_count(response_content_raw))
-    # state.get("checklist_manager").update_tokens(token_count.get_token_count())
 
     logger.info("token count after coordinator: %d", token_count.get_token_count())
     # Process JSON for internal use
@@ -1047,24 +1047,36 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     goto = "__end__"
     additional_update = {}
 
-    if "handoff_to_planner()" in response_content_raw or "handofftoplanner()" in response_content_raw:
-        # extract_and_save_json(response_content_raw)
+    # Check for handoff marker
+    if "handoff_to_planner()" or "handofftoplanner()" or "planner()" in response_content_raw:
         try:
-            requirements = json.loads(response_content_repaired)
-            additional_update["requirements"] = requirements
-            goto = "planner"
-        except json.JSONDecodeError:
-            logger.error(f"Error parsing requirements: {response_content_raw}")
+            logger.info("Handoff to planner detected in coordinator response.")
+            # Try to find JSON in the response
+            json_match = re.search(r'```json(.*?)```', response_content_raw, re.DOTALL)
+            if json_match:
+                requirements = json.loads(json_match.group(1).strip())
+                additional_update["requirements"] = requirements
+                goto = "planner"
+            else:
+                # If no JSON found but handoff requested, create minimal requirements
+                additional_update["requirements"] = {
+                    "description": "Project requirements finalized by coordinator",
+                    "content": response_content_raw
+                }
+                goto = "planner"
+                logger.warning("Handoff to planner without explicit JSON requirements")
+        except (json.JSONDecodeError, AttributeError) as e:
+            logger.error(f"Error parsing requirements: {str(e)}")
             goto = "__end__"
 
-    logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+    logger.info(f"Tokens in state till now: {state.get('tokens')} for the session: {state.get('session_id')}")
     return Command(
         goto=goto,
         update={
             "messages": [
                 HumanMessage(
                     content=response_content_raw,
-                    name="reporter",
+                    name="coordinator",
                 )
             ],
             "tokens": token_count.get_token_count(),
@@ -1079,10 +1091,11 @@ def extract_user_content(full_content: str) -> str:
     no_json = re.sub(r'\{.*?\}', '', no_json, flags=re.DOTALL)
     
     # Remove technical markers like handoff_to_planner()
-    no_json = no_json.replace("handoff_to_planner()", "")
+    no_json = no_json.replace("handoff_to_planner()", "").replace("handofftoplanner()", "")
     
     # Clean up resulting whitespace
     return "\n".join(line.strip() for line in no_json.splitlines() if line.strip())
+
 
 def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     """Reporter node that write a final report."""
