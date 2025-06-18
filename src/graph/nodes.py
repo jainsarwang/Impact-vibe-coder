@@ -1194,83 +1194,134 @@ depployer
     server begins
 
 """
-def terraform_planner_node(state: State) -> Command[Literal["supervisor"]]:
-    """Terraform Planner node for graph"""
 
-    logger.info("Terraform Planner generating full plan")
-
-    directory_structure = state.get('directory_structure')
-    
-    if not directory_structure:
-        logging.warning("No Directory Object in State, Going back to supervisor")
-        return Command(goto='supervisor')
-
-    # Prepare all variables for the prompt
-    prompt_vars = {
-        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
-        "CODER_AGENTS": ", ".join(CODER_AGENTS),  # Convert list to string
-        "directory_structure": directory_structure,
-        **state  # Include other state variables
-    }
-
-    template = get_prompt_template('code_planner')
-    system_prompt = PromptTemplate(
-        input_variables=["CURRENT_TIME", "CODER_AGENTS","directory_structure"],
-        template=template,
-    ).format(**prompt_vars)
-
-    messages = [
-        {
-            "role": "system",
-            "content": system_prompt
-        },
-        {
-            "role": "user",
-            "content": "Create a Code plan"
-        }
-    ]
-    messages = apply_prompt_template_planner("code_planner", state)
-    # whether to enable deep thinking mode
-    llm = get_llm_by_type("basic", schema=get_response_schema("code_planner"))
-    response = llm.invoke(messages)
-    global token_count_value
-    token_count_value += token_count.token_count(response.content)
-    full_response = response.content
-    # extract_and_save_json(full_response)
-    logger.debug(f"Current state messages: {state['messages']}")
-    logger.info(f"Code Planner response: {full_response}")
-
-    # extract_and_save_json(full_response, "code_planner.json")
-
-    if full_response.startswith("```json"):
-        full_response = full_response.removeprefix("```json")
-
-    if full_response.endswith("```"):
-        full_response = full_response.removesuffix("```")
-
-    goto = "supervisor"
+def terraform_generator_node(state: State) -> Command[Literal["supervisor"]]:
+    """Node for the Terraform Generator that creates infrastructure configurations."""
+    logger.info("Terraform Generator starting task")
 
     try:
-        repaired_response = json_repair.loads(full_response)
-        full_response = json.dumps(repaired_response)
+        # Get directory structure and code plan from state
+        directory_structure = state.get('full_plan')
+        if not directory_structure:
+            logger.warning("No directory structure found in state")
+            return Command(goto="supervisor")
 
-        with open("code_planner.json", "w", encoding="utf-8") as f:
-            json.dump(repaired_response, f, indent=2, ensure_ascii=False)
+        # Parse directory_structure if it's a string
+        if isinstance(directory_structure, str):
+            try:
+                directory_structure = json.loads(directory_structure)
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse directory_structure JSON: {e}")
+                return Command(goto="supervisor")
 
-        # Update checklist from the plan
-        state.get("checklist_manager").update_from_plan(repaired_response)
-    except json.JSONDecodeError:
-        logger.warning("Code Planner response is not a valid JSON")
-        goto = "__end__"
+        # Ensure directory_structure is a dictionary
+        if not isinstance(directory_structure, dict):
+            logger.error(f"Invalid directory_structure type: {type(directory_structure)}")
+            return Command(goto="supervisor")
 
-    return Command(
-        update={
-            "messages": [HumanMessage(content=full_response, name="code_planner")],
-            "code_plan": full_response,
-            "tokens": token_count.get_token_count()
-        },
-        goto=goto,
-    )
+        # Update report with project name
+        global report
+        report["project_name"] = directory_structure.get("project_name", "sample_project")
+        project_path = f"projects/{report['project_name']}"
+
+        # Generate Terraform files
+        terraform_generator_main(project_path=project_path, report=report)
+
+        # Initialize and apply Terraform
+        logger.info("Initializing and applying Terraform configuration")
+        terraform_cmds = [
+            "terraform init",
+            "terraform plan",
+            "terraform apply -auto-approve"
+        ]
+        for cmd in terraform_cmds:
+            output = bash_tool.invoke(f"cd terraform_output && {cmd}")
+            logger.debug(f"Terraform command '{cmd}' output: {output}")
+
+        # Get instance public IP
+        logger.info("Retrieving instance public IP")
+        output = bash_tool.invoke("cd terraform_output && terraform output -raw instance_1_public_ip")
+        instance_ip = output.strip()
+        if not instance_ip:
+            raise ValueError("Failed to retrieve instance IP from Terraform output")
+
+        logger.info(f"Instance IP: {instance_ip}")
+
+        report["instance_ip"] = instance_ip
+
+        # Get deployment commands
+        # get the readme.md file content from 'f"projects/{project_name}/README.md"'
+        with open(f"projects/{report['project_name']}/README.md", "r") as f:
+            readme_content = f.read()
+
+        prompt_vars = {
+            "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+            **state
+        }
+        # Get and format the prompt template
+        template = get_prompt_template('terraform_deployer')
+        system_prompt = PromptTemplate(
+            input_variables=["CURRENT_TIME"],
+            template=template,
+        ).format(**prompt_vars)
+
+        # Prepare messages for LLM
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt
+            },
+            {"role": "user", "content": readme_content}
+        ]
+        deployment_commands = get_llm_by_type("basic", schema=get_response_schema("terraform_deployer")).invoke(messages)
+        deployment_commands = str(deployment_commands.content)
+        deployment_commands = repair_json_output(deployment_commands)
+        deployment_commands = json.loads(deployment_commands)
+        deployment_cmds = " && ".join(deployment_commands.get("commands", []))
+
+        logging.info(f"Deployment commands: {deployment_commands}")
+
+        # Prepare deployment commands
+        key_path = "vibecoder-key.pem"
+        deployment_cmds = [
+            # Set key permissions
+            f"icacls {key_path} /inheritance:r",
+            f'icacls {key_path} /grant:r "%USERNAME%":"(R,W)"',
+            f'icacls {key_path} /remove "NT AUTHORITY\\Authenticated Users"',
+
+            # Wait for instance to be ready
+            "timeout /t 30",
+
+            # Prepare remote directory
+            f'ssh -i {key_path} -o StrictHostKeyChecking=no ec2-user@{instance_ip} "mkdir -p /home/ec2-user/app"',
+
+            # Copy source code
+            f'scp -i {key_path} -o StrictHostKeyChecking=no source_code.zip ec2-user@{instance_ip}:/home/ec2-user/app/',
+
+            # Extract and deploy
+            f'ssh -i {key_path} -o StrictHostKeyChecking=no ec2-user@{instance_ip} "cd /home/ec2-user/app && unzip -o source_code.zip"',
+
+            # Execute deployment commands
+            f'ssh -i {key_path} -o StrictHostKeyChecking=no ec2-user@{instance_ip} "{deployment_cmds}"',
+
+            # Print access information
+            f"echo http://{instance_ip}"
+        ]
+
+        # Execute deployment commands
+        logger.info("Starting deployment to instance")
+        for cmd in deployment_cmds:
+            output = bash_tool.invoke(f"cd terraform_output && {cmd}")
+            logger.debug(f"Deployment command output: {output}")
+
+        logger.info("Terraform Generator completed task successfully")
+
+        return Command(
+            goto="supervisor", 
+            update={
+                "is_terraform_generated": True,
+            }
+        )
 
 max_retries = 0 
 
