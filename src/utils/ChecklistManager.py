@@ -306,4 +306,15 @@ class ChecklistManager:
             session_db.update_one({"session_id": self.session_id}, {"$set": {"tokens": tokens}})
         else:
             raise Exception("tokens are invalid")
+    
+    def _save_chat_history(self, state):
+        """
+        Saves the Chat history to the chat_history collection in the database
+        
+        Args:
+        Accept state paramter to save entire state
+        
+        Return:
+        Return nothing, just saves the the content in the database
+        """
         

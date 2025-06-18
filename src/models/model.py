@@ -363,36 +363,47 @@ chats_schema = {
 chats_history_schema = {
     '$jsonSchema': {
         'bsonType': 'object',
-        'required': ['chat_history_id', 'chat_id', 'user_id', 'message', 'tokens_used', 'created_at'],
+        'required': ['chat_history_id', 'chat', 'created_at', 'updated_at'],
         'properties': {
             'chat_history_id': {
                 'bsonType': 'string',
-                'description': 'Unique message identifier'
+                'description': 'session_id'
             },
-            'chat_id': {
-                'bsonType': 'string',
-                'description': 'Associated chat'
+            'chat': {
+                'bsonType': 'object',
+                'description': 'state from nodes while updation',
+                'properties': {
+                    'messages': {
+                        'bsonType': 'array',
+                        'items': {
+                            'bsonType': 'object',
+                            'properties': {
+                                'content': {'bsonType': 'string'},
+                                'type': {'bsonType': 'string'},
+                                'additional_kwargs': {'bsonType': 'object'},
+                                'response_metadata': {'bsonType': 'object'},
+                                'id': {'bsonType': ['string', 'null']},
+                                'name': {'bsonType': ['string', 'null']}
+                            }
+                        }
+                    },
+                    # Include all other State fields here
+                    'TEAM_MEMBERS': {
+                        'bsonType': 'array',
+                        'items': {'bsonType': 'string'}
+                    },
+                    'session_id': {'bsonType': 'string'},
+                    'requirements': {'bsonType': ['object', 'array']},
+                    # ... add all other fields from your State model
+                }
             },
-            'user_id': {
-                'bsonType': 'string',
-                'description': 'User who sent the message'
-            },
-            'message': {
-                'bsonType': 'string',
-                'description': 'Message content'
-            },
-            'direction': {
-                'bsonType': 'string',
-                'enum': ['inbound', 'outbound'],
-                'description': 'Message direction'
-            },
-            'tokens_used': {
-                "bsonType": ["long", "int"],
-                'description': 'tokens consumed by this message'
+            'updated_at': {
+                'bsonType': 'date',
+                'description': 'Timestamp of last update'
             },
             'created_at': {
                 'bsonType': 'date',
-                'description': 'Timestamp of message'
+                'description': 'Timestamp of creation'
             }
         }
     }
