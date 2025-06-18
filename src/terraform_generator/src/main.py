@@ -10,7 +10,7 @@ from .terraform_planner import TerraformPlanner, TerraformPlan, EC2InstanceConfi
 from .terraform_generator import TerraformGenerator
 from ..utils.terraform_utils import load_project_report, validate_terraform_config
 
-def main(project_path: str = None, report: str = None, output_dir: str = 'terraform_output', region: str = 'ap-south-1', instance_type: str = 't2.micro'):
+def main(project_path: str = None, report: dict = None, output_dir: str = 'terraform_output', region: str = 'ap-south-1', instance_type: str = 't2.micro'):
 
     try:
         # Validate project path exists

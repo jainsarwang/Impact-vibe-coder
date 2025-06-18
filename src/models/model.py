@@ -209,12 +209,6 @@ users_schema = {
             'updated_at': {
                 'bsonType': 'date',
                 'description': 'Last update timestamp'
-            },
-            'role': {
-                'bsonType': 'object',
-                'description': 'Role assigned to the user',
-                'virtual': True,
-                'dependencies': {'role_id': ['role_name']}
             }
         }
     }
