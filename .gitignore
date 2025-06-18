@@ -1,4 +1,14 @@
-# Node modules
+# Ignore Python virtual environments
+.venv/
+env/
+
+# Ignore build directories
+__pycache__/
+*.pyc
+dist/
+build/
+
+# Ignore Node.js modules
 node_modules/
 /backend/node_modules
 

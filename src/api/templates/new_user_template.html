@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to {{ organization_name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .welcome-text {
+            color: #34495e;
+            font-size: 18px;
+        }
+        .credentials {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .login-button {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .login-button:hover {
+            background-color: #2980b9;
+        }
+        .important-note {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to {{ organization_name }}!</h1>
+        
+        <p class="welcome-text">Dear {{ name }},</p>
+        
+        <p>We're excited to have you join our platform! Your account has been successfully created.</p>
+        
+        <div class="credentials">
+            <p><strong>Your Login Credentials:</strong></p>
+            <p>Username: <strong>{{ username }}</strong></p>
+            <p>Password: <strong>{{ password }}</strong></p>
+        </div>
+
+        <div class="important-note">
+            <h3 style="margin-top: 0;">Important Security Notes:</h3>
+            <ul>
+                <li>Keep your credentials confidential and never share them</li>
+                <li>Ensure you're using a secure and private network when accessing your account</li>
+                <li>Log out after each session to maintain security</li>
+            </ul>
+        </div>
+        
+        <p>To get started, please click the button below to access your account:</p>
+        
+        <center>
+            <a href="{{ frontend_url }}/login" class="login-button">Login to Your Account</a>
+        </center>
+        
+        <p style="margin-top: 30px;">If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+        
+        <p>Best regards,<br>The {{ organization_name }} Team</p>
+    </div>
+</body>
+</html>

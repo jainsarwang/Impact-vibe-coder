@@ -22,14 +22,6 @@ class UpdateEmailCredential(BaseModel):
     host: Optional[str] = None
     port: Optional[int] = None
 
-class EmailCredentialResponse(BaseModel):
-    email: str
-    host: str
-    port: int
-    password: str
-    user_id: str
-    created_at: datetime
-    updated_at: datetime
 
 
 async def add_email_credential(request: EmailCredential, current_user: User = Depends(get_current_active_user)):
@@ -41,11 +33,22 @@ async def add_email_credential(request: EmailCredential, current_user: User = De
         "password": request.password,
         "host": request.host,
         "port": request.port,
+        "created_at": datetime.now(),
+        "updated_at": datetime.now()
     }
     try:
-        await email_credentials_collection.insert_one(credential_data)
+        doc = await email_credentials_collection.find_one({"user_id": user_id})
+        if doc:
+            raise HTTPException(status_code=400, detail="Email credentials already exists")
 
-        return {"message": "Email credential added successfully"}
+        doc = await email_credentials_collection.insert_one(credential_data)
+
+        return {
+            "data": {
+                **credential_data,
+                "id": str(doc.inserted_id)
+            }
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -58,8 +61,17 @@ async def get_email_credential(user_id: Optional[str] = None, current_user: User
     else:
         user_id = current_user.user_id
 
-    credentials = await email_credentials_collection.find_one({"user_id": user_id})
-    return credentials
+    try:
+        credentials = await email_credentials_collection.find_one({"user_id": user_id})
+        
+        return {
+            "data" : ({
+                **credentials,
+                "id": str(credentials["_id"])
+            } if credentials else None)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 async def update_email_credential(request: UpdateEmailCredential, current_user: User = Depends(get_current_active_user)):
     user_id = current_user.user_id
@@ -67,10 +79,14 @@ async def update_email_credential(request: UpdateEmailCredential, current_user: 
     credential_data = request.model_dump(exclude_none=True)
     credential_data["updated_at"] = datetime.now()
 
-    try:
-        await email_credentials_collection.update_one({"user_id": user_id}, {"$set": credential_data})
+    doc = await email_credentials_collection.find_one({"user_id": user_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Email credentials not found")
 
-        return {"message": "Email credential updated successfully"}
+    try:
+        doc = await email_credentials_collection.update_one({"user_id": user_id}, {"$set": credential_data})
+        
+        return {"data": None}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -82,6 +98,6 @@ async def delete_email_credential(user_id: Optional[str] = None, current_user: U
 
     try:
         await email_credentials_collection.delete_one({"user_id": user_id})
-        return {"message": "Email credential deleted successfully"}
+        return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

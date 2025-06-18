@@ -83,6 +83,7 @@ class User(UserBase):
     """Response model for user data"""
     user_id: str
     role_id: str
+    role_name: Optional[str] = None
     organization_id: str
     is_active: bool
     is_primary_admin: bool = False
@@ -170,3 +171,17 @@ class ChatMessageOut(ChatMessage):
 
 class UpdateToken(BaseModel) :
     tokens: int
+
+# Email Credential Response
+class EmailCredentialResponse(BaseModel):
+    class EmailCredential(BaseModel): # For response
+        id: str # mongoDB id
+        email: str
+        host: str
+        port: int
+        password: str
+        user_id: str
+        created_at: datetime
+        updated_at: datetime
+
+    data: Optional[EmailCredential]

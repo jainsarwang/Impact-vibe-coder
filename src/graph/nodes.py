@@ -141,7 +141,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Token count after directory generator: %s", token_count.get_token_count())
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
-    extract_and_save_json(response_content, "directory_structure.json")
+    # extract_and_save_json(response_content, "directory_structure.json")
 
     # Initialize checklist from directory structure
     checklist_manager.initialize_from_directory(response_content)
@@ -228,9 +228,6 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     try:
         repaired_response = json_repair.loads(full_response)
         full_response = json.dumps(repaired_response)
-
-        with open("code_planner.json", "w", encoding="utf-8") as f:
-            json.dump(repaired_response, f, indent=2, ensure_ascii=False)
 
         # Update checklist from the plan
         state.get("checklist_manager").update_from_plan(repaired_response)
@@ -963,12 +960,13 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         print(token_count.get_token_count())
         token_count.set_token_count(0)
         print(f"After making tokens to '0', count is: {token_count.get_token_count()}")
-        with open("project_requirements.json") as f:
-            project_requirement = json.load(f)
-
+        
+        project_requirement = state.get("full_plan")
+        project_requirement = json.loads(project_requirement)
+        
         goto = "__end__"
         if project_requirement:
-            project_name = project_requirement['project_name']
+            project_name = project_requirement.get('project_name', f"ivc-project-{state.get('session_id')}")
 
             # check if `projects/{project_name} exits`
             if not os.path.exists(f"projects/{project_name}"):
@@ -998,6 +996,7 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     logger.info("Planner generating full plan")
     messages = apply_prompt_template_planner("planner", state)
     # whether to enable deep thinking mode
+    logger.info(f"Current state messages at planner starting: {state['messages']}")
     llm = get_llm_by_type("basic", schema=get_response_schema("planner"))
     if state.get("deep_thinking_mode"):
         llm = get_llm_by_type("reasoning", schema=get_response_schema("planner"))
@@ -1024,8 +1023,7 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
         token_count.set_token_count(token_count.token_count(full_response))
         # state.get("checklist_manager").update_tokens(token_count.get_token_count())
         logger.info("Token count after planner: %d", token_count.get_token_count())
-        with open("project_requirements.json", "w", encoding="utf-8") as f:
-            json.dump(repaired_response, f, indent=2, ensure_ascii=False)
+        
     except json.JSONDecodeError:
         logger.warning("Planner response is not a valid JSON")
         goto = "__end__"
@@ -1043,8 +1041,72 @@ logger = logging.getLogger(__name__) # Ensure logger is configured
 
 def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     """Coordinator node that communicates with customers, showing only non-JSON context."""
-    logger.info("Coordinator talking.")
+    logger.info("Coordinator talking.")  
+    #Hyde Coder Part
+    #--------------------------------------------------------
+    logger.info(f"Corrdinator Starting State Messages: {state["messages"][0].content}")
+    hyde_detailed_prompt = ""
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        **state
+    }
+    # Get and format the prompt template
+    template = get_prompt_template('hyde_coder')
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME"],
+        template=template,
+    ).format(**prompt_vars)
+
+    # Prepare messages for LLM
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": str(state["messages"][0].content)
+        }
+    ]
+    # Get LLM response
+    llm = get_llm_by_type("basic", schema=get_response_schema("hyde_coder"))
+    try:
+        response = llm.invoke(messages)
+        hyde_detailed_prompt = response.content
+        try:
+            # Extract only the JSON part from hyde_detailed_prompt
+            json_match = re.search(r'```json\s*(\{.*?\})\s*```', hyde_detailed_prompt, re.DOTALL)
+            if json_match:
+                hyde_detailed_prompt = json_match.group(1)
+            else:
+                # Fallback: try to extract the first {...} block
+                brace_match = re.search(r'(\{.*?\})', hyde_detailed_prompt, re.DOTALL)
+                if brace_match:
+                    hyde_detailed_prompt = brace_match.group(1)
+            data = json.loads(hyde_detailed_prompt)
+            hyde_detailed_prompt = data["detailed_prompt"]
+        except json.JSONDecodeError:
+            data = dict(hyde_detailed_prompt)
+            hyde_detailed_prompt = data.get("detailed_prompt")
+            return None
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return None
+        token_count.set_token_count(token_count.token_count(response.content))      
+        logger.info("Token count after Hyde Coder: %s", token_count.get_token_count())
+        logger.info(f"Hyde Code Response: {hyde_detailed_prompt}")
+    except Exception as e:
+        logger.error(f"LLM invocation failed: {e}")
+        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+        goto = "__end__" 
+    logger.info(f"User Prompt: {state['messages'][0].content}")
+    logger.info(f"Hyde Coder Response: {hyde_detailed_prompt}")
+        
+    #Core existing Logic
+    logger.info(f"State Messgaes After Hyde Coder response: {state["messages"][0].content}")
+    logger.info(f"Hyde Response: {hyde_detailed_prompt}")
     messages = apply_prompt_template("coordinator", state)
+    messages.append(hyde_detailed_prompt)
     response = get_llm_by_type(AGENT_LLM_MAP["coordinator"], schema=get_response_schema('coordinator'), temperature=0.6).invoke(messages)
     
     logger.debug(f"Current state messages: {state['messages']}")
@@ -1063,19 +1125,35 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     # Set the user-visible content
     response.content = user_display_content
     
+    #---------------------------------------------------------
     # Handle planner handoff
     goto = "__end__"
-    if "handoff_to_planner()" in response_content_raw:
-        extract_and_save_json(response_content_raw)
-        goto = "planner"
+    additional_update = {}
+
+    if "handoff_to_planner()" in response_content_raw or "handofftoplanner()" in response_content_raw:
+        # extract_and_save_json(response_content_raw)
+        try:
+            requirements = json.loads(response_content_repaired)
+            additional_update["requirements"] = requirements
+            goto = "planner"
+        except json.JSONDecodeError:
+            logger.error(f"Error parsing requirements: {response_content_raw}")
+            goto = "__end__"
+
     logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
-    return Command(goto=goto,update={"messages": [
+    return Command(
+        goto=goto,
+        update={
+            "messages": [
                 HumanMessage(
                     content=response_content_raw,
-                    name="reporter",
+                    name="coordinator",
                 )
             ],
-            "tokens": token_count.get_token_count()})
+            "tokens": token_count.get_token_count(),
+            **additional_update
+        }
+    )
 
 def extract_user_content(full_content: str) -> str:
     """Extracts non-JSON parts of the response for user display."""

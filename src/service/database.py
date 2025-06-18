@@ -38,6 +38,7 @@ token_allocations_collection = db["token_allocations"]
 projects_collection = db["projects"]
 chats_collection = db["chats"]
 chat_history_collection = db["chat_history"]
+email_credential_collection = db["email_credential"]
 
 async def setup_database():
     """Initialize database with collections and schemas"""
@@ -61,7 +62,8 @@ async def setup_database():
             "projects": projects_schema,
             "chats": chats_schema,
             "chat_history": chats_history_schema,
-            "permissions_flags": permissions_flags_schema
+            "permissions_flags": permissions_flags_schema,
+            "email_credential": email_credential_schema
         }
 
         for coll_name, schema in collections_to_create.items():

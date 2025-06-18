@@ -58,7 +58,7 @@ def apply_prompt_template_planner(prompt_name: str, state: AgentState) -> list:
             template=get_prompt_template(prompt_name),
         ).format(
             CURRENT_TIME=datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
-            project_requirements=str(state["messages"]),  # Convert dict to formatted JSON string
+            project_requirements=json.dumps(state["requirements"], indent=2, ensure_ascii=False),  # Convert dict to formatted JSON string
             **state
         )
         token_count.set_token_count(token_count.token_count(system_prompt))

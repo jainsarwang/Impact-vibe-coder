@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 import logging
 from dotenv import load_dotenv
-
 load_dotenv()
 
 # Configure logging
