@@ -956,8 +956,8 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         token_count.set_token_count(0)
         print(f"After making tokens to '0', count is: {token_count.get_token_count()}")
         
-        project_requirement = json.loads(state.get("full_plan"))
-        
+        project_requirement = state.get("full_plan")
+        project_requirement = json.loads(project_requirement) if isinstance(project_requirement, str) else project_requirement
         goto = "__end__"
         if project_requirement:
             project_name = project_requirement.get('project_name', f"ivc-project-{state.get('session_id')}")
@@ -1124,7 +1124,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     goto = "__end__"
     additional_update = {}
 
-    if "handoff_to_planner()" in response_content_raw or "handofftoplanner()" in response_content_raw or "handoff_to_planner" in response.content:
+    if "handoff_to_planner()" in response_content_raw or "handofftoplanner()" in response_content_raw or "handoff_to_planner()" in response_content:
         # extract_and_save_json(response_content_raw)
         try:
             requirements = json.loads(response_content_repaired)
@@ -1156,6 +1156,7 @@ def extract_user_content(full_content: str) -> str:
     no_json = re.sub(r'\{.*?\}', '', no_json, flags=re.DOTALL)
     
     # Remove technical markers like handoff_to_planner()
+    # no_json = no_json.replace("handoff_to_planner()", "")
     # no_json = no_json.replace("handoff_to_planner()", "")
     
     # Clean up resulting whitespace
