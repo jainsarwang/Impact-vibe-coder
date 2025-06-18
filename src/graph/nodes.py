@@ -932,20 +932,15 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     try:
         if isinstance(response, str):
             # Handle Markdown JSON formatting if present
-            if response.startswith('```json') and response.endswith('```'):
-                response = response[7:-3].strip()  # Remove ```json and ```
-                token_count.set_token_count(token_count.token_count(response))
-                state.get("checklist_manager").update_tokens(token_count.get_token_count())                
-                logger.info("Token count after supervisor: %d", token_count.get_token_count())
-            parsed_response = json.loads(response)
+            parsed_response = repair_json_output(response)
         elif hasattr(response, 'content'):
             content = response.content
             # Handle Markdown JSON formatting if present
-            if content.startswith('```json') and content.endswith('```'):
-                content = content[7:-3].strip()  # Remove ```json and ```
-            parsed_response = json.loads(content)
+            parsed_response = repair_json_output(content)
         else:
             raise ValueError("Unexpected response format from supervisor LLM")
+
+        parsed_response = json.loads(parsed_response)
         goto = parsed_response.get("next")
     except (json.JSONDecodeError, ValueError) as e:
         logger.error(f"Error parsing supervisor response: {e}, raw response: {response}")
@@ -961,7 +956,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         token_count.set_token_count(0)
         print(f"After making tokens to '0', count is: {token_count.get_token_count()}")
         
-        project_requirement = state.get("requirements")
+        project_requirement = json.loads(state.get("full_plan"))
         
         goto = "__end__"
         if project_requirement:
@@ -980,8 +975,8 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
 
                 # then go to terraform generator
                 goto = 'terraform_generator'
-
-        logger.info("Workflow completed")
+            else:
+                logger.info("Workflow completed")
     elif goto in TEAM_MEMBERS:
         logger.info(f"Supervisor delegating to: {goto}")
     else:
@@ -1124,12 +1119,12 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     # Set the user-visible content
     response.content = user_display_content
     
-    #---------------------------------------------------------
+    #--------------------------------------------------------
     # Handle planner handoff
     goto = "__end__"
     additional_update = {}
 
-    if "handoff_to_planner()" in response_content_raw or "handofftoplanner()" in response_content_raw:
+    if "handoff_to_planner()" in response_content_raw or "handofftoplanner()" in response_content_raw or "handoff_to_planner" in response.content:
         # extract_and_save_json(response_content_raw)
         try:
             requirements = json.loads(response_content_repaired)
@@ -1161,7 +1156,7 @@ def extract_user_content(full_content: str) -> str:
     no_json = re.sub(r'\{.*?\}', '', no_json, flags=re.DOTALL)
     
     # Remove technical markers like handoff_to_planner()
-    no_json = no_json.replace("handoff_to_planner()", "")
+    # no_json = no_json.replace("handoff_to_planner()", "")
     
     # Clean up resulting whitespace
     return "\n".join(line.strip() for line in no_json.splitlines() if line.strip())
@@ -1172,7 +1167,7 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     messages = apply_prompt_template("reporter", state)
     response = get_llm_by_type(AGENT_LLM_MAP["reporter"], schema=get_response_schema('reporter'), temperature=0.6).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
-    response_content = response.content
+    response_content = str(response.content)
     token_count.set_token_count(token_count.token_count(response_content))
     state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after reporter: %d", token_count.get_token_count())
@@ -1224,7 +1219,7 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
 
     llm = get_llm_by_type("basic", schema=get_response_schema("diagram_generator"), temperature=0.8)
     response = llm.invoke(messages)
-    token_count.set_token_count(token_count.token_count(response.content))
+    token_count.set_token_count(token_count.token_count(str(response.content)))
     # state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after diagram generation: %d", token_count.get_token_count())
     logger.debug(f"Diagram agent response: {response}")
@@ -1351,7 +1346,7 @@ def terraform_generator_node(state: State) -> Command[Literal["supervisor"]]:
         logger.info("Terraform Generator completed task successfully")
 
         return Command(goto="supervisor", update={
-            "is_terraform_generated": True,
+                "is_terraform_generated": True,
         })
 
     except Exception as e:
