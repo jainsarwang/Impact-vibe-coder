@@ -1311,7 +1311,40 @@ def terraform_generator_node(state: State) -> Command[Literal["supervisor"]]:
             raise ValueError("Failed to retrieve instance IP from Terraform output")
 
         logger.info(f"Instance IP: {instance_ip}")
+
         report["instance_ip"] = instance_ip
+
+        # Get deployment commands
+        # get the readme.md file content from 'f"projects/{project_name}/README.md"'
+        with open(f"projects/{report['project_name']}/README.md", "r") as f:
+            readme_content = f.read()
+
+        prompt_vars = {
+            "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+            **state
+        }
+        # Get and format the prompt template
+        template = get_prompt_template('terraform_deployer')
+        system_prompt = PromptTemplate(
+            input_variables=["CURRENT_TIME"],
+            template=template,
+        ).format(**prompt_vars)
+
+        # Prepare messages for LLM
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt
+            },
+            {"role": "user", "content": readme_content}
+        ]
+        deployment_commands = get_llm_by_type("basic", schema=get_response_schema("terraform_deployer")).invoke(messages)
+        deployment_commands = str(deployment_commands.content)
+        deployment_commands = repair_json_output(deployment_commands)
+        deployment_commands = json.loads(deployment_commands)
+        deployment_cmds = " && ".join(deployment_commands.get("commands", []))
+
+        logging.info(f"Deployment commands: {deployment_commands}")
 
         # Prepare deployment commands
         key_path = "vibecoder-key.pem"
@@ -1333,6 +1366,9 @@ def terraform_generator_node(state: State) -> Command[Literal["supervisor"]]:
             # Extract and deploy
             f'ssh -i {key_path} -o StrictHostKeyChecking=no ec2-user@{instance_ip} "cd /home/ec2-user/app && unzip -o source_code.zip"',
 
+            # Execute deployment commands
+            f'ssh -i {key_path} -o StrictHostKeyChecking=no ec2-user@{instance_ip} "{deployment_cmds}"',
+
             # Print access information
             f"echo http://{instance_ip}"
         ]
@@ -1345,11 +1381,20 @@ def terraform_generator_node(state: State) -> Command[Literal["supervisor"]]:
 
         logger.info("Terraform Generator completed task successfully")
 
-        return Command(goto="supervisor", update={
+        return Command(
+            goto="supervisor", 
+            update={
                 "is_terraform_generated": True,
-        })
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error in terraform_generator_node: {str(e)}", exc_info=True)
         report["error"] = str(e)
-        return Command(goto="supervisor")
+        return Command(
+            goto="supervisor", 
+            update={
+                "is_terraform_generated": True,
+                "error": str(e)
+            }
+        )
