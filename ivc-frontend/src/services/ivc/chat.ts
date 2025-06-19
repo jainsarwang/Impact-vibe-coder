@@ -103,3 +103,49 @@ export const sendChat = async (
         setResponding(false);
     }
 };
+
+
+export const sendImageGenerationChat = async (
+    image: File,
+    options: { abortSignal?: AbortSignal } = {}
+) => {
+    const session_id = useStore.getState().session_id,
+        setAgentWorking = useStore.getState().setAgentWorking,
+        setResponding = useStore.getState().setResponding,
+        clearAgentWorking = useStore.getState().clearAgentWorking,
+        setFrontendGenerated = useStore.getState().setFrontendGenerated;
+
+    setResponding(true);
+
+    const formData = new FormData();
+    formData.append("file", image);
+
+    const stream = fetchStream<{data: {status: string}, type: "message"}>(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/generate-frontend-code?session_id=${session_id}`,
+        {
+            body: formData,
+            signal: options.abortSignal,
+            headers: {
+                "Cache-Control": "no-cache",
+            }
+        }
+    );
+
+    try {
+        for await (const event of stream) {
+            if(event.type === "message") {
+                setAgentWorking(event.data.status);
+            }
+        }
+
+        setFrontendGenerated(true);
+    } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") {
+            return;
+        }
+        throw e;
+    } finally {
+        clearAgentWorking();
+        setResponding(false);
+    }
+};

@@ -23,6 +23,7 @@ node_modules/
 __pycache__
 
 projects
+project_zips
 
 checklist.json
 code_planner.json
