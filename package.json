@@ -1,6 +1,12 @@
 {
     "scripts": {
+        "start": "concurrently \"npm run backend\" \"npm run frontend\"",
         "backend": "uv run server.py",
-        "frontend": "cd langmanus-web && npm run dev"
+        "frontend": "cd ivc-frontend && npm run dev",
+        "generate-terraform": "npm run terraform-create && npm run terraform-init && npm run terraform-plan && npm run terraform-apply",
+        "terraform-create": "python -m terraform_generator.src.main --report report.json --output-dir terraform_output",
+        "terraform-init": "cd terraform_output && terraform init",
+        "terraform-plan": "cd terraform_output && terraform plan",
+        "terraform-apply": "cd terraform_output && terraform apply -auto-approve"
     }
 }
