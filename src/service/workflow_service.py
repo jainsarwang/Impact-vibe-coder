@@ -72,7 +72,8 @@ async def run_agent_workflow(
             "deep_thinking_mode": deep_thinking_mode,
             "search_before_planning": search_before_planning,
             "session_id": session_id,
-        },{"recurison_limit": 100},
+        },
+        {"recursion_limit": 100},
         version="v2",
     ):
         kind = event.get("event")
