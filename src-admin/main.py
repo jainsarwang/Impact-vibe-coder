@@ -886,11 +886,10 @@ async def add_tokens_to_organization(
 
 @app.get("/organization/get_users")
 async def get_organization_users(
-    organization_name: str,
     current_user: User = Depends(get_current_active_user)
 ):
     "Get all users of the current organization"
-    organization = await organizations_collection.find_one({"organization_name": organization_name})
+    organization = await organizations_collection.find_one({"organization_id": current_user.get("organization_id")})
     if not organization:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
     users_of_organization_id = organization.get("organization_id")

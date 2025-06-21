@@ -306,4 +306,3 @@ class ChecklistManager:
             session_db.update_one({"session_id": self.session_id}, {"$set": {"tokens": tokens}})
         else:
             raise Exception("tokens are invalid")
-        

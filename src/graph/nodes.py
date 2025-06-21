@@ -40,7 +40,8 @@ from src.llms.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS, CODER_AGENTS, AGENT_LLM_MAP
 from src.prompts.template import apply_prompt_template, apply_prompt_template_for_coder, apply_prompt_template_planner, get_prompt_template
 from src.tools import tavily_tool, bash_tool
-from src.utils import ReadmeExecutor,  repair_json_output, ensure_directory_exists, ChecklistManager, token_count, get_response_schema
+from src.utils import ReadmeExecutor, repair_json_output, ensure_directory_exists, ChecklistManager, token_count, get_response_schema
+from src.utils.save_chat_history import save_chat_history
 from .types import State
 from ..terraform_generator.src import terraform_generator_main
 import re
@@ -134,6 +135,7 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     result = directory_generator_agent.invoke(state)
     logger.debug(f"Result response from directory generator: {result}")
     checklist_manager = ChecklistManager(state)  # Reset checklist manager for new task
+    
     logger.info("Directory Generator agent completed task")
     token_count.set_token_count(token_count.token_count(result["messages"][-1].content))
 
@@ -145,7 +147,11 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
 
     # Initialize checklist from directory structure
     checklist_manager.initialize_from_directory(response_content)
-
+    
+    
+    # checklist_manager.save_chat_history(state, "directory_generator")
+    
+    
     logger.debug(f"Directory Generator agent response: {response_content}")
     logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
@@ -929,6 +935,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         .invoke(messages)
     )
     # Parse the JSON manually if the LLM doesn't directly output structured data
+    save_chat_history(state)
     try:
         if isinstance(response, str):
             # Handle Markdown JSON formatting if present
@@ -951,6 +958,8 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     logger.debug(f"Supervisor parsed response: {goto=}")
 
     if goto == "FINISH":
+        save_chat_history(state)
+        logger.info(f"Save chat history executed")
         state.get("checklist_manager").update_tokens(token_count.get_token_count())
         print(token_count.get_token_count())
         token_count.set_token_count(0)
@@ -961,7 +970,6 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         goto = "__end__"
         if project_requirement:
             project_name = project_requirement.get('project_name', f"ivc-project-{state.get('session_id')}")
-
             # check if `projects/{project_name} exits`
             if not os.path.exists(f"projects/{project_name}"):
                 logger.error(f"Project directory not found: projects/{project_name}")
@@ -978,8 +986,12 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
             else:
                 logger.info("Workflow completed")
     elif goto in TEAM_MEMBERS:
+        save_chat_history(state)
+        logger.info(f"Save chat history executed")
         logger.info(f"Supervisor delegating to: {goto}")
     else:
+        save_chat_history(state)
+        logger.info(f"Save chat history executed")
         logger.warning(f"Supervisor returned invalid next step: {goto}. Ending workflow.")
         goto = "__end__"
     logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
@@ -1124,7 +1136,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     goto = "__end__"
     additional_update = {}
 
-    if "handoff_to_planner()" in response_content_raw or "handofftoplanner()" in response_content_raw or "handoff_to_planner()" in response_content:
+    if "handoff_to_planner()" in response_content_raw or "handofftoplanner()" in response_content_raw or "handoff_to_planner()" in response.content:
         # extract_and_save_json(response_content_raw)
         try:
             requirements = json.loads(response_content_repaired)
