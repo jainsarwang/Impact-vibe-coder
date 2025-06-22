@@ -26,7 +26,7 @@ except PyMongoError as e:
     logger.error(f"MongoDB connection error: {e}")
     raise
 
-db = client[os.getenv("MONGO_DB")]
+db = client[os.getenv("MONGO_DB") or "ivc-db"]
 
 # Initialize collections
 organizations_collection = db["organizations"]

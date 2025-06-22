@@ -1,7 +1,10 @@
 # Complete Response Schemas for All Coders
 
-from typing import List, Dict, Optional
+from typing import List, Dict, Literal, Optional, Type
+from typing_extensions import overload
 from pydantic import BaseModel, RootModel
+
+from src.config import TEAM_MEMBERS
 
 # Planner Response Schema
 class Step(BaseModel):
@@ -18,7 +21,7 @@ class PlannerResponse(BaseModel):
 
 # Supervisor Response Schema
 class SupervisorResponse(BaseModel):
-    next: str
+    next: Literal[*TEAM_MEMBERS]  # type: ignore
 
 # Diagram Response Schema  
 class DiagramResponse(BaseModel):
@@ -103,10 +106,55 @@ response_schema = {
     "hyde_coder": HydeCoderResponse
 }
 
-def get_response_schema(agent_name: str):
-    if agent_name not in response_schema:
-        return None
-    return response_schema[agent_name]
+@overload
+def get_response_schema(agent_name: Literal['planner']) -> Type[PlannerResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['supervisor']) -> Type[SupervisorResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['diagram']) -> Type[DiagramResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['directory_generator']) -> Type[DirectoryGeneratorResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['import_export']) -> Type[ImportExportResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['version_resolver']) -> Type[VersionResolverResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['code_planner']) -> Type[CodePlannerResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['model_coder']) -> Type[CoderResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['controller_coder']) -> Type[CoderResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['route_coder']) -> Type[CoderResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['service_coder']) -> Type[CoderResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['utility_coder']) -> Type[CoderResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['db_coder']) -> Type[CoderResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['config_coder']) -> Type[CoderResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['frontend_coder']) -> Type[CoderResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['test_coder']) -> Type[CoderResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['backend_coder']) -> Type[CoderResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['coder']) -> Type[CoderResponse]: ...
+@overload
+def get_response_schema(agent_name: Literal['hyde_coder']) -> Type[HydeCoderResponse]: ...
+@overload
+def get_response_schema(agent_name: str) -> Optional[Type]: ...
+
+def get_response_schema(
+    agent_name: str
+) -> Optional[Type]:
+    """
+    Returns the response schema class for a given agent name.
+    """
+    return None
+    return response_schema.get(agent_name)
 
 __all__ = [
     "get_response_schema",

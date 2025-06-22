@@ -3,7 +3,10 @@ import json
 from ..service.database import db
 from ..models.model import chats_history_schema 
 from datetime import datetime
-from ..graph.types import State
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..graph.types import State
 
 # Create collection with strict schema validation
 try:
@@ -27,7 +30,7 @@ except Exception as e:
 chat_history = db["chat_history"]
 
 #Adding code for saving code_history starts here
-def save_chat_history(state: State) -> None:
+def save_chat_history(state: "State") -> None:
     """
     Saves the Chat history to the chat_history collection in the database
     

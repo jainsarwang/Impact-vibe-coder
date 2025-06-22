@@ -3,7 +3,6 @@ import logging
 import os
 from typing import Dict, List, Optional
 from datetime import datetime
-from ..utils.session_manager import SessionManager
 from ..models.session_schema import session_schema 
 from ..service.database import db
 
@@ -30,7 +29,7 @@ session_db = db["session"]
 
 class ChecklistManager:
     """Manages the checklist for tracking file generation progress."""
-    def __init__(self, state, project_prefix: str = None):
+    def __init__(self, state, project_prefix: str = ""):
         self.session_id = ""
         self.checklist: List[Dict] = []
         self._normalize_paths = True
@@ -79,7 +78,7 @@ class ChecklistManager:
                 return entry
         return None
     
-    def initialize_from_directory(self, directory_structure: Dict) -> List[Dict]:
+    async def initialize_from_directory(self, directory_structure: Dict) -> List[Dict]:
         """Initialize checklist from directory structure."""
         try:
             self.session_id = self.state.get("session_id")
@@ -108,14 +107,14 @@ class ChecklistManager:
                         new_path = os.path.join(current_path, key)
                         process_structure(value, new_path)
             process_structure(directory_structure.get("directory_structure", {}))
-            self._save_checklist()
+            await self._save_checklist()
             logging.info(f"Initialized checklist with {len(self.checklist)} items from directory structure")
             return self.checklist
         except Exception as e:
             logging.error(f"Error initializing checklist from directory: {str(e)}")
             return []
     
-    def update_from_plan(self, plan: List[Dict]) -> List[Dict]:
+    async def update_from_plan(self, plan: List[Dict]) -> List[Dict]:
         """Update checklist based on the development plan."""
         try:
             if isinstance(plan, str):
@@ -148,20 +147,20 @@ class ChecklistManager:
                         })
                         logging.debug(f"Added new planned file to checklist: {file_path}")
             
-            self._save_checklist()
+            await self._save_checklist()
             logging.info(f"Checklist updated with plan, now contains {len(self.checklist)} items")
             return self.checklist
         except Exception as e:
             logging.error(f"Error updating checklist from plan: {str(e)}")
             return self.checklist
     
-    def mark_file_created(self, file_path: str) -> None:
+    async def mark_file_created(self, file_path: str) -> None:
         """Mark a file as created in the checklist."""
         entry = self._find_checklist_entry(file_path)
         
         if entry:
             entry["file_created"] = True
-            self._save_checklist()
+            await self._save_checklist()
             logging.debug(f"Marked file as created in checklist: {file_path}")
         else:
             # If file wasn't in checklist but was created, add it
@@ -173,16 +172,16 @@ class ChecklistManager:
                 "coder": None,
                 "description": ""
             })
-            self._save_checklist()
+            await self._save_checklist()
             logging.warning(f"File {normalized_path} was created but wasn't in checklist. Added to checklist.")
 
-    def update_file_description(self, file_path: str, description: str) -> None:
+    async def update_file_description(self, file_path: str, description: str) -> None:
         """Update the description of a file in the checklist."""
         entry = self._find_checklist_entry(file_path)
         
         if entry:
             entry["description"] = description
-            self._save_checklist()
+            await self._save_checklist()
             logging.debug(f"Updated description for file in checklist: {file_path}")
         else:
             logging.warning(f"Attempted to update description for file not in checklist: {file_path}")
@@ -227,7 +226,7 @@ class ChecklistManager:
         logging.debug(f"Checklist completion status: {complete}")
         return complete
     
-    def _save_checklist(self) -> None:
+    async def _save_checklist(self) -> None:
         """Save checklist to database with schema validation."""
         try:            
             update_data = {
@@ -241,7 +240,7 @@ class ChecklistManager:
                 }
             }
             
-            session_db.update_one(
+            await session_db.update_one(
                 {"session_id": self.session_id},
                 update_data,
                 upsert=True
@@ -253,10 +252,10 @@ class ChecklistManager:
                 logging.error("Data validation failed. Checklist data doesn't match schema.")
         
     
-    def load_checklist(self) -> List[Dict]:
+    async def load_checklist(self) -> List[Dict]:
         """Load checklist from database."""
         try:
-            session_data = session_db.find_one({"session_id": self.session_id})
+            session_data = await session_db.find_one({"session_id": self.session_id})
             if session_data and "checklist" in session_data:
                 self.checklist = session_data["checklist"]
                 logging.info(f"Loaded checklist with {len(self.checklist)} items from session")
@@ -268,7 +267,7 @@ class ChecklistManager:
             logging.error(f"Error loading checklist: {str(e)}")
             return []
     
-    def cleanup_duplicated_paths(self) -> List[Dict]:
+    async def cleanup_duplicated_paths(self) -> List[Dict]:
         """
         Clean up any duplicate paths in the checklist by merging information.
         This helps fix the issue when the same file is tracked multiple times with different paths.
@@ -296,13 +295,13 @@ class ChecklistManager:
         if to_remove:
             self.checklist = [entry for i, entry in enumerate(self.checklist) if i not in to_remove]
             logging.info(f"Removed {len(to_remove)} duplicate path entries from checklist")
-            self._save_checklist()
+            await self._save_checklist()
             
         return self.checklist
     
-    def update_tokens(self, tokens) -> None:
+    async def update_tokens(self, tokens) -> None:
         logging.info(f"tokens: {tokens}")
         if tokens >=0: 
-            session_db.update_one({"session_id": self.session_id}, {"$set": {"tokens": tokens}})
+            await session_db.update_one({"session_id": self.session_id}, {"$set": {"tokens": tokens}})
         else:
             raise Exception("tokens are invalid")

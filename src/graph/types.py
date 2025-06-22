@@ -4,7 +4,7 @@ from langgraph.graph import MessagesState
 from langchain_core.messages import BaseMessage
 
 from src.config import TEAM_MEMBERS
-from src.utils import ChecklistManager
+from src.utils.ChecklistManager import ChecklistManager
 
 # Define routing options
 OPTIONS = TEAM_MEMBERS + ["FINISH"]
@@ -21,7 +21,6 @@ class State(MessagesState):
 
     # Constants
     TEAM_MEMBERS: list[str]
-    session_id: str
     checklist_manager: ChecklistManager
 
     # Runtime Variables

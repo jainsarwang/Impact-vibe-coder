@@ -1,10 +1,15 @@
 import os
-from typing import Optional
+from typing import Dict, Optional, Type, Union
+from langchain_core.language_models.base import LanguageModelInput
+from langchain_core.runnables.base import Runnable
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI as ChatGemini
+from pydantic import BaseModel
 from src.config.agents import LLMType
 from google import genai
 from google.genai import types
+
+from src.utils.llm_response import get_response_schema
 
 # Groq Configuration
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
@@ -32,7 +37,7 @@ def create_groq_llm(model: str, temperature: float = 0.0) -> ChatOpenAI:
         temperature=temperature,
     )
 
-def create_gemini_llm(model: str, response_schema = None, temperature: float = 0.0) -> ChatGemini:
+def create_gemini_llm(model: str, temperature: float = 0.0) -> ChatGemini:
     if not GOOGLE_API_KEY:
         raise ValueError("GOOGLE_API_KEY environment variable not set")
     
@@ -44,21 +49,17 @@ def create_gemini_llm(model: str, response_schema = None, temperature: float = 0
         max_retries=2,
     )
 
-    if response_schema:
-        # Simply pass the schema to guide the response format
-        llm.with_structured_output(schema=response_schema)
-
     return llm
 
 def get_llm_by_type(llm_type: LLMType, schema = None, temperature = 0.0) -> ChatOpenAI | ChatGemini:
-    """Get LLM instance by type. Returns cached instance if available."""
+    """Get LLM instance by tye. Returns cached instance if available."""
 
     if llm_type == "basic":
-        llm = create_gemini_llm(model="gemini-2.5-flash-preview-04-17", response_schema=schema, temperature=temperature)
+        llm = create_gemini_llm(model="gemini-2.5-flash-preview-04-17", temperature=temperature)
     elif llm_type == "reasoning":
-        llm = create_gemini_llm(model="gemini-2.0-flash", response_schema=schema, temperature=temperature)
+        llm = create_gemini_llm(model="gemini-2.0-flash", temperature=temperature)
     elif llm_type == "vision":
-        llm = create_gemini_llm(model="gemini-2.0-flash", response_schema=schema, temperature=temperature)
+        llm = create_gemini_llm(model="gemini-2.0-flash", temperature=temperature)
     elif llm_type == "version_llm":
         llm = create_groq_llm(BASIC_MODEL_GROQ, temperature=temperature)
     else:

@@ -1,25 +1,25 @@
-from datetime import datetime
 import logging
-import json
 import os
+import json
 import json_repair
-import logging
+from datetime import datetime
 from copy import deepcopy
 from io import BytesIO
+from bson import SON
+import re
+import json
+
+from langchain_core.messages import HumanMessage, BaseMessage
 from PIL import Image
 from typing import Dict, List, Literal
 from pymongo import MongoClient
-from bson import SON
 
-
-from langchain_core.messages import HumanMessage, BaseMessage
-
-import json_repair
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 from langgraph.types import Command
 
-from src.agents import  (
+from .types import State
+from ..agents import  (
     research_agent, 
     directory_generator_agent, 
     coder_master_agent, 
@@ -32,20 +32,15 @@ from src.agents import  (
     test_coder_agent,
     frontend_coder_agent,db_coder_agent,
     browser_agent,
-    import_export_agent,
-    version_agent,
     figma_coder_agent
 )
-from src.llms.llm import get_llm_by_type
-from src.config import TEAM_MEMBERS, CODER_AGENTS, AGENT_LLM_MAP
-from src.prompts.template import apply_prompt_template, apply_prompt_template_for_coder, apply_prompt_template_planner, get_prompt_template
-from src.tools import tavily_tool, bash_tool
-from src.utils import ReadmeExecutor, repair_json_output, ensure_directory_exists, ChecklistManager, token_count, get_response_schema
-from src.utils.save_chat_history import save_chat_history
-from .types import State
+from ..llms.llm import get_llm_by_type
+from ..config import TEAM_MEMBERS, CODER_AGENTS, AGENT_LLM_MAP
+from ..prompts.template import apply_prompt_template, apply_prompt_template_planner, get_prompt_template
+from ..tools import tavily_tool, bash_tool
+from ..utils import ReadmeExecutor, repair_json_output, ensure_directory_exists, ChecklistManager, token_count, get_response_schema, save_chat_history
 from ..terraform_generator.src import terraform_generator_main
-import re
-import json
+
 
 
 logger = logging.getLogger(__name__)
@@ -128,7 +123,7 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
     )
 
 
-def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
+async def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the directory generator agent that generator directory structure."""
     logger.info("Directory Generator agent starting task")
     logger.debug(f"Request sent to directory generator: {state}")
@@ -139,21 +134,21 @@ def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Directory Generator agent completed task")
     token_count.set_token_count(token_count.token_count(result["messages"][-1].content))
 
-    checklist_manager.update_tokens(token_count.get_token_count())
+    await checklist_manager.update_tokens(token_count.get_token_count())
     logger.info("Token count after directory generator: %s", token_count.get_token_count())
     response_content = result["messages"][-1].content
     response_content = repair_json_output(response_content)
     # extract_and_save_json(response_content, "directory_structure.json")
 
     # Initialize checklist from directory structure
-    checklist_manager.initialize_from_directory(response_content)
+    await checklist_manager.initialize_from_directory(json.loads(response_content))
     
     
     # checklist_manager.save_chat_history(state, "directory_generator")
     
-    
     logger.debug(f"Directory Generator agent response: {response_content}")
     logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
+    
     return Command(
         update={
             "messages": [
@@ -175,7 +170,7 @@ Directory  ->  Image Generation  -> Dependencies Graph  ->  Coder Master  -> (
 )  ->  Move to next File generation by Coder
 """
     
-def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
+async def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     """Code Planner node that generate the full plan for coder master."""
     logger.info("Code Planner generating full plan")
 
@@ -199,6 +194,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
         template=template,
     ).format(**prompt_vars)
 
+    # message which is sent to LLM
     messages = [
         {
             "role": "system",
@@ -209,37 +205,39 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
             "content": "Create a Code plan"
         }
     ]
+
+    # Getting Message list and sending to LLM
     messages = apply_prompt_template_planner("code_planner", state)
-    # whether to enable deep thinking mode
     llm = get_llm_by_type("basic", schema=get_response_schema("code_planner"))
     response = llm.invoke(messages)
-    token_count.set_token_count(token_count.token_count(response.content))
-    state.get("checklist_manager").update_tokens(token_count.get_token_count())
+
+    # Counting Tokens of response
+    token_count.set_token_count(token_count.token_count(str(response.content)))
+    await state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after code planner: %s", token_count.get_token_count())
+    
     full_response = response.content
+
     # extract_and_save_json(full_response)
-    logger.debug(f"Current state messages: {state['messages']}")
     logger.info(f"Code Planner response: {full_response}")
 
     # extract_and_save_json(full_response, "code_planner.json")
 
-    if full_response.startswith("```json"):
-        full_response = full_response.removeprefix("```json")
-
-    if full_response.endswith("```"):
-        full_response = full_response.removesuffix("```")
+    # fixing the json output
+    full_response = repair_json_output(str(full_response))
 
     goto = "supervisor"
 
     try:
-        repaired_response = json_repair.loads(full_response)
-        full_response = json.dumps(repaired_response)
+        json_response = json.loads(full_response)
+        full_response = json.dumps(json_response)
 
         # Update checklist from the plan
-        state.get("checklist_manager").update_from_plan(repaired_response)
+        await state.get("checklist_manager").update_from_plan(json_response)
     except json.JSONDecodeError:
         logger.warning("Code Planner response is not a valid JSON")
         goto = "__end__"
+    
     logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
     return Command(
         update={
@@ -251,7 +249,7 @@ def code_planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]
     )
 
 
-def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
+async def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     """Node for version resolver agent that verifies versions and corrects them to latest stable versions."""
     logger.info("Version Resolver Agent starting task")
 
@@ -308,12 +306,12 @@ def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end_
     ]
 
     # Get LLM response
-    llm = get_llm_by_type("basic", schema=get_response_schema("version_resolver"))
+    llm = get_llm_by_type(AGENT_LLM_MAP['version_resolver'], schema=get_response_schema("version_resolver"))
     try:
         response = llm.invoke(messages)
         full_response = response.content
         token_count.set_token_count(token_count.token_count(response.content))      
-        state.get("checklist_manager").update_tokens(token_count.get_token_count())
+        await state.get("checklist_manager").update_tokens(token_count.get_token_count())
         logger.info("Token count after version resolver: %s", token_count.get_token_count())    
         json_response = repair_json_output(full_response)
     except Exception as e:
@@ -360,7 +358,7 @@ def version_resolver_node(state: State) -> Command[Literal["supervisor", "__end_
         goto="supervisor",
     )
     
-def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "supervisor", "__end__"]]:
+async def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "supervisor", "__end__"]]:
     """
     Coder Master node that decides which agent should act next based on the checklist.
     It reads the checklist, finds the next pending file, delegates to the assigned
@@ -396,7 +394,7 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
                 raise ValueError("Invalid code plan format")
 
         # Update checklist with the plan
-        state.get("checklist_manager").update_from_plan(code_plan)
+        await state.get("checklist_manager").update_from_plan(code_plan)
     except (json.JSONDecodeError, ValueError) as e:
         logger.error(f"Failed to parse or process code_plan JSON string: {e}")
         logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
@@ -480,7 +478,7 @@ def coder_master_node(state: State) -> Command[Literal[*CODER_AGENTS, "superviso
             goto='supervisor',            
         )
 
-def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_master"]]:
+async def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_master"]]:
     """
     Generic coder node that invokes a specified agent, parses its JSON response
     to extract file paths and content, and writes those files to disk.
@@ -510,7 +508,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
 
     response_content_raw = result["messages"][-1].content
     token_count.set_token_count(token_count.token_count(response_content_raw))
-    state.get("checklist_manager").update_tokens(token_count.get_token_count())
+    await state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after coder agent '%s': %s", prompt_name, token_count.get_token_count())
     response_content_repaired = repair_json_output(response_content_raw)
 
@@ -584,9 +582,9 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
             newly_generated_this_run.append(file_path)
             
             # Update checklist
-            state.get("checklist_manager").mark_file_created(file_path)
+            await state.get("checklist_manager").mark_file_created(file_path)
             if description:
-                state.get("checklist_manager").update_file_description(file_path, description)
+                await state.get("checklist_manager").update_file_description(file_path, description)
                 logger.info(f"Updated description for file '{file_path}': {description}")
 
         except Exception as e:
@@ -609,7 +607,7 @@ def coder(state: State, prompt_name: str, agent) -> Command[Literal["coder_maste
     )
 
 
-def import_export_node(state: State) -> Command[Literal["supervisor"]]:
+async def import_export_node(state: State) -> Command[Literal["supervisor"]]:
     """
     Node for the import-export agent that verifies import and export statements of directory structure 
     and verifies the path of import and export statements. 
@@ -653,15 +651,12 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
         response = llm.invoke(messages)
         full_response = response.content
         token_count.set_token_count(token_count.token_count(response.content))
-        state.get("checklist_manager").update_tokens(token_count.get_token_count())
+        await state.get("checklist_manager").update_tokens(token_count.get_token_count())
         logger.info("token count after import-export agent: %s", token_count.get_token_count())
         logger.debug(f"Current state messages: {state['messages']}")
         logger.info(f"Import Export Response: {full_response}")
-        if full_response.startswith("```json"):
-            full_response = full_response.removeprefix("```json")
-
-        if full_response.endswith("```"):
-            full_response = full_response.removesuffix("```")
+        
+        full_response = repair_json_output(str(full_response))
 
     #     with open("directory_structure.json", "w", encoding="utf-8") as f:
     #         json.dump(repaired_response, f, indent=2, ensure_ascii=False)
@@ -723,43 +718,43 @@ def import_export_node(state: State) -> Command[Literal["supervisor"]]:
 # """
 
 
-def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
+async def model_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Model Coder agent that generator directory structure."""
-    return coder(state, 'model_coder', model_coder_agent)
+    return await coder(state, 'model_coder', model_coder_agent)
 
-def controller_coder_node(state: State) -> Command[Literal["coder_master"]]:
+async def controller_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Controller Coder agent that generator directory structure."""
-    return coder(state, 'controller_coder', controller_coder_agent)
+    return await coder(state, 'controller_coder', controller_coder_agent)
 
-def route_coder_node(state: State) -> Command[Literal["coder_master"]]:
+async def route_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Router Coder agent that generator directory structure."""
-    return coder(state, 'route_coder', route_coder_agent)
+    return await coder(state, 'route_coder', route_coder_agent)
 
-def service_coder_node(state: State) -> Command[Literal["coder_master"]]:
+async def service_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Service Coder agent that generator directory structure."""
-    return coder(state, 'service_coder', service_coder_agent)
+    return await coder(state, 'service_coder', service_coder_agent)
 
-def utility_coder_node(state: State) -> Command[Literal["coder_master"]]:
+async def utility_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Utility Coder agent that generator directory structure."""
-    return coder(state, 'utility_coder', utility_coder_agent)
+    return await coder(state, 'utility_coder', utility_coder_agent)
 
-def config_coder_node(state: State) -> Command[Literal["coder_master"]]:
+async def config_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Config Coder agent that generator directory structure."""
-    return coder(state, 'config_coder', config_coder_agent)
+    return await coder(state, 'config_coder', config_coder_agent)
 
-def test_coder_node(state: State) -> Command[Literal["coder_master"]]:
+async def test_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Test Coder agent that generator directory structure."""
-    return coder(state, 'test_coder', test_coder_agent)
+    return await coder(state, 'test_coder', test_coder_agent)
 
-def frontend_coder_node(state: State) -> Command[Literal["coder_master"]]:
+async def frontend_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Frontend Coder agent that generator directory structure."""
-    return coder(state, 'frontend_coder', frontend_coder_agent)
+    return await coder(state, 'frontend_coder', frontend_coder_agent)
 
-def db_coder_node(state: State) -> Command[Literal["coder_master"]]:
+async def db_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the DB Coder agent that generator directory structure."""
-    return coder(state, 'db_coder', db_coder_agent)
+    return await coder(state, 'db_coder', db_coder_agent)
 
-def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
+async def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
     """Node for the Figma Coder agent that generator directory structure."""
 
     logger.info(f"Coder node figma_coder starting task.")
@@ -817,7 +812,7 @@ def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
         
     current_generated_files = state.get('generated_files', [])
     state['generated_files'] = current_generated_files + [parsed_instruction.get("file", "")]
-    state.get('checklist_manager').mark_file_created(parsed_instruction.get("file", ""))
+    await state.get('checklist_manager').mark_file_created(parsed_instruction.get("file", ""))
     logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
 
     return Command(
@@ -894,7 +889,7 @@ def figma_coder_node(state: State) -> Command[Literal["coder_master"]]:
 #         goto="supervisor",
 #     )
 
-def browser_node(state: State) -> Command[Literal["supervisor"]]:
+async def browser_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the browser agent that performs web browsing tasks."""
     logger.info("Browser agent starting task")
     result = browser_agent.invoke(state)
@@ -903,7 +898,7 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
     # 尝试修复可能的JSON输出
     response_content = repair_json_output(response_content)
     token_count.set_token_count(token_count.token_count(response_content))
-    state.get("checklist_manager").update_tokens(token_count.get_token_count())
+    await state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after browser agent: %d", token_count.get_token_count())
     logger.debug(f"Browser agent response: {response_content}")
     logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
@@ -920,7 +915,7 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
-def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
+async def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     """Supervisor node that decides which agent should act next."""
     logger.info("Supervisor evaluating next action")
     messages = apply_prompt_template("supervisor", state)
@@ -960,7 +955,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     if goto == "FINISH":
         save_chat_history(state)
         logger.info(f"Save chat history executed")
-        state.get("checklist_manager").update_tokens(token_count.get_token_count())
+        await state.get("checklist_manager").update_tokens(token_count.get_token_count())
         print(token_count.get_token_count())
         token_count.set_token_count(0)
         print(f"After making tokens to '0', count is: {token_count.get_token_count()}")
@@ -1094,10 +1089,11 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
         except json.JSONDecodeError:
             data = dict(hyde_detailed_prompt)
             hyde_detailed_prompt = data.get("detailed_prompt")
-            return None
+            return "__end__"
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            return None
+            return "__end__"
+
         token_count.set_token_count(token_count.token_count(response.content))      
         logger.info("Token count after Hyde Coder: %s", token_count.get_token_count())
         logger.info(f"Hyde Code Response: {hyde_detailed_prompt}")
@@ -1117,7 +1113,7 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     
     logger.debug(f"Current state messages: {state['messages']}")
     # Keep original response
-    response_content_raw = response.content
+    response_content_raw = str(response.content)
     token_count.set_token_count(token_count.token_count(response_content_raw))
     # state.get("checklist_manager").update_tokens(token_count.get_token_count())
 
@@ -1174,7 +1170,7 @@ def extract_user_content(full_content: str) -> str:
     # Clean up resulting whitespace
     return "\n".join(line.strip() for line in no_json.splitlines() if line.strip())
 
-def reporter_node(state: State) -> Command[Literal["supervisor"]]:
+async def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     """Reporter node that write a final report."""
     logger.info("Reporter write final report")
     messages = apply_prompt_template("reporter", state)
@@ -1182,7 +1178,7 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     logger.debug(f"Current state messages: {state['messages']}")
     response_content = str(response.content)
     token_count.set_token_count(token_count.token_count(response_content))
-    state.get("checklist_manager").update_tokens(token_count.get_token_count())
+    await state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after reporter: %d", token_count.get_token_count())
     response_content = repair_json_output(response_content)
 

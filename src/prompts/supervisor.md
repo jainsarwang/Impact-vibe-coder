@@ -20,9 +20,9 @@ For each user request, you will:
 Always respond with a valid JSON object containing only the 'next' key and a single value: either a worker's name or 'FINISH'.
 
 # OUTPUT FORMAT TO BE FOLLOWED AS IS:
-
+You must respond with valid JSON matching this schema:
 ```json
-{ "next": "researcher" }
+{ "next": <<TEAM_MEMBERS>> }
 ```
 
 ## Team Members

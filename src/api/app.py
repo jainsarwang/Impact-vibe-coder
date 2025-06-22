@@ -156,9 +156,9 @@ async def chat_endpoint(request: ProjectGenerationRequest, session_id: str, req:
             try:
                 async for event in run_agent_workflow(
                     messages,
-                    request.debug,
-                    request.deep_thinking_mode,
-                    request.search_before_planning,
+                    request.debug or False,
+                    request.deep_thinking_mode or False,
+                    request.search_before_planning or False,
                     session_id,
                 ):
                     # Check if client is still connected
@@ -342,7 +342,7 @@ async def refresh_token(authorization: str = Header(...)):
             expires_delta=access_token_expires
         )
         
-        logger.info(f"Successful login for user: {user['username']} (ID: {user['user_id']})")
+        logger.info(f"Successful login for user: {user.username} (ID: {user.user_id})")
         return {"access_token": access_token, "token_type": "bearer"}
     except JWTError as e:
         logger.warning(f"JWT refresh decode error: {e}", exc_info=True)
@@ -948,7 +948,7 @@ async def toggle_user_status(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can toggle user status.")
     if await verify_role(current_user, "superadmin"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Superadmin cannot toggle organization's user status, Only admins can toggle user status.")
-    if current_user.get("user_id") == user_id: 
+    if current_user.user_id == user_id: 
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot toggle self status.")
     user_doc = await users_collection.find_one({"user_id": user_id})
     if not user_doc:

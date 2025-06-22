@@ -119,13 +119,6 @@ class Organization(OrganizationCreate):
             datetime: lambda dt: dt.isoformat()
         }
 
-
-class AdminCreateRequest(BaseModel): # For superadmin to create a new admin + org
-    name: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
-    organization_name: str = Field(..., min_length=1, max_length=100)
-    total_tokens: int = Field(..., ge=0)
-
 class AdminCreateResponse(BaseModel):
     """Response model for admin creation"""
     username: str

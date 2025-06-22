@@ -18,7 +18,7 @@ def get_prompt_template(prompt_name: str) -> str:
     template = re.sub(r"<<([^>>]+)>>", r"{\1}", template)
     return template
 
-def apply_prompt_template(prompt_name: str, state: AgentState) -> list:
+def apply_prompt_template(prompt_name: str, state: State) -> list:
     system_prompt = PromptTemplate(
         input_variables=["CURRENT_TIME"],
         template=get_prompt_template(prompt_name),
@@ -48,7 +48,7 @@ def apply_prompt_template_for_coder(prompt_name: str, state: State) -> list:
             }
         ]
 
-def apply_prompt_template_planner(prompt_name: str, state: AgentState) -> list:
+def apply_prompt_template_planner(prompt_name: str, state: State) -> list:
     """Applies prompt template for planner with proper JSON handling."""
     try:
         # Load project requirements from JSON file
