@@ -1,6 +1,8 @@
 import React, { useState, useRef } from "react";
-import { Upload, Image as ImageIcon, Sparkles, Loader2 } from "lucide-react";
+import { Upload, Image as ImageIcon, Sparkles, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { handleDownloadProject } from "@/services/ivc/download";
+import { useStore } from "@/hooks/ivc/useStore";
 
 interface ImageUploadProps {
     onGenerate: (prompt?: string, imageFile?: File) => void;
@@ -8,6 +10,8 @@ interface ImageUploadProps {
 }
 
 const ImageUpload = ({ onGenerate, isGenerating }: ImageUploadProps) => {
+    const sessionId = useStore(state => state.session_id);
+    const frontend_generated = useStore(state => state.frontend_generated);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -133,6 +137,14 @@ const ImageUpload = ({ onGenerate, isGenerating }: ImageUploadProps) => {
                                 </div>
                             )}
                         </Button>
+
+                        {frontend_generated && <button
+                            onClick={() => handleDownloadProject(sessionId!)}
+                            className="flex items-center mx-auto space-x-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                        >
+                            <Download className="w-6 h-6" />
+                            <span>Download Project</span>
+                        </button>}
                     </form>
                 </div>
             </div>

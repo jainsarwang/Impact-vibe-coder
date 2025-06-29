@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 import logging
 from dotenv import load_dotenv
-
 load_dotenv()
 
 # Configure logging
@@ -61,7 +60,8 @@ class ReadmeExecutor:
             .\venv\Scripts\activate
             ```
                 you should not include the source command in the setup commands. Just run *environment_name*\Scripts\activate, Not include '.bat' with activate.
-
+            7. If the command is not executable, like 'git clone', 'git pull', 'git push', 'git checkout', 'git commit', 'git merge', 'git rebase', etc., do not include it in the setup commands.
+            8. Dont include any commands that are not executable in the terminal, like 'npm install', 'pip install', 'yarn install', etc. Only include bash commands that can be executed in the terminal.
             Return only a JSON response with this structure:
             {{
                 "setup": ["command1", "command2"],

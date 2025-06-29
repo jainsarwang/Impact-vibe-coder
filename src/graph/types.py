@@ -43,4 +43,5 @@ class State(MessagesState):
     validation_instruction : dict
     current_file_validating : str
 
-    # Todo: add report to state
+    report: str # report of the current application
+    is_terraform_generated: bool # if terraform is generated or not
