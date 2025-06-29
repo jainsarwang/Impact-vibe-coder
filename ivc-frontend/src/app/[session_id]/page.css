@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,7 +11,56 @@
 		@apply bg-background text-foreground;
 	}
 
-	pre {
+	.markdown {
+		@apply overflow-hidden;
+	}
+
+	.markdown pre {
 		@apply overflow-auto p-2 rounded-md mt-2 bg-white/15;
+	}
+
+	.markdown h1 {
+		@apply text-2xl
+	}
+
+	.markdown h2 {
+		@apply text-xl;
+	}
+
+	.markdown h3 {
+		@apply text-lg;
+	}
+
+	.markdown h1,
+	.markdown h2,
+	.markdown h3,
+	.markdown h4,
+	.markdown h5,
+	.markdown h6 {
+		@apply font-bold mt-2;
+	}
+
+	.markdown p+p {
+		@apply mt-2;
+	}
+
+	.markdown a {
+		@apply text-blue-600;
+	}
+
+	.markdown ul,
+	.markdown ol {
+		@apply ml-3 pl-6 mb-2;
+	}
+
+	.markdown ul {
+		list-style: circle;
+	}
+	.markdown ol {
+		list-style: decimal;
+	}
+
+	.markdown li {
+		list-style: inherit;
 	}
 }

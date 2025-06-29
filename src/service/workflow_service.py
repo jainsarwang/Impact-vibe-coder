@@ -1,6 +1,6 @@
 import logging
 
-from src.config import CODER_AGENTS, TEAM_MEMBERS
+from src.config import ADDITIONAL_STREAMING_AGENT, CODER_AGENTS, TEAM_MEMBERS
 from src.graph import build_graph
 from langchain_community.adapters.openai import convert_message_to_dict
 import uuid
@@ -53,7 +53,7 @@ async def run_agent_workflow(
 
     workflow_id = str(uuid.uuid4())
 
-    streaming_llm_agents = [*TEAM_MEMBERS, *CODER_AGENTS, "planner", "coordinator"]
+    streaming_llm_agents = [*TEAM_MEMBERS, *CODER_AGENTS, *ADDITIONAL_STREAMING_AGENT]
     # del streaming_llm_agents[streaming_llm_agents.index("coder_master")]
 
     # Reset coordinator cache at the start of each workflow
@@ -73,7 +73,7 @@ async def run_agent_workflow(
             "search_before_planning": search_before_planning,
             "session_id": session_id,
         },
-        {"recursion_limit": 100},
+        {"recursion_limit": 1000},
         version="v2",
     ):
         kind = event.get("event")

@@ -14,6 +14,8 @@ interface FileDocumentation {
 }
 
 function normalizeFilePath(filePath: string) {
+    if(!filePath) return "";
+    
     return filePath
         .replace(/\\\\/g, "/")
         .replace(/\\/g, "/")
@@ -196,7 +198,7 @@ export class WorkflowEngine {
                                     });
                                 }
                             );
-                        } else if (event.data.agent_name.endsWith("_coder")) {
+                        } else if (event.data.agent_name.endsWith("_coder") && currentFile) {
                             updateFile({
                                 name: normalizeFilePath(currentFile as string),
                                 status: "completed",

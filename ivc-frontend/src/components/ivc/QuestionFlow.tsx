@@ -187,7 +187,11 @@ const QuestionFlow = ({
                                                         : "bg-white/10 border border-white/20"
                                                 }`}
                                             >
-                                                <Markdown className="text-white">
+                                                <Markdown className="text-white markdown" options={{
+                                                    wrapper: "div",
+                                                    disableParsingRawHTML: true, 
+                                                    disableAutoLink: true
+                                                }}>
                                                     {message.content}
                                                 </Markdown>
                                             </div>

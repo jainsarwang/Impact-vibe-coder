@@ -47,8 +47,8 @@ Directly output the raw JSON format of `Plan`.
 
 ```ts
 interface Step {
-    agent_name: string;
-    title: string;
+    agent_name: <<TEAM_MEMBERS>> as string;
+    title: string;  
     description: string;
     note?: string;
 }

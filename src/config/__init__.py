@@ -38,8 +38,13 @@ TEAM_MEMBERS = [
     "code_planner",
     "coder_master",
     "version_resolver",
-    "diagram",
-    "terraform_generator"
+    "diagram"
+]
+
+ADDITIONAL_STREAMING_AGENT = [
+    "coordinator",
+    "planner",
+    "terraform_generator",
 ]
 
 CODER_AGENTS = [

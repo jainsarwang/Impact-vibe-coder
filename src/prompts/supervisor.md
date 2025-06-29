@@ -22,7 +22,9 @@ Always respond with a valid JSON object containing only the 'next' key and a sin
 # OUTPUT FORMAT TO BE FOLLOWED AS IS:
 You must respond with valid JSON matching this schema:
 ```json
-{ "next": <<TEAM_MEMBERS>> }
+{ 
+    "next": <<TEAM_MEMBERS>> as string 
+}
 ```
 
 ## Team Members
