@@ -1,4 +1,4 @@
-import { Message, AgentStatus, FileStatus } from "@/lib/ivc/types";
+import { Message, AgentStatus, FileStatus } from "@/lib/types";
 import { create } from "zustand";
 
 interface State {
@@ -11,8 +11,6 @@ interface State {
     agentWorking: string;
     architectAgents: Record<string, AgentStatus>;
     workflowStarted?: string;
-    frontend_generated: boolean;
-    setFrontendGenerated: (frontend_generated: boolean) => void;
     setState: (newState: Partial<State>) => void;
     addMessage: (message: Message) => void;
     addArchitectAgent: (agent: AgentStatus) => void;
@@ -45,9 +43,6 @@ export const useStore = create<State>(() => ({
     architectAgents: {},
     agentWorking: null,
     workflowStarted: undefined,
-    frontend_generated: false, // for image to frontend generation
-    setFrontendGenerated: (frontend_generated: boolean) =>
-        useStore.setState((state) => ({ frontend_generated })),
     setState: (newState: Partial<State>) =>
         useStore.setState((state) => ({ ...state, ...newState })),
     addMessage: (message: Message) =>

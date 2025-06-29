@@ -89,7 +89,7 @@ class ImpactVibeAPI {
   }
 
   async downloadProject(sessionId: string): Promise<Blob> {
-    const response = await fetch(`${this.baseURL}/api/download-zip/${sessionId}`);
+    const response = await fetch(`${this.baseURL}/api/download-project/${sessionId}`);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -99,5 +99,5 @@ class ImpactVibeAPI {
   }
 }
 
-export const impactVibeAPI = new ImpactVibeAPI(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080');
+export const impactVibeAPI = new ImpactVibeAPI();
 export type { AgentUpdate, FileUpdate, ProjectRequest };

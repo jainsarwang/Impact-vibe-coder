@@ -22,7 +22,6 @@ import asyncio
 from src.graph import build_graph
 from src.config import BROWSER_HISTORY_DIR
 from src.image_to_code import Image2CodeRouter
-from src.image_to_code.constants import ZIPPED_FILE_EXPORT_STORAGE_PATH
 from .routes import email_router
 from ..service.workflow_service import run_agent_workflow
 from .types.api import ProjectGenerationRequest, User, Token, AdminCreateRequest, AdminCreateResponse, UserCreateRequest, UserCreateResponse, Project, ChatMessage, ChatMessageOut, UpdateToken
@@ -82,35 +81,6 @@ graph = build_graph()
 app.include_router(Image2CodeRouter, prefix = "/api/generate-frontend-code")
 
 app.include_router(email_router, prefix = "/api/email")
-
-
-@app.get("/api/download-zip/{session_id}", response_class=FileResponse)
-async def download_generated_zip(session_id: str):
-    zipped_file_export_storage_path = os.path.join(ZIPPED_FILE_EXPORT_STORAGE_PATH, f"{session_id}.zip")
-
-    if os.path.exists(zipped_file_export_storage_path):
-        zip_path = zipped_file_export_storage_path
-        original_filename = f"{session_id}_frontend.zip"
-
-
-        if os.path.exists(zip_path):
-            print(f"API Info: Serving zip file '{zip_path}' for session_id '{session_id}' as '{original_filename}'")
-            # Consider deleting the file after serving or after a timeout
-            # For simplicity, not implemented here. E.g. using BackgroundTasks:
-            # background_tasks.add_task(os.remove, zip_path)
-            # background_tasks.add_task(task_outputs.pop, task_id, None)
-            return FileResponse(
-                path=zip_path,
-                media_type='application/zip',
-                filename=original_filename
-            )
-        else:
-            print(f"API Error: Zip file for session_id '{session_id}' not found at '{zip_path}' (expected).")
-            raise HTTPException(status_code=404, detail="Generated file not found on server. It might have been cleaned up or an error occurred.")
-    else:
-        print(f"API Error: Invalid session '{session_id}' for download.")
-        raise HTTPException(status_code=404, detail="Invalid task ID or file has expired.")
-
 
 @app.post("/api/chat/stream")
 async def chat_endpoint(request: ProjectGenerationRequest, session_id: str, req: Request):

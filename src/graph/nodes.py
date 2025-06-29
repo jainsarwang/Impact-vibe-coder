@@ -11,7 +11,6 @@ from typing import Dict, List, Literal
 from pymongo import MongoClient
 from bson import SON
 
-
 from langchain_core.messages import HumanMessage, BaseMessage
 
 import json_repair
@@ -43,24 +42,11 @@ from src.prompts.template import apply_prompt_template, apply_prompt_template_fo
 from src.tools import tavily_tool, bash_tool
 from src.utils import ReadmeExecutor,  repair_json_output, ensure_directory_exists, ChecklistManager, token_count, get_response_schema
 from .types import State
-from ..terraform_generator.src import terraform_generator_main
 import re
 import json
 
 
 logger = logging.getLogger(__name__)
-
-report = {
-    "project_name": "VibeCoder",
-    "instances": [
-        {
-            "ami_id": "ami-0af9569868786b23a",  # Default Amazon Linux 2 AMI
-            "instance_type": "t2.micro",
-            "tags": {"Name": "VibeCoder-Instance"},
-            "security_groups": []
-        }
-    ]
-}
 
 def extract_and_save_json(response_text: str, output_file: str = 'project_requirements.json') -> bool:
     """
@@ -126,7 +112,6 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
         },
         goto="supervisor",
     )
-
 
 def directory_generator_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the directory generator agent that generator directory structure."""
@@ -935,15 +920,20 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     try:
         if isinstance(response, str):
             # Handle Markdown JSON formatting if present
-            parsed_response = repair_json_output(response)
+            if response.startswith('```json') and response.endswith('```'):
+                response = response[7:-3].strip()  # Remove ```json and ```
+                token_count.set_token_count(token_count.token_count(response))
+                state.get("checklist_manager").update_tokens(token_count.get_token_count())                
+                logger.info("Token count after supervisor: %d", token_count.get_token_count())
+            parsed_response = json.loads(response)
         elif hasattr(response, 'content'):
             content = response.content
             # Handle Markdown JSON formatting if present
-            parsed_response = repair_json_output(content)
+            if content.startswith('```json') and content.endswith('```'):
+                content = content[7:-3].strip()  # Remove ```json and ```
+            parsed_response = json.loads(content)
         else:
             raise ValueError("Unexpected response format from supervisor LLM")
-
-        parsed_response = json.loads(parsed_response)
         goto = parsed_response.get("next")
     except (json.JSONDecodeError, ValueError) as e:
         logger.error(f"Error parsing supervisor response: {e}, raw response: {response}")
@@ -960,26 +950,23 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
         print(f"After making tokens to '0', count is: {token_count.get_token_count()}")
         
         project_requirement = state.get("full_plan")
-        project_requirement = json.loads(project_requirement) if isinstance(project_requirement, str) else project_requirement
-        goto = "__end__"
+
         if project_requirement:
             project_name = project_requirement.get('project_name', f"ivc-project-{state.get('session_id')}")
 
             # check if `projects/{project_name} exits`
             if not os.path.exists(f"projects/{project_name}"):
                 logger.error(f"Project directory not found: projects/{project_name}")
-            elif state.get('report') and not state.get("is_terraform_generated"):
-                # if report is generated and terraform is not generated, then execute the executor
+                goto = "__end__"
+            else:
                 logging.debug("**Executor Started")
                 executor = ReadmeExecutor(project_path=f"projects/{project_name}")
                 executor.extract_commands_with_gemini()
                 executor.execute_commands()
                 logging.debug("**Executor Ended")
 
-                # then go to terraform generator
-                goto = 'terraform_generator'
-            else:
-                logger.info("Workflow completed")
+        goto = "__end__"
+        logger.info("Workflow completed")
     elif goto in TEAM_MEMBERS:
         logger.info(f"Supervisor delegating to: {goto}")
     else:
@@ -993,7 +980,6 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     logger.info("Planner generating full plan")
     messages = apply_prompt_template_planner("planner", state)
     # whether to enable deep thinking mode
-    logger.info(f"Current state messages at planner starting: {state['messages']}")
     llm = get_llm_by_type("basic", schema=get_response_schema("planner"))
     if state.get("deep_thinking_mode"):
         llm = get_llm_by_type("reasoning", schema=get_response_schema("planner"))
@@ -1038,72 +1024,8 @@ logger = logging.getLogger(__name__) # Ensure logger is configured
 
 def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     """Coordinator node that communicates with customers, showing only non-JSON context."""
-    logger.info("Coordinator talking.")  
-    #Hyde Coder Part
-    #--------------------------------------------------------
-    logger.info(f"Corrdinator Starting State Messages: {state["messages"][0].content}")
-    hyde_detailed_prompt = ""
-    prompt_vars = {
-        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
-        **state
-    }
-    # Get and format the prompt template
-    template = get_prompt_template('hyde_coder')
-    system_prompt = PromptTemplate(
-        input_variables=["CURRENT_TIME"],
-        template=template,
-    ).format(**prompt_vars)
-
-    # Prepare messages for LLM
-    messages = [
-        {
-            "role": "system",
-            "content": system_prompt
-        },
-        {
-            "role": "user",
-            "content": str(state["messages"][0].content)
-        }
-    ]
-    # Get LLM response
-    llm = get_llm_by_type("basic", schema=get_response_schema("hyde_coder"))
-    try:
-        response = llm.invoke(messages)
-        hyde_detailed_prompt = response.content
-        try:
-            # Extract only the JSON part from hyde_detailed_prompt
-            json_match = re.search(r'```json\s*(\{.*?\})\s*```', hyde_detailed_prompt, re.DOTALL)
-            if json_match:
-                hyde_detailed_prompt = json_match.group(1)
-            else:
-                # Fallback: try to extract the first {...} block
-                brace_match = re.search(r'(\{.*?\})', hyde_detailed_prompt, re.DOTALL)
-                if brace_match:
-                    hyde_detailed_prompt = brace_match.group(1)
-            data = json.loads(hyde_detailed_prompt)
-            hyde_detailed_prompt = data["detailed_prompt"]
-        except json.JSONDecodeError:
-            data = dict(hyde_detailed_prompt)
-            hyde_detailed_prompt = data.get("detailed_prompt")
-            return None
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-            return None
-        token_count.set_token_count(token_count.token_count(response.content))      
-        logger.info("Token count after Hyde Coder: %s", token_count.get_token_count())
-        logger.info(f"Hyde Code Response: {hyde_detailed_prompt}")
-    except Exception as e:
-        logger.error(f"LLM invocation failed: {e}")
-        logger.info(f"Tokens in  state till now: {state.get("tokens")} for the session: {state.get("session_id")}")
-        goto = "__end__" 
-    logger.info(f"User Prompt: {state['messages'][0].content}")
-    logger.info(f"Hyde Coder Response: {hyde_detailed_prompt}")
-        
-    #Core existing Logic
-    logger.info(f"State Messgaes After Hyde Coder response: {state["messages"][0].content}")
-    logger.info(f"Hyde Response: {hyde_detailed_prompt}")
+    logger.info("Coordinator talking.")
     messages = apply_prompt_template("coordinator", state)
-    messages.append(hyde_detailed_prompt)
     response = get_llm_by_type(AGENT_LLM_MAP["coordinator"], schema=get_response_schema('coordinator'), temperature=0.6).invoke(messages)
     
     logger.debug(f"Current state messages: {state['messages']}")
@@ -1121,19 +1043,30 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     # Set the user-visible content
     response.content = user_display_content
     
-    #--------------------------------------------------------
     # Handle planner handoff
     goto = "__end__"
     additional_update = {}
 
-    if "handoff_to_planner()" in response_content_raw or "handofftoplanner()" in response_content_raw or "handoff_to_planner()" in response_content:
-        # extract_and_save_json(response_content_raw)
+    # Check for handoff marker
+    if "handoff_to_planner()" or "handofftoplanner()" or "planner()" in response_content_raw:
         try:
-            requirements = json.loads(response_content_repaired)
-            additional_update["requirements"] = requirements
-            goto = "planner"
-        except json.JSONDecodeError:
-            logger.error(f"Error parsing requirements: {response_content_raw}")
+            logger.info("Handoff to planner detected in coordinator response.")
+            # Try to find JSON in the response
+            json_match = re.search(r'```json(.*?)```', response_content_raw, re.DOTALL)
+            if json_match:
+                requirements = json.loads(json_match.group(1).strip())
+                additional_update["requirements"] = requirements
+                goto = "planner"
+            else:
+                # If no JSON found but handoff requested, create minimal requirements
+                additional_update["requirements"] = {
+                    "description": "Project requirements finalized by coordinator",
+                    "content": response_content_raw
+                }
+                goto = "planner"
+                logger.warning("Handoff to planner without explicit JSON requirements")
+        except (json.JSONDecodeError, AttributeError) as e:
+            logger.error(f"Error parsing requirements: {str(e)}")
             goto = "__end__"
 
     logger.info(f"Tokens in state till now: {state.get('tokens')} for the session: {state.get('session_id')}")
@@ -1158,8 +1091,7 @@ def extract_user_content(full_content: str) -> str:
     no_json = re.sub(r'\{.*?\}', '', no_json, flags=re.DOTALL)
     
     # Remove technical markers like handoff_to_planner()
-    # no_json = no_json.replace("handoff_to_planner()", "")
-    # no_json = no_json.replace("handoff_to_planner()", "")
+    no_json = no_json.replace("handoff_to_planner()", "").replace("handofftoplanner()", "")
     
     # Clean up resulting whitespace
     return "\n".join(line.strip() for line in no_json.splitlines() if line.strip())
@@ -1171,7 +1103,7 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     messages = apply_prompt_template("reporter", state)
     response = get_llm_by_type(AGENT_LLM_MAP["reporter"], schema=get_response_schema('reporter'), temperature=0.6).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
-    response_content = str(response.content)
+    response_content = response.content
     token_count.set_token_count(token_count.token_count(response_content))
     state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after reporter: %d", token_count.get_token_count())
@@ -1189,8 +1121,7 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
                     name="reporter",
                 )
             ],
-            "tokens": token_count.get_token_count(),
-            "report": response_content
+            "tokens": token_count.get_token_count()
         },
         goto="supervisor",
     )
@@ -1223,7 +1154,7 @@ def diagram_node(state: State) -> Command[Literal["supervisor"]]:
 
     llm = get_llm_by_type("basic", schema=get_response_schema("diagram_generator"), temperature=0.8)
     response = llm.invoke(messages)
-    token_count.set_token_count(token_count.token_count(str(response.content)))
+    token_count.set_token_count(token_count.token_count(response.content))
     # state.get("checklist_manager").update_tokens(token_count.get_token_count())
     logger.info("Token count after diagram generation: %d", token_count.get_token_count())
     logger.debug(f"Diagram agent response: {response}")
@@ -1263,142 +1194,362 @@ depployer
     server begins
 
 """
+def terraform_planner_node(state: State) -> Command[Literal["supervisor"]]:
+    """Terraform Planner node for graph"""
 
-def terraform_generator_node(state: State) -> Command[Literal["supervisor"]]:
-    """Node for the Terraform Generator that creates infrastructure configurations."""
-    logger.info("Terraform Generator starting task")
+    logger.info("Terraform Planner generating full plan")
+
+    directory_structure = state.get('directory_structure')
+    
+    if not directory_structure:
+        logging.warning("No Directory Object in State, Going back to supervisor")
+        return Command(goto='supervisor')
+
+    # Prepare all variables for the prompt
+    prompt_vars = {
+        "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+        "CODER_AGENTS": ", ".join(CODER_AGENTS),  # Convert list to string
+        "directory_structure": directory_structure,
+        **state  # Include other state variables
+    }
+
+    template = get_prompt_template('code_planner')
+    system_prompt = PromptTemplate(
+        input_variables=["CURRENT_TIME", "CODER_AGENTS","directory_structure"],
+        template=template,
+    ).format(**prompt_vars)
+
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": "Create a Code plan"
+        }
+    ]
+    messages = apply_prompt_template_planner("code_planner", state)
+    # whether to enable deep thinking mode
+    llm = get_llm_by_type("basic", schema=get_response_schema("code_planner"))
+    response = llm.invoke(messages)
+    global token_count_value
+    token_count_value += token_count.token_count(response.content)
+    full_response = response.content
+    # extract_and_save_json(full_response)
+    logger.debug(f"Current state messages: {state['messages']}")
+    logger.info(f"Code Planner response: {full_response}")
+
+    # extract_and_save_json(full_response, "code_planner.json")
+
+    if full_response.startswith("```json"):
+        full_response = full_response.removeprefix("```json")
+
+    if full_response.endswith("```"):
+        full_response = full_response.removesuffix("```")
+
+    goto = "supervisor"
 
     try:
-        # Get directory structure and code plan from state
-        directory_structure = state.get('full_plan')
-        if not directory_structure:
-            logger.warning("No directory structure found in state")
-            return Command(goto="supervisor")
+        repaired_response = json_repair.loads(full_response)
+        full_response = json.dumps(repaired_response)
 
-        # Parse directory_structure if it's a string
-        if isinstance(directory_structure, str):
-            try:
-                directory_structure = json.loads(directory_structure)
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse directory_structure JSON: {e}")
-                return Command(goto="supervisor")
+        with open("code_planner.json", "w", encoding="utf-8") as f:
+            json.dump(repaired_response, f, indent=2, ensure_ascii=False)
 
-        # Ensure directory_structure is a dictionary
-        if not isinstance(directory_structure, dict):
-            logger.error(f"Invalid directory_structure type: {type(directory_structure)}")
-            return Command(goto="supervisor")
+        # Update checklist from the plan
+        state.get("checklist_manager").update_from_plan(repaired_response)
+    except json.JSONDecodeError:
+        logger.warning("Code Planner response is not a valid JSON")
+        goto = "__end__"
 
-        # Update report with project name
-        global report
-        report["project_name"] = directory_structure.get("project_name", "sample_project")
-        project_path = f"projects/{report['project_name']}"
+    return Command(
+        update={
+            "messages": [HumanMessage(content=full_response, name="code_planner")],
+            "code_plan": full_response,
+            "tokens": token_count.get_token_count()
+        },
+        goto=goto,
+    )
 
-        # Generate Terraform files
-        terraform_generator_main(project_path=project_path, report=report)
+max_retries = 0 
 
-        # Initialize and apply Terraform
-        logger.info("Initializing and applying Terraform configuration")
-        terraform_cmds = [
-            "terraform init",
-            "terraform plan",
-            "terraform apply -auto-approve"
-        ]
-        for cmd in terraform_cmds:
-            output = bash_tool.invoke(f"cd terraform_output && {cmd}")
-            logger.debug(f"Terraform command '{cmd}' output: {output}")
+def validator_master_node(state: State) -> Command[Literal["validator", "supervisor"]]:
+    """
+    Validator Master node that decides which files need validation based on the checklist.
+    It reads the checklist, finds the next file that needs validation, delegates to the
+    validator agent, and transitions back to supervisor when all files are validated.
+    """
+    logger.info("Validator master evaluating next action based on checklist")
+    global max_retries
 
-        # Get instance public IP
-        logger.info("Retrieving instance public IP")
-        output = bash_tool.invoke("cd terraform_output && terraform output -raw instance_1_public_ip")
-        instance_ip = output.strip()
-        if not instance_ip:
-            raise ValueError("Failed to retrieve instance IP from Terraform output")
+    generated_files = state.get('generated_files', [])
+    
+    if not generated_files:
+        logger.warning("No generated files found in state. Going back to supervisor.")
+        return Command(goto='supervisor', update={
+            "messages": state["messages"] + [
+                HumanMessage(
+                    content="Validator master cannot proceed: No generated files to validate.",
+                    name="validator_master",
+                )
+            ]
+        })
 
-        logger.info(f"Instance IP: {instance_ip}")
+    # Get the next file to validate from the checklist
+    next_file_info = state.get("checklist_manager").next_file_to_validate()
 
-        report["instance_ip"] = instance_ip
+    code_plan = state.get("code_plan")
+    instruction_content = ""
 
-        # Get deployment commands
-        # get the readme.md file content from 'f"projects/{project_name}/README.md"'
-        with open(f"projects/{report['project_name']}/README.md", "r") as f:
-            readme_content = f.read()
+    for item in code_plan:
+            if "file" in item and state.get("checklist_manager")._normalize_path(item["file"]) == state.get("checklist_manager")._normalize_path(next_file_info["file_path",""]):
+                instruction_content = json.dumps(item, indent=2)
+                break
 
-        prompt_vars = {
-            "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
-            **state
+    if next_file_info:
+        file_path_to_validate = next_file_info['file_path']
+        
+        logger.info(f"Next file to validate from checklist: {file_path_to_validate}")
+
+        # Check if file exists
+        if not os.path.exists(f"projects/{file_path_to_validate}"):
+            logger.error(f"File to validate does not exist: {file_path_to_validate}")
+            return Command(goto='supervisor', update={
+                "messages": state["messages"] + [
+                    HumanMessage(
+                        content=f"Validation error: File '{file_path_to_validate}' does not exist.",
+                        name="validator_master",
+                    )
+                ]
+            })
+
+        # Read the file content
+        try:
+            file_path_to_validate = f"projects/{file_path_to_validate}"
+            with open(file_path_to_validate, 'r', encoding='utf-8') as f:
+                file_content = f.read()
+        except Exception as e:
+            logger.error(f"Error reading file {file_path_to_validate}: {str(e)}")
+            return Command(goto='supervisor', update={
+                "messages": state["messages"] + [
+                    HumanMessage(
+                        content=f"Error reading file '{file_path_to_validate}': {str(e)}",
+                        name="validator_master",
+                    )
+                ]
+            })
+
+        # Get file description from checklist
+        file_description = state.get("checklist_manager").get_file_description(file_path_to_validate)
+        
+        # Prepare validation instruction
+        validation_instruction = {
+            "file_path": file_path_to_validate,
+            "file_content": file_content,
+            "description": file_description or "No description available",
+            "directory_structure": state.get('directory_structure', ''),
+            "generated_files": generated_files,
+            "instruction_content":instruction_content
         }
-        # Get and format the prompt template
-        template = get_prompt_template('terraform_deployer')
-        system_prompt = PromptTemplate(
-            input_variables=["CURRENT_TIME"],
-            template=template,
-        ).format(**prompt_vars)
+        logger.info(f"validation Instruction:{validation_instruction}")
 
-        # Prepare messages for LLM
-        messages = [
-            {
-                "role": "system",
-                "content": system_prompt
-            },
-            {"role": "user", "content": readme_content}
-        ]
-        deployment_commands = get_llm_by_type("basic", schema=get_response_schema("terraform_deployer")).invoke(messages)
-        deployment_commands = str(deployment_commands.content)
-        deployment_commands = repair_json_output(deployment_commands)
-        deployment_commands = json.loads(deployment_commands)
-        deployment_cmds = " && ".join(deployment_commands.get("commands", []))
+        logger.info(f"Delegating to validator agent for file: {file_path_to_validate}")
 
-        logging.info(f"Deployment commands: {deployment_commands}")
-
-        # Prepare deployment commands
-        key_path = "vibecoder-key.pem"
-        deployment_cmds = [
-            # Set key permissions
-            f"icacls {key_path} /inheritance:r",
-            f'icacls {key_path} /grant:r "%USERNAME%":"(R,W)"',
-            f'icacls {key_path} /remove "NT AUTHORITY\\Authenticated Users"',
-
-            # Wait for instance to be ready
-            "timeout /t 30",
-
-            # Prepare remote directory
-            f'ssh -i {key_path} -o StrictHostKeyChecking=no ec2-user@{instance_ip} "mkdir -p /home/ec2-user/app"',
-
-            # Copy source code
-            f'scp -i {key_path} -o StrictHostKeyChecking=no source_code.zip ec2-user@{instance_ip}:/home/ec2-user/app/',
-
-            # Extract and deploy
-            f'ssh -i {key_path} -o StrictHostKeyChecking=no ec2-user@{instance_ip} "cd /home/ec2-user/app && unzip -o source_code.zip"',
-
-            # Execute deployment commands
-            f'ssh -i {key_path} -o StrictHostKeyChecking=no ec2-user@{instance_ip} "{deployment_cmds}"',
-
-            # Print access information
-            f"echo http://{instance_ip}"
-        ]
-
-        # Execute deployment commands
-        logger.info("Starting deployment to instance")
-        for cmd in deployment_cmds:
-            output = bash_tool.invoke(f"cd terraform_output && {cmd}")
-            logger.debug(f"Deployment command output: {output}")
-
-        logger.info("Terraform Generator completed task successfully")
+        validator_master_message = f"Delegating file `{file_path_to_validate}` for validation."
 
         return Command(
-            goto="supervisor", 
+            goto="validator",
             update={
-                "is_terraform_generated": True,
+                "messages": state["messages"] + [HumanMessage(content=validator_master_message, name="validator_master")],
+                "validation_instruction": validation_instruction,
+                "current_file_validating": file_path_to_validate,
             }
         )
+
+    else:
+        logger.info("Checklist indicates no more files need validation.")
+        
+        # Check validation summary
+        validation_summary = state.get("checklist_manager").get_validation_summary()
+        print(validation_summary)
+        
+        completion_message = "Validation phase completed. All generated files have been validated."
+        if validation_summary:
+            total_files = validation_summary.get('total_files', 0)
+            validated_files = validation_summary.get('validated_files', 0)
+            failed_files = validation_summary.get('failed_files', 0)
+            validation_complete = validation_summary.get('validation_complete',True)
+            
+            completion_message += f"\nValidation Summary: {validated_files}/{total_files} files passed validation."
+            goto = "supervisor"
+            if failed_files > 0 and max_retries !=3:
+                completion_message += f" {failed_files} files failed validation and were updated."
+                goto = "validator_master"
+                max_retries += 1
+
+        updated_state = deepcopy(state)
+        updated_state["validation_instruction"] = None
+        updated_state["current_file_validating"] = None
+        updated_state["messages"].append(HumanMessage(content=completion_message, name="validator_master"))
+
+        return Command(
+            goto=goto ,
+            update=updated_state
+        )
+
+def validator_node(state: State) -> Command[Literal["validator_master"]]:
+    """
+    Validator node that invokes the validator agent, parses its JSON response
+    to check if validation passed, and updates files if validation failed.
+    """
+    logger.info("Validator node starting validation task")
+    logger.info(f"Validation instruction: {state.get('validation_instruction')}")
+
+    try:
+        result = validator_agent(state)
+    except Exception as e:
+        logger.error(f"Error invoking validator agent: {str(e)}", exc_info=True)
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Error during validator agent execution: {str(e)}",
+                        name="validator",
+                    )
+                ],
+                "tokens" : token_count.get_token_count()
+            },
+            goto="validator_master",
+        )
+
+    logger.info("Validator agent completed invocation")
+
+    # Get the last message content
+    if not result.get("messages"):
+        logger.error("No messages in validator agent response")
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content="Validator agent returned no messages",
+                        name="validator",
+                    )
+                ]
+            },
+            goto="validator_master",
+        )
+
+    response_content = result["messages"][-1].content
+    token_count.set_token_count(token_count.token_count(response_content))
+    logger.info("Token count after validator agent: %s", token_count.get_token_count())
+    
+    # Handle different response formats
+    parsed_response = {}
+    if isinstance(response_content, str):
+        try:
+            # Try to repair possible JSON output
+            response_content_repaired = repair_json_output(response_content)
+            logger.info(f"Validator node response: {response_content_repaired}")
+            parsed_response = json.loads(response_content_repaired)
+        except json.JSONDecodeError:
+            # If not JSON, treat as plain text response
+            parsed_response = {"message": response_content}
+    elif isinstance(response_content, dict):
+        parsed_response = response_content
+    else:
+        logger.error(f"Unexpected response type: {type(response_content)}")
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"Unexpected response type from validator: {type(response_content)}",
+                        name="validator",
+                    )
+                ]
+            },
+            goto="validator_master",
+        )
+
+    logger.info(f"Parsed validation response: {parsed_response}")
+
+    # Extract validation results
+    file_path = parsed_response.get("FILE") or parsed_response.get("file_path")
+    programming_language = parsed_response.get("programming_language", "unknown")
+    is_validated = parsed_response.get("validated", False)
+    reason = parsed_response.get("reason","")
+    updated_code = parsed_response.get("updated_code")
+
+    current_file_validating = state.get("current_file_validating")
+    
+    if not file_path:
+        file_path = current_file_validating
+
+    if not file_path:
+        logger.error("No file path found in validation response")
+        return Command(
+            update={
+                "messages": state["messages"] + [
+                    HumanMessage(
+                        content="Validation error: No file path specified in response",
+                        name="validator",
+                    )
+                ]
+            },
+            goto="validator_master",
+        )
+
+    try:
+        # If validation failed and updated code is provided, write the updated code
+        if not is_validated and updated_code:
+            logger.info(f"Validation failed for {file_path}, updating with corrected code")
+            
+            # Create directory if it doesn't exist
+            dir_path = os.path.dirname(file_path)
+            if dir_path:
+                os.makedirs(dir_path, exist_ok=True)
+            
+            # Write updated code to file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(updated_code)
+            
+            logger.info(f"Updated file {file_path} with corrected code")
+
+        # Mark file as validated in checklist
+        state.get("checklist_manager").mark_file_validated(file_path = file_path, validation_passed=is_validated,reason=reason)
+        
+        validation_status = "passed" if is_validated else "failed and updated"
+        logger.info(f"File {file_path} validation {validation_status}")
 
     except Exception as e:
-        logger.error(f"Error in terraform_generator_node: {str(e)}", exc_info=True)
-        report["error"] = str(e)
+        logger.error(f"Error processing validation results for {file_path}: {str(e)}", exc_info=True)
         return Command(
-            goto="supervisor", 
             update={
-                "is_terraform_generated": True,
-                "error": str(e)
-            }
+                "messages": [
+                    HumanMessage(
+                        content=f"Error processing validation results: {str(e)}",
+                        name="validator",
+                    )
+                ]
+            },
+            goto="validator_master",
         )
+
+    # Prepare the message to return
+    if isinstance(response_content, str):
+        message_content = response_content
+    else:
+        message_content = json.dumps(parsed_response, indent=2)
+
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=message_content,
+                    name="validator",
+                )
+            ],
+            "tokens": token_count.get_token_count()
+        },
+        goto="validator_master",
+    )

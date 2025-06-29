@@ -84,9 +84,6 @@ export type ChatEvent =
     | EndOfLLMEvent
     | MessageEvent;
 
-export type ImageGenerationEvent = {
-    status: string;
-}
 // used in File progress for maintaining agent status
 export interface AgentStatus {
     name: string;

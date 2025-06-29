@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useStore } from "@/hooks/ivc/useStore";
 import { Message } from "@/lib/ivc/types";
 import { getAgentName } from "@/lib/ivc/agentNames";
-import { sendChat, sendImageGenerationChat } from "@/services/ivc/chat";
+import { sendChat } from "@/services/ivc/chat";
 import PromptInput from "./PromptInput";
 import QuestionFlow from "./QuestionFlow";
 import FileProgress from "./FileProgress";
@@ -59,13 +59,9 @@ const ProjectBuilder: React.FC = () => {
         setCurrentInput(userPrompt);
         setUploadedImage(imageFile || null);
 
-        if (imageFile) {
-            handleImageSubmit(undefined, imageFile);
-        } else {
-            handleFormSubmit(undefined, userPrompt);
-            setCurrentStep("requirementGathering");
-        }
+        handleFormSubmit(undefined, userPrompt);
 
+        setCurrentStep("requirementGathering");
         setIsGenerating(false);
     };
 
@@ -105,13 +101,6 @@ const ProjectBuilder: React.FC = () => {
             searchBeforePlanning,
         });
     };
-
-    const handleImageSubmit  = async (e?:React.FormEvent, imageFile?: File) => {
-        e?.preventDefault();
-        if (!imageFile) return;
-        
-        await sendImageGenerationChat(imageFile);
-    }
 
     const handleReqGatheringComplete = async (): Promise<void> => {
         setCurrentStep("building");

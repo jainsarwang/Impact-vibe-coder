@@ -50,7 +50,7 @@ def create_gemini_llm(model: str, response_schema = None, temperature: float = 0
 
     return llm
 
-def get_llm_by_type(llm_type: LLMType, schema = None, temperature = 0.0) -> ChatOpenAI | ChatGemini:
+def get_llm_by_type(llm_type: LLMType, schema = None, temperature = 0.0) -> ChatOpenAI | genai.Client:
     """Get LLM instance by type. Returns cached instance if available."""
 
     if llm_type == "basic":
@@ -64,7 +64,7 @@ def get_llm_by_type(llm_type: LLMType, schema = None, temperature = 0.0) -> Chat
     else:
         raise ValueError(f"Unknown LLM type: {llm_type}")
 
-    # _llm_cache[llm_type] = llm
+    _llm_cache[llm_type] = llm
     return llm
 
 def generate_image_with_gemini(prompt: str, temperature) -> Optional[str]:

@@ -1,14 +1,4 @@
-# Ignore Python virtual environments
-.venv/
-env/
-
-# Ignore build directories
-__pycache__/
-*.pyc
-dist/
-build/
-
-# Ignore Node.js modules
+# Node modules
 node_modules/
 /backend/node_modules
 
@@ -23,7 +13,6 @@ node_modules/
 __pycache__
 
 projects
-project_zips
 
 checklist.json
 code_planner.json
@@ -38,8 +27,3 @@ project_structure.html
 project_analysis.json
 project_structure.png
 project_requirements.json
-
-# Terraform excluded
-terraform_output
-report.json
-credentials

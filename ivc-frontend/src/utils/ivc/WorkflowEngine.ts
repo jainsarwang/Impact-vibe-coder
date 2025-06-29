@@ -30,9 +30,9 @@ export class WorkflowEngine {
 
     async *run(stream: AsyncIterable<ChatEvent>) {
         const setAgentWorking = useStore.getState().setAgentWorking;
-        // const addMessage = useStore.getState().addMessage;
+        const addMessage = useStore.getState().addMessage;
         const clearAgentWorking = useStore.getState().clearAgentWorking;
-        // const updateMessage = useStore.getState().updateMessage;
+        const updateMessage = useStore.getState().updateMessage;
         const addArchitectAgent = useStore.getState().addArchitectAgent;
         const updateArchitectAgent = useStore.getState().updateArchitectAgent;
         const addFile = useStore.getState().addFile;
@@ -78,7 +78,7 @@ export class WorkflowEngine {
                         role: "assistant",
                         content: "",
                     };
-                    // addMessage(textMessage);
+                    addMessage(textMessage);
 
                     yield textMessage;
                     break;
@@ -212,20 +212,20 @@ export class WorkflowEngine {
                         if (textMessage) {
                             textMessage.content += event.data.delta.content;
 
-                            // updateMessage({
-                            //     id: textMessage.id,
-                            //     content: textMessage.content,
-                            // });
+                            updateMessage({
+                                id: textMessage.id,
+                                content: textMessage.content,
+                            });
                         }
                     } else if (event.data.delta.reasoning_content) {
                         if (textMessage) {
                             textMessage.content +=
                                 event.data.delta.reasoning_content;
 
-                            // updateMessage({
-                            //     id: textMessage.id,
-                            //     content: textMessage.content,
-                            // });
+                            updateMessage({
+                                id: textMessage.id,
+                                content: textMessage.content,
+                            });
                         }
                     }
 
