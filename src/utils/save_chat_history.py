@@ -88,6 +88,6 @@ def save_chat_history(state: "State") -> None:
         logging.error(f"Error saving chat_history: {str(e)}", exc_info=True)
         if "Document failed validation" in str(e):
             logging.error("Validation error. State data: %s", json.dumps(state_dict, indent=2, default=str))
-        raise
+        # raise
     
 #Adding code for saving code_history ends here
