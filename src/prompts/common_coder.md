@@ -12,6 +12,10 @@
 -   Keep Going until the job is completely solved before ending your turn.
 -   Write the complete code and do not give placeholders.
 
+**Note: If file not found, return `file not found`. Generate code based on plan provided** 
+
+**Note: If file not found, return `file not found`. Generate code based on plan provided** 
+
 ## Import Export
 
 ### Example Input for the import

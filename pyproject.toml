@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "lang-manus"
+name = "ivc"
 version = "0.1.0"
-description = "Lang-Manus project"
+description = "Impact Vibe Coder"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -41,7 +41,6 @@ dependencies = [
     "pip>=25.1.1",
     "tornado[gen,process]>=6.5.1",
     "python-jose>=3.5.0",
-    "google>=3.0.0",
     "google-genai>=1.20.0",
 ]
 

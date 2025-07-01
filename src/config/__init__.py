@@ -42,6 +42,12 @@ TEAM_MEMBERS = [
     "validator_master"
 ]
 
+ADDITIONAL_STREAMING_AGENT = [
+    "coordinator",
+    "planner",
+    "terraform_generator",
+]
+
 CODER_AGENTS = [
     "model_coder",
     "controller_coder",

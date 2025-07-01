@@ -679,18 +679,6 @@ wheels = [
 ]
 
 [[package]]
-name = "google"
-version = "3.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "beautifulsoup4" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/89/97/b49c69893cddea912c7a660a4b6102c6b02cd268f8c7162dd70b7c16f753/google-3.0.0.tar.gz", hash = "sha256:143530122ee5130509ad5e989f0512f7cb218b2d4eddbafbad40fd10e8d8ccbe", size = 44978 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ac/35/17c9141c4ae21e9a29a43acdfd848e3e468a810517f862cad07977bf8fe9/google-3.0.0-py2.py3-none-any.whl", hash = "sha256:889cf695f84e4ae2c55fbc0cfdaf4c1e729417fa52ab1db0485202ba173e4935", size = 45258 },
-]
-
-[[package]]
 name = "google-ai-generativelanguage"
 version = "0.6.18"
 source = { registry = "https://pypi.org/simple" }
@@ -991,6 +979,96 @@ wheels = [
 ]
 
 [[package]]
+name = "ivc"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "bcrypt" },
+    { name = "browser-use" },
+    { name = "crypto" },
+    { name = "fastapi" },
+    { name = "google-genai" },
+    { name = "httpx" },
+    { name = "json-repair" },
+    { name = "jsonschema" },
+    { name = "langchain-community" },
+    { name = "langchain-deepseek" },
+    { name = "langchain-experimental" },
+    { name = "langchain-openai" },
+    { name = "langgraph" },
+    { name = "litellm" },
+    { name = "markdownify" },
+    { name = "motor" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "passlib" },
+    { name = "pillow" },
+    { name = "pip" },
+    { name = "plotly" },
+    { name = "pydantic", extra = ["email"] },
+    { name = "pymongo" },
+    { name = "python-dotenv" },
+    { name = "python-jose" },
+    { name = "python-multipart" },
+    { name = "readabilipy" },
+    { name = "socksio" },
+    { name = "sse-starlette" },
+    { name = "tornado" },
+    { name = "uvicorn" },
+    { name = "yfinance" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "black" },
+]
+test = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "bcrypt", specifier = ">=4.3.0" },
+    { name = "black", marker = "extra == 'dev'", specifier = ">=24.2.0" },
+    { name = "browser-use", specifier = ">=0.1.0" },
+    { name = "crypto", specifier = ">=1.4.1" },
+    { name = "fastapi", specifier = ">=0.110.0" },
+    { name = "google-genai", specifier = ">=1.20.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "json-repair", specifier = ">=0.7.0" },
+    { name = "jsonschema", specifier = ">=4.23.0" },
+    { name = "langchain-community", specifier = ">=0.3.19" },
+    { name = "langchain-deepseek", specifier = ">=0.1.2" },
+    { name = "langchain-experimental", specifier = ">=0.3.4" },
+    { name = "langchain-openai", specifier = ">=0.3.8" },
+    { name = "langgraph", specifier = ">=0.3.5" },
+    { name = "litellm", specifier = ">=1.63.11" },
+    { name = "markdownify", specifier = ">=1.1.0" },
+    { name = "motor", specifier = ">=3.7.1" },
+    { name = "numpy", specifier = ">=2.2.3" },
+    { name = "pandas", specifier = ">=2.2.3" },
+    { name = "passlib", specifier = ">=1.7.4" },
+    { name = "pillow", specifier = ">=11.2.1" },
+    { name = "pip", specifier = ">=25.1.1" },
+    { name = "plotly", specifier = ">=6.1.0" },
+    { name = "pydantic", extras = ["email"], specifier = ">=2.10.6" },
+    { name = "pymongo", specifier = ">=4.13.0" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=7.4.0" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.1.0" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "python-jose", specifier = ">=3.5.0" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
+    { name = "readabilipy", specifier = ">=0.3.0" },
+    { name = "socksio", specifier = ">=1.0.0" },
+    { name = "sse-starlette", specifier = ">=1.6.5" },
+    { name = "tornado", extras = ["gen", "process"], specifier = ">=6.5.1" },
+    { name = "uvicorn", specifier = ">=0.27.1" },
+    { name = "yfinance", specifier = ">=0.2.54" },
+]
+provides-extras = ["dev", "test"]
+
+[[package]]
 name = "jinja2"
 version = "3.1.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1115,98 +1193,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/bf/ce/46fbd9c8119cfc358
 wheels = [
     { url = "https://files.pythonhosted.org/packages/01/0e/b27cdbaccf30b890c40ed1da9fd4a3593a5cf94dae54fb34f8a4b74fcd3f/jsonschema_specifications-2025.4.1-py3-none-any.whl", hash = "sha256:4653bffbd6584f7de83a67e0d620ef16900b390ddc7939d56684d6c81e33f1af", size = 18437, upload-time = "2025-04-23T12:34:05.422Z" },
 ]
-
-[[package]]
-name = "lang-manus"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "bcrypt" },
-    { name = "browser-use" },
-    { name = "crypto" },
-    { name = "fastapi" },
-    { name = "google" },
-    { name = "google-genai" },
-    { name = "httpx" },
-    { name = "json-repair" },
-    { name = "jsonschema" },
-    { name = "langchain-community" },
-    { name = "langchain-deepseek" },
-    { name = "langchain-experimental" },
-    { name = "langchain-openai" },
-    { name = "langgraph" },
-    { name = "litellm" },
-    { name = "markdownify" },
-    { name = "motor" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "passlib" },
-    { name = "pillow" },
-    { name = "pip" },
-    { name = "plotly" },
-    { name = "pydantic", extra = ["email"] },
-    { name = "pymongo" },
-    { name = "python-dotenv" },
-    { name = "python-jose" },
-    { name = "python-multipart" },
-    { name = "readabilipy" },
-    { name = "socksio" },
-    { name = "sse-starlette" },
-    { name = "tornado" },
-    { name = "uvicorn" },
-    { name = "yfinance" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "black" },
-]
-test = [
-    { name = "pytest" },
-    { name = "pytest-cov" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "bcrypt", specifier = ">=4.3.0" },
-    { name = "black", marker = "extra == 'dev'", specifier = ">=24.2.0" },
-    { name = "browser-use", specifier = ">=0.1.0" },
-    { name = "crypto", specifier = ">=1.4.1" },
-    { name = "fastapi", specifier = ">=0.110.0" },
-    { name = "google", specifier = ">=3.0.0" },
-    { name = "google-genai", specifier = ">=1.20.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "json-repair", specifier = ">=0.7.0" },
-    { name = "jsonschema", specifier = ">=4.23.0" },
-    { name = "langchain-community", specifier = ">=0.3.19" },
-    { name = "langchain-deepseek", specifier = ">=0.1.2" },
-    { name = "langchain-experimental", specifier = ">=0.3.4" },
-    { name = "langchain-openai", specifier = ">=0.3.8" },
-    { name = "langgraph", specifier = ">=0.3.5" },
-    { name = "litellm", specifier = ">=1.63.11" },
-    { name = "markdownify", specifier = ">=1.1.0" },
-    { name = "motor", specifier = ">=3.7.1" },
-    { name = "numpy", specifier = ">=2.2.3" },
-    { name = "pandas", specifier = ">=2.2.3" },
-    { name = "passlib", specifier = ">=1.7.4" },
-    { name = "pillow", specifier = ">=11.2.1" },
-    { name = "pip", specifier = ">=25.1.1" },
-    { name = "plotly", specifier = ">=6.1.0" },
-    { name = "pydantic", extras = ["email"], specifier = ">=2.10.6" },
-    { name = "pymongo", specifier = ">=4.13.0" },
-    { name = "pytest", marker = "extra == 'test'", specifier = ">=7.4.0" },
-    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.1.0" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
-    { name = "python-jose", specifier = ">=3.5.0" },
-    { name = "python-multipart", specifier = ">=0.0.20" },
-    { name = "readabilipy", specifier = ">=0.3.0" },
-    { name = "socksio", specifier = ">=1.0.0" },
-    { name = "sse-starlette", specifier = ">=1.6.5" },
-    { name = "tornado", extras = ["gen", "process"], specifier = ">=6.5.1" },
-    { name = "uvicorn", specifier = ">=0.27.1" },
-    { name = "yfinance", specifier = ">=0.2.54" },
-]
-provides-extras = ["dev", "test"]
 
 [[package]]
 name = "langchain"

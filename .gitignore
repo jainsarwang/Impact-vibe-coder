@@ -11,16 +11,34 @@ build/
 # Ignore Node.js modules
 node_modules/
 
-# Ignore environment files
+# Environment variables
 .env
-.env.local
-.env.*
 
-# Ignore editor-specific files
-.vscode/
-.idea/
+# Frontend build output
+/frontend/dist
 
-# Ignore logs and temporary files
-*.log
-*.tmp
-projects/
+.venv
+
+__pycache__
+
+projects
+project_zips
+
+checklist.json
+code_planner.json
+directory_structure.json
+project_structure.json
+import-export.json
+code_planner.json
+checklist.json
+app.log
+.dependency_graph.png
+project_structure.html
+project_analysis.json
+project_structure.png
+project_requirements.json
+
+# Terraform excluded
+terraform_output
+report.json
+credentials

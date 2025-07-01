@@ -18,6 +18,7 @@ import { getAgentName } from "@/lib/ivc/agentNames";
 import { impactVibeAPI } from "@/services/ivc/impactVibeAPI";
 import FileViewer from "./FileViewer";
 import VSCodeEditor from "./VSCodeEditor";
+import { handleDownloadProject } from "@/services/ivc/download";
 
 interface FileProgressProps {
     prompt: string;
@@ -81,28 +82,6 @@ const FileProgress = ({
 
     const handleFileSave = (fileName: string, content: string) => {
         console.log(`Saving file ${fileName}:`, content);
-    };
-
-    const handleDownloadProject = async () => {
-        if (!sessionId) {
-            console.error("No session ID available for download");
-            return;
-        }
-
-        try {
-            const blob = await impactVibeAPI.downloadProject(sessionId);
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `impact-vibe-project-${sessionId}.zip`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error("Error downloading project:", error);
-            // You might want to show an error toast here
-        }
     };
 
     return (
@@ -310,7 +289,7 @@ const FileProgress = ({
                                 {!isGenerating &&
                                     completedFiles === totalFiles && (
                                         <button
-                                            onClick={handleDownloadProject}
+                                            onClick={() => handleDownloadProject(sessionId!)}
                                             className="flex items-center space-x-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
                                         >
                                             <Download className="w-6 h-6" />
