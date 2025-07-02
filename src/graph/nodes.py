@@ -5,16 +5,13 @@ import json_repair
 from datetime import datetime
 from copy import deepcopy
 from io import BytesIO
-from bson import SON
 import re
 import json
 
-from langchain_core.messages import HumanMessage, BaseMessage
 from PIL import Image
 from typing import Dict, List, Literal
-from pymongo import MongoClient
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, BaseMessage
 from langchain_core.prompts import PromptTemplate
 from langgraph.types import Command
 
@@ -41,8 +38,6 @@ from ..prompts.template import apply_prompt_template, apply_prompt_template_plan
 from ..tools import tavily_tool, bash_tool
 from ..utils import ReadmeExecutor, repair_json_output, ensure_directory_exists, ChecklistManager, token_count, get_response_schema, save_chat_history
 from ..terraform_generator.src import terraform_generator_main
-import re
-import json
 
 
 logger = logging.getLogger(__name__)
@@ -1407,7 +1402,8 @@ def terraform_generator_node(state: State) -> Command[Literal["supervisor"]]:
             }
         )
     except Exception as e:
-        logging.error(f"Error During terraform generation: {e}")
+        logger.error(f"Error in terraform_generator_node: {str(e)}", exc_info=True)
+        report["error"] = str(e)
 
         return Command(
             update={
@@ -1417,9 +1413,10 @@ def terraform_generator_node(state: State) -> Command[Literal["supervisor"]]:
                         name="terraform_generator",
                     )
                 ],
-                "tokens": token_count.get_token_count()
+                "is_terraform_generated": True,
+                "error": str(e)
             },
-            goto="validator_master",
+            goto="supervisor",
         )
 
 max_retries = 0 
